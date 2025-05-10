@@ -1,0 +1,215 @@
+{
+  "bandonDunes": [
+    {
+      "group": "Group 1: 7:00 am",
+      "team_bolton": [
+        {
+          "name": "Chris Bolton",
+          "handicap": 6
+        },
+        {
+          "name": "Troy McGee",
+          "handicap": 5
+        }
+      ],
+      "team_ensign": [
+        {
+          "name": "Josh Ensign",
+          "handicap": 10
+        },
+        {
+          "name": "Nick Doyle",
+          "handicap": 12
+        }
+      ]
+    },
+    {
+      "group": "Group 1: 7:10 am",
+      "team_bolton": [
+        {
+          "name": "Jay Rollins",
+          "handicap": 8
+        },
+        {
+          "name": "Justin Crain",
+          "handicap": 2
+        }
+      ],
+      "team_ensign": [
+        {
+          "name": "Matt Funicello",
+          "handicap": 22
+        },
+        {
+          "name": "Doug Hodges",
+          "handicap": 25
+        }
+      ]
+    },
+    {
+      "group": "Group 1: 7:20 am",
+      "team_bolton": [
+        {
+          "name": "Henry Wang",
+          "handicap": 12
+        },
+        {
+          "name": "Jerry Carter",
+          "handicap": 20
+        }
+      ],
+      "team_ensign": [
+        {
+          "name": "Kevin Levin",
+          "handicap": 3
+        },
+        {
+          "name": "David Dorman",
+          "handicap": 1
+        }
+      ]
+    }
+  ],
+  "pacificDunes": [
+    {
+      "group": "Group 1: 7:30 am",
+      "team_bolton": [
+        {
+          "name": "Chris Bolton",
+          "handicap": 6
+        },
+        {
+          "name": "Henry Wang",
+          "handicap": 12
+        }
+      ],
+      "team_ensign": [
+        {
+          "name": "Josh Ensign",
+          "handicap": 10
+        },
+        {
+          "name": "Kevin Levin",
+          "handicap": 3
+        }
+      ]
+    },
+    {
+      "group": "Group 1: 7:40 am",
+      "team_bolton": [
+        {
+          "name": "Jay Rollins",
+          "handicap": 8
+        },
+        {
+          "name": "Troy McGee",
+          "handicap": 5
+        }
+      ],
+      "team_ensign": [
+        {
+          "name": "Nick Doyle",
+          "handicap": 12
+        },
+        {
+          "name": "David Dorman",
+          "handicap": 1
+        }
+      ]
+    },
+    {
+      "group": "Group 1: 7:50 am",
+      "team_bolton": [
+        {
+          "name": "Justin Crain",
+          "handicap": 2
+        },
+        {
+          "name": "Jerry Carter",
+          "handicap": 20
+        }
+      ],
+      "team_ensign": [
+        {
+          "name": "Matt Funicello",
+          "handicap": 22
+        },
+        {
+          "name": "Doug Hodges",
+          "handicap": 25
+        }
+      ]
+    }
+  ],
+  "oldMacdonald": [
+    {
+      "group": "Group 1: 8:00 am",
+      "team_bolton": [
+        {
+          "name": "Chris Bolton",
+          "handicap": 6
+        },
+        {
+          "name": "Jerry Carter",
+          "handicap": 20
+        }
+      ],
+      "team_ensign": [
+        {
+          "name": "Josh Ensign",
+          "handicap": 10
+        },
+        {
+          "name": "Doug Hodges",
+          "handicap": 25
+        }
+      ]
+    },
+    {
+      "group": "Group 1: 8:10 am",
+      "team_bolton": [
+        {
+          "name": "Jay Rollins",
+          "handicap": 8
+        },
+        {
+          "name": "Henry Wang",
+          "handicap": 12
+        }
+      ],
+      "team_ensign": [
+        {
+          "name": "Nick Doyle",
+          "handicap": 12
+        },
+        {
+          "name": "Kevin Levin",
+          "handicap": 3
+        }
+      ]
+    },
+    {
+      "group": "Group 1: 8:20 am",
+      "team_bolton": [
+        {
+          "name": "Troy McGee",
+          "handicap": 5
+        },
+        {
+          "name": "Justin Crain",
+          "handicap": 2
+        }
+      ],
+      "team_ensign": [
+        {
+          "name": "Matt Funicello",
+          "handicap": 22
+        },
+        {
+          "name": "David Dorman",
+          "handicap": 1
+        }
+      ]
+    }
+  ]
+} 
