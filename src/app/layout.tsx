@@ -6,6 +6,7 @@ import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
 import Link from 'next/link';
 import { Cormorant_Garamond } from 'next/font/google';
+import { Analytics } from '@vercel/analytics/react';
 
 const cormorantGaramond = Cormorant_Garamond({ subsets: ['latin'], weight: ['400', '700'] });
 
@@ -29,6 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <main>
           {children}
         </main>
+        <Analytics />
       </body>
     </html>
   );
