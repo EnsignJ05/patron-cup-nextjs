@@ -4,10 +4,12 @@ import Typography from '@mui/material/Typography';
 interface CourseScoreCardProps {
   courseName: string;
   date: string;
+  teamBoltonTotal?: number;
+  teamEnsignTotal?: number;
   children?: React.ReactNode; // For match results or tables
 }
 
-export default function CourseScoreCard({ courseName, date, children }: CourseScoreCardProps) {
+export default function CourseScoreCard({ courseName, date, teamBoltonTotal, teamEnsignTotal, children }: CourseScoreCardProps) {
   return (
     <Box
       sx={{
@@ -32,6 +34,19 @@ export default function CourseScoreCard({ courseName, date, children }: CourseSc
           {date}
         </Typography>
       </Box>
+      {(teamBoltonTotal !== undefined && teamEnsignTotal !== undefined) && (
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3, mb: 1 }}>
+          <Typography variant="subtitle1" sx={{ color: '#3ddad7', fontWeight: 700 }}>
+            Team Bolton: {teamBoltonTotal}
+          </Typography>
+          <Typography variant="subtitle1" sx={{ color: '#b0b0b0', fontWeight: 700 }}>
+            |
+          </Typography>
+          <Typography variant="subtitle1" sx={{ color: '#f7b32b', fontWeight: 700 }}>
+            Team Ensign: {teamEnsignTotal}
+          </Typography>
+        </Box>
+      )}
       {/* Placeholder for match results or children */}
       {children || (
         <Typography variant="body1" sx={{ color: '#e0e0e0', fontStyle: 'italic' }}>

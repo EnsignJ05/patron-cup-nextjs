@@ -1,17 +1,33 @@
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import CourseScoreCard from '@/components/scoreboard/CourseScoreCard';
+import MatchRow from '@/components/scoreboard/MatchRow';
+import matchesData from '@/data/matches.json';
 
-// Example overall scores
-const teamBoltonScore = 12;
-const teamEnsignScore = 10;
+interface Match {
+  winner?: string | null;
+}
 
-// Example courses
-const courses = [
-  { name: 'Bandon Dunes', date: 'June 4, 2025' },
-  { name: 'Pacific Dunes', date: 'June 5, 2025' },
-  { name: 'Old Macdonald', date: 'June 6, 2025' },
-];
+function getTeamTotals(matches: Match[]) {
+  let bolton = 0, ensign = 0;
+  for (const m of matches) {
+    if (m.winner === 'team_bolton') bolton += 1;
+    else if (m.winner === 'team_ensign') ensign += 1;
+    else if (m.winner === 'tie') { bolton += 0.5; ensign += 0.5; }
+  }
+  return { bolton, ensign };
+}
+
+const bandonMatches = matchesData.matches.filter(m => m.course === 'Bandon Dunes');
+const pacificMatches = matchesData.matches.filter(m => m.course === 'Pacific Dunes');
+const oldMacMatches = matchesData.matches.filter(m => m.course === 'Old Macdonald');
+
+const bandonTotals = getTeamTotals(bandonMatches);
+const pacificTotals = getTeamTotals(pacificMatches);
+const oldMacTotals = getTeamTotals(oldMacMatches);
+
+const teamBoltonScore = bandonTotals.bolton + pacificTotals.bolton + oldMacTotals.bolton;
+const teamEnsignScore = bandonTotals.ensign + pacificTotals.ensign + oldMacTotals.ensign;
 
 export default function ScoreboardPage() {
   return (
@@ -63,10 +79,48 @@ export default function ScoreboardPage() {
           </Typography>
         </Box>
       </Box>
-      {/* Course Score Cards */}
-      {courses.map((course) => (
-        <CourseScoreCard key={course.name} courseName={course.name} date={course.date} />
-      ))}
+      {/* Bandon Dunes Course Score Card */}
+      <CourseScoreCard courseName="Bandon Dunes" date="June 5, 2025" teamBoltonTotal={bandonTotals.bolton} teamEnsignTotal={bandonTotals.ensign}>
+        {bandonMatches.map((match) => (
+          <MatchRow
+            key={match.match}
+            match={match.match}
+            group={match.group}
+            time={match.time}
+            team_bolton={match.team_bolton}
+            team_ensign={match.team_ensign}
+            winner={match.winner}
+          />
+        ))}
+      </CourseScoreCard>
+      {/* Pacific Dunes Course Score Card */}
+      <CourseScoreCard courseName="Pacific Dunes" date="June 6, 2025" teamBoltonTotal={pacificTotals.bolton} teamEnsignTotal={pacificTotals.ensign}>
+        {pacificMatches.map((match) => (
+          <MatchRow
+            key={match.match}
+            match={match.match}
+            group={match.group}
+            time={match.time}
+            team_bolton={match.team_bolton}
+            team_ensign={match.team_ensign}
+            winner={match.winner}
+          />
+        ))}
+      </CourseScoreCard>
+      {/* Old Macdonald Course Score Card */}
+      <CourseScoreCard courseName="Old Macdonald" date="June 7, 2025" teamBoltonTotal={oldMacTotals.bolton} teamEnsignTotal={oldMacTotals.ensign}>
+        {oldMacMatches.map((match) => (
+          <MatchRow
+            key={match.match}
+            match={match.match}
+            group={match.group}
+            time={match.time}
+            team_bolton={match.team_bolton}
+            team_ensign={match.team_ensign}
+            winner={match.winner}
+          />
+        ))}
+      </CourseScoreCard>
     </Box>
   );
 } 
