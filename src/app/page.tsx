@@ -1,6 +1,5 @@
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-// import Button from '@mui/material/Button'; // Removed unused import
 import Image from 'next/image';
 import { Playfair_Display } from 'next/font/google';
 import { Inter } from 'next/font/google';
