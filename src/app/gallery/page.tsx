@@ -13,7 +13,20 @@ const imageFilenames = [
 
 export default function GalleryPage() {
   return (
-    <Box sx={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', color: 'white', pt: { xs: 4, sm: 8 }, px: { xs: 1, sm: 2 } }}>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        width: '100vw',
+        background: 'linear-gradient(to bottom, rgba(34,34,34,0.7) 60%, transparent), url(/gallery-hero.webp) center/cover no-repeat',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        color: 'white',
+        pt: { xs: 4, sm: 8 },
+        px: { xs: 1, sm: 2 },
+      }}
+    >
       <Typography variant="h3" sx={{ mb: { xs: 2, sm: 4 }, fontWeight: 700, fontSize: { xs: '2rem', sm: '2.5rem' } }}>
         Gallery
       </Typography>

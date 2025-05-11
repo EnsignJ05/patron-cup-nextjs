@@ -31,7 +31,19 @@ const teamEnsignScore = bandonTotals.ensign + pacificTotals.ensign + oldMacTotal
 
 export default function ScoreboardPage() {
   return (
-    <Box sx={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', color: 'white', pt: { xs: 4, sm: 8 } }}>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        width: '100vw',
+        background: 'linear-gradient(to bottom, rgba(34,34,34,0.7) 60%, transparent), url(/scoreboard-hero.jpg) center/cover no-repeat',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        color: 'white',
+        pt: { xs: 4, sm: 8 },
+      }}
+    >
       {/* Scoreboard Heading */}
       <Typography variant="h3" sx={{ mb: { xs: 2, sm: 4 }, fontWeight: 700 }}>
         Scoreboard
