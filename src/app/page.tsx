@@ -1,11 +1,23 @@
+'use client';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import Image from 'next/image';
 import { Playfair_Display } from 'next/font/google';
 import { Inter } from 'next/font/google';
+import Slider from 'react-slick';
+import 'slick-carousel/slick/slick.css';
+import 'slick-carousel/slick/slick-theme.css';
+import Image from 'next/image';
 
 const playfair = Playfair_Display({ subsets: ['latin'], weight: ['700'] });
 const inter = Inter({ subsets: ['latin'], weight: ['400', '700'] });
+
+const bandonImages = [
+  '/gallery/BandonPhotos/tee-times-hero.jpg',
+  '/gallery/BandonPhotos/scoreboard-hero.jpg',
+  '/gallery/BandonPhotos/gallery-hero.webp',
+  '/gallery/BandonPhotos/itinerary-hero.jpg',
+  '/gallery/BandonPhotos/hero.jpg',
+];
 
 export default function Home() {
   return (
@@ -43,6 +55,33 @@ export default function Home() {
         >
           Patron Cup 2025
         </Typography>
+      </Box>
+      <Box sx={{ width: '100%', maxWidth: 900, mb: 6 }}>
+        <Slider
+          dots
+          infinite
+          speed={500}
+          slidesToShow={1}
+          slidesToScroll={1}
+          autoplay
+          autoplaySpeed={3500}
+          arrows={false}
+        >
+          {bandonImages.map((src, idx) => (
+            <Box key={src} sx={{ position: 'relative', width: '100%', height: { xs: 220, sm: 340, md: 420 }, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: 5, boxShadow: '0 8px 32px rgba(0,0,0,0.25)' }}>
+              <Image
+                src={src}
+                alt={`Bandon Dunes photo ${idx + 1}`}
+                fill
+                style={{ objectFit: 'cover', borderRadius: 20 }}
+                loading="lazy"
+                sizes="(max-width: 600px) 100vw, (max-width: 900px) 900px, 1200px"
+              />
+            </Box>
+          ))}
+        </Slider>
+      </Box>
+      <Box sx={{ maxWidth: 700, width: '100%', px: { xs: 1, sm: 2 }, mb: { xs: 3, sm: 6 } }}>
         <Typography
           variant="h3"
           className={inter.className}
@@ -69,25 +108,6 @@ export default function Home() {
         >
           June 4th – 8th
         </Typography>
-      </Box>
-      <Box
-        sx={{
-          width: { xs: '98vw', sm: 600, md: 800 },
-          maxWidth: '98vw',
-          borderRadius: 5,
-          overflow: 'hidden',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
-          mb: { xs: 3, sm: 6 },
-        }}
-      >
-        <Image
-          src="/hero.jpg"
-          alt="Golf course hero"
-          width={1200}
-          height={600}
-          style={{ width: '100%', height: 'auto', display: 'block' }}
-          priority
-        />
       </Box>
     </Box>
   );
