@@ -10,7 +10,7 @@ export default function TeeTimesPage() {
       sx={{
         minHeight: '100vh',
         width: '100vw',
-        background: 'linear-gradient(to bottom, rgba(34,34,34,0.7) 60%, transparent), url(/tee-times-hero.jpg) center/cover no-repeat',
+        background: '#f5f5f5',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -19,7 +19,7 @@ export default function TeeTimesPage() {
         py: 8,
       }}
     >
-      <Typography variant="h3" gutterBottom sx={{ color: 'white', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
+      <Typography variant="h3" gutterBottom sx={{ color: '#2c3e50', textShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
         Tee Times
       </Typography>
       {coursesData.courses.map((course) => (

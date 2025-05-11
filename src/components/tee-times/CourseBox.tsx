@@ -28,8 +28,12 @@ interface CourseBoxProps {
 }
 
 const theme = {
-  background: '#eef2f7',
+  background: '#ffffff',
   text: '#2c3e50',
+  border: 'rgba(0,0,0,0.12)',
+  hover: 'rgba(0,0,0,0.04)',
+  shadow: '0 8px 32px rgba(0,0,0,0.12)',
+  hoverShadow: '0 12px 48px rgba(0,0,0,0.15)',
 };
 
 export default function CourseBox({ name, description, hasTeeTimes, teeTimes }: CourseBoxProps) {
@@ -38,13 +42,17 @@ export default function CourseBox({ name, description, hasTeeTimes, teeTimes }: 
       sx={{ 
         width: '100%', 
         maxWidth: 800, 
-        bgcolor: alpha(theme.background, 0.75),
+        bgcolor: theme.background,
         borderRadius: 3,
-        boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
+        boxShadow: theme.shadow,
         p: 4,
         mb: 3,
-        backdropFilter: 'blur(16px)',
-        border: '1px solid rgba(255,255,255,0.4)',
+        border: `1px solid ${theme.border}`,
+        transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+        '&:hover': {
+          transform: 'translateY(-4px)',
+          boxShadow: theme.hoverShadow,
+        },
       }}
     >
       <Typography 
@@ -52,10 +60,10 @@ export default function CourseBox({ name, description, hasTeeTimes, teeTimes }: 
         sx={{ 
           mb: 3,
           color: theme.text,
-          fontWeight: 500,
+          fontWeight: 600,
           letterSpacing: '0.5px',
           borderBottom: '2px solid',
-          borderColor: alpha(theme.text, 0.15),
+          borderColor: theme.border,
           pb: 1,
           display: 'inline-block'
         }}
@@ -69,17 +77,17 @@ export default function CourseBox({ name, description, hasTeeTimes, teeTimes }: 
             bgcolor: 'transparent',
             boxShadow: 'none',
             '& .MuiTableCell-root': {
-              borderColor: alpha(theme.text, 0.08),
+              borderColor: theme.border,
               py: 1.5,
               color: theme.text,
             },
             '& .MuiTableHead-root .MuiTableCell-root': {
-              bgcolor: alpha(theme.text, 0.02),
+              bgcolor: theme.hover,
               fontWeight: 600,
               color: theme.text,
             },
             '& .MuiTableBody-root .MuiTableRow-root:hover': {
-              bgcolor: alpha(theme.text, 0.015),
+              bgcolor: theme.hover,
             }
           }}
         >

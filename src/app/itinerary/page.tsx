@@ -7,19 +7,19 @@ export default function ItineraryPage() {
       sx={{
         minHeight: '100vh',
         width: '100vw',
-        background: 'linear-gradient(to bottom, rgba(34,34,34,0.7) 60%, transparent), url(/itinerary-hero.jpg) center/cover no-repeat',
+        background: '#f5f5f5',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        color: 'white',
+        color: '#2c3e50',
         pt: { xs: 4, sm: 8 },
       }}
     >
-      <Typography variant="h3" sx={{ mb: 2, fontWeight: 700 }}>
+      <Typography variant="h3" sx={{ mb: 2, fontWeight: 700, color: '#2c3e50' }}>
         Itinerary
       </Typography>
-      <Typography variant="h6" sx={{ color: '#b0b0b0' }}>
+      <Typography variant="h6" sx={{ color: '#666666' }}>
         This page is coming soon.
       </Typography>
     </Box>

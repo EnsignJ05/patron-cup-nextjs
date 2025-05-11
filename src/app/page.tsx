@@ -13,8 +13,8 @@ export default function Home() {
       sx={{
         minHeight: '100vh',
         width: '100vw',
-        background: '#101614',
-        color: 'white',
+        background: '#f5f5f5',
+        color: '#2c3e50',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'flex-start',
@@ -37,6 +37,8 @@ export default function Home() {
             letterSpacing: '-1.5px',
             mb: { xs: 1, sm: 2 },
             wordBreak: 'break-word',
+            color: '#2c3e50',
+            textShadow: '0 2px 12px rgba(0,0,0,0.1)',
           }}
         >
           Patron Cup 2025
@@ -47,7 +49,7 @@ export default function Home() {
           sx={{
             fontWeight: 600,
             fontSize: { xs: '1.1rem', sm: '1.7rem', md: '2.5rem', lg: '3rem' },
-            color: '#3ddad7',
+            color: '#2c3e50',
             mb: { xs: 1, sm: 2 },
             wordBreak: 'break-word',
           }}
@@ -60,7 +62,7 @@ export default function Home() {
           sx={{
             fontWeight: 400,
             fontSize: { xs: '0.95rem', sm: '1.2rem', md: '1.5rem' },
-            color: '#e0e0e0',
+            color: '#666666',
             mb: { xs: 2, sm: 4 },
             wordBreak: 'break-word',
           }}

@@ -31,27 +31,27 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <html lang="en">
-      <body className={inter.className} style={{ margin: 0, background: '#101614' }}>
+      <body className={inter.className} style={{ margin: 0, background: '#f5f5f5' }}>
         <AppBar
           position="static"
           color="transparent"
           elevation={0}
           sx={{
-            boxShadow: '0 4px 24px 0 rgba(0,0,0,0.18)',
-            background: 'rgba(16,22,20,0.92)',
-            backdropFilter: 'blur(8px)',
-            borderBottom: '2px solid #22302b',
+            boxShadow: 'none',
+            background: '#f5f5f5',
+            backdropFilter: 'none',
+            borderBottom: '1px solid rgba(0,0,0,0.06)',
             minHeight: 96,
           }}
         >
           <Toolbar sx={{ justifyContent: 'center', gap: { xs: 2, md: 8 }, minHeight: 96, px: { xs: 1, sm: 2, md: 4 } }}>
             {/* Logo */}
             <Box sx={{ display: 'flex', alignItems: 'center', mr: { xs: 2, md: 10 } }}>
-              <Box sx={{ width: 40, height: 40, bgcolor: '#3ddad7', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 1.5 }}>
+              <Box sx={{ width: 40, height: 40, bgcolor: '#2c3e50', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 1.5 }}>
                 {/* Simple golf icon placeholder */}
                 <svg width="26" height="26" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" stroke="white" strokeWidth="2" /><rect x="9" y="4" width="2" height="8" fill="white" /><circle cx="10" cy="15" r="1.5" fill="white" /></svg>
               </Box>
-              <Typography variant="h5" sx={{ fontWeight: 800, color: '#3ddad7', fontFamily: inter.style.fontFamily, fontSize: 30, letterSpacing: 1.5 }} component={Link} href="/" style={{ textDecoration: 'none' }}>
+              <Typography variant="h5" sx={{ fontWeight: 800, color: '#2c3e50', fontFamily: inter.style.fontFamily, fontSize: 30, letterSpacing: 1.5 }} component={Link} href="/" style={{ textDecoration: 'none' }}>
                 Patron Cup
               </Typography>
             </Box>
@@ -63,7 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   component={Link}
                   href={link.href}
                   sx={{
-                    color: 'white',
+                    color: '#2c3e50',
                     fontWeight: 600,
                     fontSize: 20,
                     textTransform: 'none',
@@ -71,6 +71,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     background: 'none',
                     boxShadow: 'none',
                     px: 2,
+                    '&:hover': {
+                      background: 'rgba(0,0,0,0.03)',
+                    },
                   }}
                 >
                   {link.label}
@@ -84,7 +87,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 color="inherit"
                 aria-label="menu"
                 onClick={() => setDrawerOpen(true)}
-                sx={{ color: 'white' }}
+                sx={{ color: '#2c3e50' }}
               >
                 <MenuIcon sx={{ fontSize: 32 }} />
               </IconButton>
@@ -92,7 +95,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 anchor="right"
                 open={drawerOpen}
                 onClose={() => setDrawerOpen(false)}
-                PaperProps={{ sx: { bgcolor: '#181f1b', color: 'white', minWidth: 220 } }}
+                PaperProps={{ sx: { bgcolor: '#f5f5f5', color: '#2c3e50', minWidth: 220 } }}
               >
                 <List>
                   {navLinks.map((link) => (
@@ -105,8 +108,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                           fontWeight: 600,
                           fontSize: 18,
                           fontFamily: inter.style.fontFamily,
-                          color: 'white',
+                          color: '#2c3e50',
                           py: 2,
+                          '&:hover': {
+                            background: 'rgba(0,0,0,0.03)',
+                          },
                         }}
                       >
                         <ListItemText primary={link.label} />
