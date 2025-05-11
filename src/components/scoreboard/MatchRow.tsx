@@ -17,7 +17,7 @@ interface MatchRowProps {
 }
 
 export default function MatchRow({ match, group, time, team_bolton, team_ensign, winner }: MatchRowProps) {
-  let rowBg = 'transparent';
+  const rowBg = 'transparent';
   let boltonBox = {};
   let ensignBox = {};
   let boltonStyle: SxProps<Theme> = { color: '#2c3e50' };
