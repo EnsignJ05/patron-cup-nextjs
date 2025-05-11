@@ -1,5 +1,6 @@
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
+import { SxProps, Theme } from '@mui/material/styles';
 
 interface Player {
   name: string;
@@ -16,30 +17,34 @@ interface MatchRowProps {
 }
 
 export default function MatchRow({ match, group, time, team_bolton, team_ensign, winner }: MatchRowProps) {
-  let winnerDisplay = null;
-  let winnerColor = '';
   let rowBg = 'transparent';
-  let boltonStyle = {};
-  let ensignStyle = {};
+  let boltonStyle: SxProps<Theme> = {};
+  let ensignStyle: SxProps<Theme> = {};
+  let boltonBox = {};
+  let ensignBox = {};
+  let tieBadge = null;
 
   if (winner === 'team_bolton') {
-    winnerDisplay = 'Winner: Team Bolton';
-    winnerColor = '#3ddad7';
     rowBg = 'rgba(61,218,215,0.10)';
     boltonStyle = { fontWeight: 700, fontSize: 16, color: '#3ddad7' };
     ensignStyle = { fontWeight: 400, fontSize: 14, color: '#b0b0b0' };
+    boltonBox = { border: '2px solid #3ddad7', borderRadius: 3, boxShadow: '0 0 8px #3ddad733' };
   } else if (winner === 'team_ensign') {
-    winnerDisplay = 'Winner: Team Ensign';
-    winnerColor = '#f7b32b';
     rowBg = 'rgba(247,179,43,0.10)';
     boltonStyle = { fontWeight: 400, fontSize: 14, color: '#b0b0b0' };
     ensignStyle = { fontWeight: 700, fontSize: 16, color: '#f7b32b' };
+    ensignBox = { border: '2px solid #f7b32b', borderRadius: 3, boxShadow: '0 0 8px #f7b32b33' };
   } else if (winner === 'tie') {
-    winnerDisplay = 'Result: Tie';
-    winnerColor = '#b0b0b0';
     rowBg = 'rgba(176,176,176,0.10)';
     boltonStyle = { fontWeight: 500, fontSize: 15, color: 'white' };
     ensignStyle = { fontWeight: 500, fontSize: 15, color: 'white' };
+    boltonBox = { border: '2px solid #b0b0b0', borderRadius: 3 };
+    ensignBox = { border: '2px solid #b0b0b0', borderRadius: 3 };
+    tieBadge = (
+      <Box sx={{ px: 2, py: 0.5, bgcolor: '#b0b0b0', color: '#222', borderRadius: 2, fontWeight: 700, fontSize: 13, alignSelf: 'center', my: { xs: 1, sm: 0 } }}>
+        Tie
+      </Box>
+    );
   } else {
     boltonStyle = { fontWeight: 500, fontSize: 15, color: 'white' };
     ensignStyle = { fontWeight: 500, fontSize: 15, color: 'white' };
@@ -70,28 +75,25 @@ export default function MatchRow({ match, group, time, team_bolton, team_ensign,
         </Typography>
         <Typography variant="body2" sx={{ color: '#e0e0e0' }}>{time}</Typography>
       </Box>
-      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <Typography variant="body2" sx={boltonStyle as any}>
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', p: 1, ...boltonBox }}>
+        <Typography variant="body2" sx={boltonStyle}>
           Team Bolton
         </Typography>
         {team_bolton.map((p) => (
-          <Typography key={p.name} variant="body2" sx={boltonStyle as any}>{p.name} <span style={{ color: '#b0b0b0', fontSize: 12 }}>({p.handicap})</span></Typography>
+          <Typography key={p.name} variant="body2" sx={boltonStyle}>{p.name} <span style={{ color: '#b0b0b0', fontSize: 12 }}>({p.handicap})</span></Typography>
         ))}
       </Box>
-      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <Typography variant="body2" sx={ensignStyle as any}>
+      {/* Tie badge for ties only, between teams */}
+      {tieBadge && (
+        <Box sx={{ display: { xs: 'block', sm: 'flex' }, alignItems: 'center', justifyContent: 'center', minWidth: 60 }}>{tieBadge}</Box>
+      )}
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', p: 1, ...ensignBox }}>
+        <Typography variant="body2" sx={ensignStyle}>
           Team Ensign
         </Typography>
         {team_ensign.map((p) => (
-          <Typography key={p.name} variant="body2" sx={ensignStyle as any}>{p.name} <span style={{ color: '#b0b0b0', fontSize: 12 }}>({p.handicap})</span></Typography>
+          <Typography key={p.name} variant="body2" sx={ensignStyle}>{p.name} <span style={{ color: '#b0b0b0', fontSize: 12 }}>({p.handicap})</span></Typography>
         ))}
-      </Box>
-      <Box sx={{ width: 180, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        {winnerDisplay ? (
-          <Typography variant="caption" sx={{ color: winnerColor, fontWeight: 700, fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {winnerDisplay}
-          </Typography>
-        ) : null}
       </Box>
     </Box>
   );
