@@ -23,19 +23,21 @@ export default function Home() {
         textAlign: 'center',
         m: 0,
         p: 0,
-        pt: 14,
+        pt: { xs: 8, sm: 12, md: 14 },
+        px: { xs: 1, sm: 2, md: 0 },
       }}
     >
-      <Box sx={{ maxWidth: 700, width: '100%', px: 2, mb: 6 }}>
+      <Box sx={{ maxWidth: 700, width: '100%', px: { xs: 1, sm: 2 }, mb: { xs: 3, sm: 6 } }}>
         <Typography
           variant="h1"
           className={playfair.className}
           sx={{
             fontWeight: 800,
-            fontSize: { xs: '2.5rem', md: '4.5rem', lg: '5.5rem' },
-            lineHeight: 1.05,
+            fontSize: { xs: '2.1rem', sm: '3rem', md: '4.5rem', lg: '5.5rem' },
+            lineHeight: 1.08,
             letterSpacing: '-1.5px',
-            mb: 2,
+            mb: { xs: 1, sm: 2 },
+            wordBreak: 'break-word',
           }}
         >
           Patron Cup 2025
@@ -45,9 +47,10 @@ export default function Home() {
           className={inter.className}
           sx={{
             fontWeight: 600,
-            fontSize: { xs: '1.5rem', md: '2.5rem', lg: '3rem' },
+            fontSize: { xs: '1.1rem', sm: '1.7rem', md: '2.5rem', lg: '3rem' },
             color: '#3ddad7',
-            mb: 2,
+            mb: { xs: 1, sm: 2 },
+            wordBreak: 'break-word',
           }}
         >
           Bandon Dunes Golf Resort
@@ -57,9 +60,10 @@ export default function Home() {
           className={inter.className}
           sx={{
             fontWeight: 400,
-            fontSize: { xs: '1.1rem', md: '1.5rem' },
+            fontSize: { xs: '0.95rem', sm: '1.2rem', md: '1.5rem' },
             color: '#e0e0e0',
-            mb: 4,
+            mb: { xs: 2, sm: 4 },
+            wordBreak: 'break-word',
           }}
         >
           June 4th – 8th
@@ -67,12 +71,12 @@ export default function Home() {
       </Box>
       <Box
         sx={{
-          width: { xs: '95vw', sm: 600, md: 800 },
-          maxWidth: '95vw',
+          width: { xs: '98vw', sm: 600, md: 800 },
+          maxWidth: '98vw',
           borderRadius: 5,
           overflow: 'hidden',
           boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
-          mb: 6,
+          mb: { xs: 3, sm: 6 },
         }}
       >
         <Image

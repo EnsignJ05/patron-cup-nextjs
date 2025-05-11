@@ -13,18 +13,18 @@ const imageFilenames = [
 
 export default function GalleryPage() {
   return (
-    <Box sx={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', color: 'white', pt: 8 }}>
-      <Typography variant="h3" sx={{ mb: 4, fontWeight: 700 }}>
+    <Box sx={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', color: 'white', pt: { xs: 4, sm: 8 }, px: { xs: 1, sm: 2 } }}>
+      <Typography variant="h3" sx={{ mb: { xs: 2, sm: 4 }, fontWeight: 700, fontSize: { xs: '2rem', sm: '2.5rem' } }}>
         Gallery
       </Typography>
       <Box
         sx={{
           display: 'grid',
           gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
-          gap: 4,
+          gap: { xs: 2, sm: 4 },
           width: '100%',
           maxWidth: 900,
-          px: 2,
+          px: 0,
         }}
       >
         {imageFilenames.map((filename) => (
