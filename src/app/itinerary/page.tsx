@@ -20,7 +20,7 @@ export default function ItineraryPage() {
         Itinerary
       </Typography>
       <Typography variant="h6" sx={{ color: '#666666' }}>
-        This page is coming soon.
+      We&apos;re polishing this up tighter than your buddy&apos;s new &apos;I&apos;m on Ozempic&apos; waistline. Stay tuned, Slim.
       </Typography>
     </Box>
   );

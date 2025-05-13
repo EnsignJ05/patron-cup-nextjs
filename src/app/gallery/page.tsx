@@ -27,8 +27,19 @@ export default function GalleryPage() {
         px: { xs: 1, sm: 2 },
       }}
     >
-      <Typography variant="h3" sx={{ mb: { xs: 2, sm: 4 }, fontWeight: 700, fontSize: { xs: '2rem', sm: '2.5rem' }, color: '#2c3e50' }}>
+      <Typography variant="h3" sx={{ mb: { xs: 1, sm: 2 }, fontWeight: 700, fontSize: { xs: '2rem', sm: '2.5rem' }, color: '#2c3e50' }}>
         Gallery
+      </Typography>
+      <Typography 
+        variant="subtitle1" 
+        sx={{ 
+          mb: { xs: 2, sm: 4 }, 
+          color: '#666666',
+          fontSize: { xs: '1rem', sm: '1.1rem' },
+          fontStyle: 'italic'
+        }}
+      >
+        This is just some shit I had Sora create. We&apos;ll see if I can get uploading to work.
       </Typography>
       <Box
         sx={{

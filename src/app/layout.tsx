@@ -20,9 +20,10 @@ const inter = Inter({ subsets: ['latin'], weight: ['400', '700'] });
 
 const navLinks = [
   { label: 'Home', href: '/' },
+  { label: 'Teams', href: '/teams' },
   { label: 'Itinerary', href: '/itinerary' },
+  { label: 'Lodging', href: '/lodging' },
   { label: 'Tee Times', href: '/tee-times' },
-  { label: 'Scoreboard', href: '/scoreboard' },
   { label: 'Gallery', href: '/gallery' },
 ];
 
@@ -41,22 +42,22 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             background: '#f5f5f5',
             backdropFilter: 'none',
             borderBottom: '1px solid rgba(0,0,0,0.06)',
-            minHeight: 96,
+            minHeight: 72,
           }}
         >
-          <Toolbar sx={{ justifyContent: 'center', gap: { xs: 2, md: 8 }, minHeight: 96, px: { xs: 1, sm: 2, md: 4 } }}>
+          <Toolbar sx={{ justifyContent: 'center', gap: { xs: 1, md: 4 }, minHeight: 72, px: { xs: 1, sm: 2, md: 3 } }}>
             {/* Logo */}
-            <Box sx={{ display: 'flex', alignItems: 'center', mr: { xs: 2, md: 10 } }}>
-              <Box sx={{ width: 40, height: 40, bgcolor: '#2c3e50', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 1.5 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mr: { xs: 1, md: 4 } }}>
+              <Box sx={{ width: 36, height: 36, bgcolor: '#2c3e50', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 1 }}>
                 {/* Simple golf icon placeholder */}
-                <svg width="26" height="26" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" stroke="white" strokeWidth="2" /><rect x="9" y="4" width="2" height="8" fill="white" /><circle cx="10" cy="15" r="1.5" fill="white" /></svg>
+                <svg width="24" height="24" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" stroke="white" strokeWidth="2" /><rect x="9" y="4" width="2" height="8" fill="white" /><circle cx="10" cy="15" r="1.5" fill="white" /></svg>
               </Box>
-              <Typography variant="h5" sx={{ fontWeight: 800, color: '#2c3e50', fontFamily: inter.style.fontFamily, fontSize: 30, letterSpacing: 1.5 }} component={Link} href="/" style={{ textDecoration: 'none' }}>
+              <Typography variant="h5" sx={{ fontWeight: 800, color: '#2c3e50', fontFamily: inter.style.fontFamily, fontSize: 26, letterSpacing: 1 }} component={Link} href="/" style={{ textDecoration: 'none' }}>
                 Patron Cup
               </Typography>
             </Box>
             {/* Desktop Nav */}
-            <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 6 }}>
+            <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 3 }}>
               {navLinks.map((link) => (
                 <Button
                   key={link.href}
@@ -65,12 +66,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   sx={{
                     color: '#2c3e50',
                     fontWeight: 600,
-                    fontSize: 20,
+                    fontSize: 18,
                     textTransform: 'none',
                     fontFamily: inter.style.fontFamily,
                     background: 'none',
                     boxShadow: 'none',
-                    px: 2,
+                    px: 1.5,
                     '&:hover': {
                       background: 'rgba(0,0,0,0.03)',
                     },

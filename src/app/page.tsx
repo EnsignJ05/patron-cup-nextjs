@@ -7,6 +7,7 @@ import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 import Image from 'next/image';
+import CountdownTimer from '@/components/CountdownTimer';
 
 const playfair = Playfair_Display({ subsets: ['latin'], weight: ['700'] });
 const inter = Inter({ subsets: ['latin'], weight: ['400', '700'] });
@@ -34,11 +35,11 @@ export default function Home() {
         textAlign: 'center',
         m: 0,
         p: 0,
-        pt: { xs: 8, sm: 12, md: 14 },
+        pt: { xs: 4, sm: 6, md: 7 },
         px: { xs: 1, sm: 2, md: 0 },
       }}
     >
-      <Box sx={{ maxWidth: 700, width: '100%', px: { xs: 1, sm: 2 }, mb: { xs: 3, sm: 6 } }}>
+      <Box sx={{ maxWidth: 700, width: '100%', px: { xs: 1, sm: 2 }, mb: { xs: 1.5, sm: 3 } }}>
         <Typography
           variant="h1"
           className={playfair.className}
@@ -56,6 +57,11 @@ export default function Home() {
           Patron Cup 2025
         </Typography>
       </Box>
+      
+      <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center', mb: { xs: 2, sm: 3 } }}>
+        <CountdownTimer />
+      </Box>
+
       <Box sx={{ width: '100%', maxWidth: 900, mb: 6 }}>
         <Slider
           dots
