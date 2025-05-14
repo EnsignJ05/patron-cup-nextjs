@@ -6,6 +6,7 @@ import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
 import Link from 'next/link';
+import Image from 'next/image';
 import IconButton from '@mui/material/IconButton';
 import MenuIcon from '@mui/icons-material/Menu';
 import Drawer from '@mui/material/Drawer';
@@ -32,6 +33,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <html lang="en">
+      <head>
+        <title>Patron Cup</title>
+        <link rel="icon" type="image/png" sizes="32x32" href="/gallery/patron-logo.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/gallery/patron-logo.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/gallery/patron-logo.png" />
+        <meta name="msapplication-TileImage" content="/gallery/patron-logo.png" />
+        <meta name="msapplication-TileColor" content="#2c3e50" />
+        <meta property="og:image" content="/gallery/patron-logo.png" />
+      </head>
       <body className={inter.className} style={{ margin: 0, background: '#f5f5f5' }}>
         <AppBar
           position="static"
@@ -47,14 +57,28 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           <Toolbar sx={{ justifyContent: 'center', gap: { xs: 1, md: 4 }, minHeight: 72, px: { xs: 1, sm: 2, md: 3 } }}>
             {/* Logo */}
-            <Box sx={{ display: 'flex', alignItems: 'center', mr: { xs: 1, md: 4 } }}>
-              <Box sx={{ width: 36, height: 36, bgcolor: '#2c3e50', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 1 }}>
-                {/* Simple golf icon placeholder */}
-                <svg width="24" height="24" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" stroke="white" strokeWidth="2" /><rect x="9" y="4" width="2" height="8" fill="white" /><circle cx="10" cy="15" r="1.5" fill="white" /></svg>
-              </Box>
-              <Typography variant="h5" sx={{ fontWeight: 800, color: '#2c3e50', fontFamily: inter.style.fontFamily, fontSize: 26, letterSpacing: 1 }} component={Link} href="/" style={{ textDecoration: 'none' }}>
-                Patron Cup
-              </Typography>
+            <Box 
+              component={Link}
+              href="/"
+              sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                mr: { xs: 1, md: 4 },
+                height: 70,
+                width: 70,
+                position: 'relative',
+                '&:hover': {
+                  opacity: 0.8,
+                },
+              }}
+            >
+              <Image
+                src="/gallery/patron-logo.png"
+                alt="Patron Cup Logo"
+                fill
+                style={{ objectFit: 'contain' }}
+                priority
+              />
             </Box>
             {/* Desktop Nav */}
             <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 3 }}>

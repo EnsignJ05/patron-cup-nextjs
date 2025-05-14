@@ -99,6 +99,7 @@ export default function ScoreboardPage() {
             match={match.match}
             group={match.group}
             time={match.time}
+            date={match.date}
             team_bolton={match.team_bolton}
             team_ensign={match.team_ensign}
             winner={match.winner}
@@ -113,6 +114,7 @@ export default function ScoreboardPage() {
             match={match.match}
             group={match.group}
             time={match.time}
+            date={match.date}
             team_bolton={match.team_bolton}
             team_ensign={match.team_ensign}
             winner={match.winner}
@@ -127,6 +129,7 @@ export default function ScoreboardPage() {
             match={match.match}
             group={match.group}
             time={match.time}
+            date={match.date}
             team_bolton={match.team_bolton}
             team_ensign={match.team_ensign}
             winner={match.winner}

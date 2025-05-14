@@ -1,14 +1,86 @@
 'use client';
-import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
+import { Box, Typography } from '@mui/material';
 import teamsData from '@/data/teams.json';
+import PageContainer from '@/components/layout/PageContainer';
+import ComingSoon from '@/components/shared/ComingSoon';
+import Card from '@/components/shared/Card';
+import { colors } from '@/styles/theme';
 
 interface TeamMember {
   first_name: string;
   last_name: string;
   handicap: number;
+}
+
+interface TeamCardProps {
+  teamName: string;
+  players: TeamMember[];
+  stats: {
+    playerCount: number;
+    averageHandicap: string;
+  };
+}
+
+function TeamCard({ teamName, players, stats }: TeamCardProps) {
+  return (
+    <Box sx={{ flex: 1, width: '100%' }}>
+      <Card>
+        <Typography 
+          variant="h4" 
+          sx={{ 
+            mb: 1, 
+            color: colors.primary,
+            fontWeight: 700,
+            textAlign: 'center'
+          }}
+        >
+          {teamName}
+        </Typography>
+        <Typography 
+          variant="subtitle1" 
+          sx={{ 
+            mb: 3, 
+            color: colors.secondary,
+            textAlign: 'center'
+          }}
+        >
+          {stats.playerCount} Players • Avg HC: {stats.averageHandicap}
+        </Typography>
+        {players.map((member) => (
+          <Box 
+            key={`${member.first_name}-${member.last_name}`}
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              py: 1.5,
+              borderBottom: '1px solid rgba(0,0,0,0.08)',
+              '&:last-child': {
+                borderBottom: 'none',
+              },
+            }}
+          >
+            <Typography variant="h6" sx={{ color: colors.primary }}>
+              {member.first_name} {member.last_name}
+            </Typography>
+            <Typography 
+              variant="body1" 
+              sx={{ 
+                color: colors.secondary,
+                bgcolor: 'rgba(0,0,0,0.04)',
+                px: 2,
+                py: 0.5,
+                borderRadius: 2,
+                fontWeight: 600,
+              }}
+            >
+              HC: {member.handicap}
+            </Typography>
+          </Box>
+        ))}
+      </Card>
+    </Box>
+  );
 }
 
 export default function TeamsPage() {
@@ -31,68 +103,9 @@ export default function TeamsPage() {
   const burgessStats = getTeamStats(teamBurgess);
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        width: '100vw',
-        background: '#f5f5f5',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        py: { xs: 4, sm: 8 },
-        px: { xs: 2, sm: 4 },
-      }}
-    >
-      <Typography 
-        variant="h3" 
-        sx={{ 
-          mb: { xs: 4, sm: 6 }, 
-          color: '#2c3e50',
-          fontWeight: 700,
-          textAlign: 'center'
-        }}
-      >
-        Teams
-      </Typography>
-
+    <PageContainer title="Teams">
       {!showTeams ? (
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            py: 8,
-            px: 4,
-            bgcolor: '#ffffff',
-            borderRadius: 4,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-            maxWidth: '600px',
-            width: '100%',
-          }}
-        >
-          <Typography
-            variant="h4"
-            sx={{
-              color: '#2c3e50',
-              fontWeight: 700,
-              textAlign: 'center',
-              mb: 2,
-            }}
-          >
-            Coming Soon
-          </Typography>
-          <Typography
-            variant="body1"
-            sx={{
-              color: '#666666',
-              textAlign: 'center',
-              fontSize: 18,
-            }}
-          >
-            The Teams Are Almost Ready... Unlike your liver after this trip.
-          </Typography>
-        </Box>
+        <ComingSoon message="The Teams Are Almost Ready... Unlike your liver after this trip." />
       ) : (
         <Box 
           sx={{ 
@@ -103,151 +116,18 @@ export default function TeamsPage() {
             width: '100%'
           }}
         >
-          {/* Team Thompson */}
-          <Box sx={{ flex: 1, width: '100%' }}>
-            <Card 
-              sx={{ 
-                height: '100%',
-                borderRadius: 4,
-                boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-                transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
-                '&:hover': {
-                  transform: 'translateY(-4px)',
-                  boxShadow: '0 12px 48px rgba(0,0,0,0.15)',
-                },
-              }}
-            >
-              <CardContent>
-                <Typography 
-                  variant="h4" 
-                  sx={{ 
-                    mb: 1, 
-                    color: '#2c3e50',
-                    fontWeight: 700,
-                    textAlign: 'center'
-                  }}
-                >
-                  Team Thompson
-                </Typography>
-                <Typography 
-                  variant="subtitle1" 
-                  sx={{ 
-                    mb: 3, 
-                    color: '#666666',
-                    textAlign: 'center'
-                  }}
-                >
-                  {thompsonStats.playerCount} Players • Avg HC: {thompsonStats.averageHandicap}
-                </Typography>
-                {teamThompson.map((member) => (
-                  <Box 
-                    key={`${member.first_name}-${member.last_name}`}
-                    sx={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      py: 1.5,
-                      borderBottom: '1px solid rgba(0,0,0,0.08)',
-                      '&:last-child': {
-                        borderBottom: 'none',
-                      },
-                    }}
-                  >
-                    <Typography variant="h6" sx={{ color: '#2c3e50' }}>
-                      {member.first_name} {member.last_name}
-                    </Typography>
-                    <Typography 
-                      variant="body1" 
-                      sx={{ 
-                        color: '#666666',
-                        bgcolor: 'rgba(0,0,0,0.04)',
-                        px: 2,
-                        py: 0.5,
-                        borderRadius: 2,
-                        fontWeight: 600,
-                      }}
-                    >
-                      HC: {member.handicap}
-                    </Typography>
-                  </Box>
-                ))}
-              </CardContent>
-            </Card>
-          </Box>
-
-          {/* Team Burgess */}
-          <Box sx={{ flex: 1, width: '100%' }}>
-            <Card 
-              sx={{ 
-                height: '100%',
-                borderRadius: 4,
-                boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-                transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
-                '&:hover': {
-                  transform: 'translateY(-4px)',
-                  boxShadow: '0 12px 48px rgba(0,0,0,0.15)',
-                },
-              }}
-            >
-              <CardContent>
-                <Typography 
-                  variant="h4" 
-                  sx={{ 
-                    mb: 1, 
-                    color: '#2c3e50',
-                    fontWeight: 700,
-                    textAlign: 'center'
-                  }}
-                >
-                  Team Burgess
-                </Typography>
-                <Typography 
-                  variant="subtitle1" 
-                  sx={{ 
-                    mb: 3, 
-                    color: '#666666',
-                    textAlign: 'center'
-                  }}
-                >
-                  {burgessStats.playerCount} Players • Avg HC: {burgessStats.averageHandicap}
-                </Typography>
-                {teamBurgess.map((member) => (
-                  <Box 
-                    key={`${member.first_name}-${member.last_name}`}
-                    sx={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      py: 1.5,
-                      borderBottom: '1px solid rgba(0,0,0,0.08)',
-                      '&:last-child': {
-                        borderBottom: 'none',
-                      },
-                    }}
-                  >
-                    <Typography variant="h6" sx={{ color: '#2c3e50' }}>
-                      {member.first_name} {member.last_name}
-                    </Typography>
-                    <Typography 
-                      variant="body1" 
-                      sx={{ 
-                        color: '#666666',
-                        bgcolor: 'rgba(0,0,0,0.04)',
-                        px: 2,
-                        py: 0.5,
-                        borderRadius: 2,
-                        fontWeight: 600,
-                      }}
-                    >
-                      HC: {member.handicap}
-                    </Typography>
-                  </Box>
-                ))}
-              </CardContent>
-            </Card>
-          </Box>
+          <TeamCard 
+            teamName="Team Thompson"
+            players={teamThompson}
+            stats={thompsonStats}
+          />
+          <TeamCard 
+            teamName="Team Burgess"
+            players={teamBurgess}
+            stats={burgessStats}
+          />
         </Box>
       )}
-    </Box>
+    </PageContainer>
   );
 } 
