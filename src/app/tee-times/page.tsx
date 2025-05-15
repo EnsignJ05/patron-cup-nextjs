@@ -1,80 +1,195 @@
 'use client';
-import { DataGrid, GridColDef } from '@mui/x-data-grid';
-import { useMemo, useState, useEffect } from 'react';
-import teeTimesDataRaw from '@/data/tee-times.json';
+import { useMemo, useState } from 'react';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
+import matchesData from '@/data/matches.json';
+import { DataGrid, GridColDef } from '@mui/x-data-grid';
+
+interface Match {
+  match: number;
+  group: number;
+  course: string;
+  date: string;
+  time: string;
+  matchType: string;
+  team_thompson: Player[];
+  team_burgess: Player[];
+  winner: string | null;
+}
+
+interface Player {
+  name: string;
+  handicap: number;
+}
 
 interface PlayerRow {
   id: string;
   name: string;
   handicap: number;
-  bandonDunes: string;
   pacificDunes: string;
-  oldMacdonald: string;
+  pacificDunesGroup?: number;
+  sheepRanch: string;
+  sheepRanchGroup?: number;
+  bandonDunes: string;
+  bandonDunesGroup?: number;
+  team: 'Thompson' | 'Burgess';
 }
 
-// Helper to aggregate all players and their tee times
-function getPlayerRows(): PlayerRow[] {
-  const teeTimesData: Record<string, Array<{ group: string; team_bolton: { name: string; handicap: number }[]; team_ensign: { name: string; handicap: number }[] }>> = teeTimesDataRaw as Record<string, Array<{ group: string; team_bolton: { name: string; handicap: number }[]; team_ensign: { name: string; handicap: number }[] }>>;
-  const playerMap: Record<string, PlayerRow & Record<'bandonDunes' | 'pacificDunes' | 'oldMacdonald', string>> = {};
-  const courseKeys = ['bandonDunes', 'pacificDunes', 'oldMacdonald'] as const;
+function getPlayerRows(matches: Match[]): PlayerRow[] {
+  const playerMap = new Map<string, PlayerRow>();
 
-  for (const courseKey of courseKeys) {
-    const teeTimes = teeTimesData[courseKey];
-    if (!teeTimes) continue;
-    for (const group of teeTimes) {
-      const groupTime = group.group;
-      for (const player of [...group.team_bolton, ...group.team_ensign]) {
-        if (!playerMap[player.name]) {
-          playerMap[player.name] = {
-            id: player.name,
-            name: player.name,
-            handicap: player.handicap,
-            bandonDunes: '',
-            pacificDunes: '',
-            oldMacdonald: '',
-          };
-        }
-        const key = courseKey;
-        if (playerMap[player.name][key]) {
-          playerMap[player.name][key] += `, ${groupTime}`;
-        } else {
-          playerMap[player.name][key] = groupTime;
-        }
+  matches.forEach(match => {
+    // Process Team Thompson players
+    match.team_thompson.forEach(player => {
+      if (!playerMap.has(player.name)) {
+        playerMap.set(player.name, {
+          id: player.name,
+          name: player.name,
+          handicap: player.handicap,
+          pacificDunes: '',
+          sheepRanch: '',
+          bandonDunes: '',
+          team: 'Thompson'
+        });
       }
-    }
-  }
-  return Object.values(playerMap);
+      const playerRow = playerMap.get(player.name)!;
+      if (match.course === 'Pacific Dunes') {
+        playerRow.pacificDunes = match.time;
+        playerRow.pacificDunesGroup = match.group;
+      } else if (match.course === 'Sheep Ranch') {
+        playerRow.sheepRanch = match.time;
+        playerRow.sheepRanchGroup = match.group;
+      } else if (match.course === 'Bandon Dunes') {
+        playerRow.bandonDunes = match.time;
+        playerRow.bandonDunesGroup = match.group;
+      }
+    });
+
+    // Process Team Burgess players
+    match.team_burgess.forEach(player => {
+      if (!playerMap.has(player.name)) {
+        playerMap.set(player.name, {
+          id: player.name,
+          name: player.name,
+          handicap: player.handicap,
+          pacificDunes: '',
+          sheepRanch: '',
+          bandonDunes: '',
+          team: 'Burgess'
+        });
+      }
+      const playerRow = playerMap.get(player.name)!;
+      if (match.course === 'Pacific Dunes') {
+        playerRow.pacificDunes = match.time;
+        playerRow.pacificDunesGroup = match.group;
+      } else if (match.course === 'Sheep Ranch') {
+        playerRow.sheepRanch = match.time;
+        playerRow.sheepRanchGroup = match.group;
+      } else if (match.course === 'Bandon Dunes') {
+        playerRow.bandonDunes = match.time;
+        playerRow.bandonDunesGroup = match.group;
+      }
+    });
+  });
+
+  return Array.from(playerMap.values());
 }
 
 const columns: GridColDef[] = [
-  { field: 'name', headerName: 'Name', flex: 1, minWidth: 150 },
-  { field: 'handicap', headerName: 'Handicap', type: 'number', minWidth: 100 },
-  { field: 'bandonDunes', headerName: 'Bandon Dunes', flex: 1, minWidth: 160 },
-  { field: 'pacificDunes', headerName: 'Pacific Dunes', flex: 1, minWidth: 160 },
-  { field: 'oldMacdonald', headerName: 'Old Mac', flex: 1, minWidth: 160 },
+  { 
+    field: 'name',
+    headerName: 'Name',
+    width: 200,
+    renderCell: (params) => (
+      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+        <Typography 
+          variant="body1" 
+          sx={{ 
+            color: '#2c3e50',
+            fontWeight: 600,
+            fontSize: '1rem',
+            '&::after': {
+              content: '""',
+              display: 'inline-block',
+              width: 8,
+              height: 8,
+              borderRadius: '50%',
+              marginLeft: 1,
+              bgcolor: params.row.team === 'Thompson' ? '#3498db' : '#e74c3c',
+            }
+          }}
+        >
+          {params.value}
+        </Typography>
+      </Box>
+    ),
+  },
+  { 
+    field: 'handicap',
+    headerName: 'Handicap',
+    width: 100,
+    type: 'number',
+    headerAlign: 'center',
+    renderCell: (params) => (
+      <Typography 
+        variant="body1" 
+        sx={{ 
+          width: '100%',
+          textAlign: 'center',
+          color: '#2c3e50',
+          fontSize: '1rem',
+        }}
+      >
+        {params.value}
+      </Typography>
+    ),
+  },
+  { 
+    field: 'pacificDunes',
+    headerName: 'Pacific Dunes',
+    width: 180,
+    renderCell: (params) => (
+      <Typography variant="body1" sx={{ color: params.value ? '#2c3e50' : '#95a5a6', fontSize: '1rem' }}>
+        {params.value ? `Group ${params.row.pacificDunesGroup} : ${params.value}` : 'No Tee Time'}
+      </Typography>
+    ),
+  },
+  { 
+    field: 'sheepRanch',
+    headerName: 'Sheep Ranch',
+    width: 180,
+    renderCell: (params) => (
+      <Typography variant="body1" sx={{ color: params.value ? '#2c3e50' : '#95a5a6', fontSize: '1rem' }}>
+        {params.value ? `Group ${params.row.sheepRanchGroup} : ${params.value}` : 'No Tee Time'}
+      </Typography>
+    ),
+  },
+  { 
+    field: 'bandonDunes',
+    headerName: 'Bandon Dunes',
+    width: 180,
+    renderCell: (params) => (
+      <Typography variant="body1" sx={{ color: params.value ? '#2c3e50' : '#95a5a6', fontSize: '1rem' }}>
+        {params.value ? `Group ${params.row.bandonDunesGroup} : ${params.value}` : 'No Tee Time'}
+      </Typography>
+    ),
+  },
 ];
 
 export default function TeeTimesPage() {
   const showTeeTimes = process.env.NEXT_PUBLIC_SHOW_TEE_TIMES === 'true';
   const [search, setSearch] = useState('');
-  const [filteredRows, setFilteredRows] = useState<PlayerRow[]>([]);
-  const [showNoResults, setShowNoResults] = useState(false);
-  const rows = useMemo(() => getPlayerRows(), []);
 
-  useEffect(() => {
-    if (search.length >= 3) {
-      const filtered = rows.filter((row) =>
-        row.name.toLowerCase().includes(search.toLowerCase())
-      );
-      setFilteredRows(filtered);
-      setShowNoResults(filtered.length === 0);
-    } else {
-      setFilteredRows(rows);
-      setShowNoResults(false);
-    }
-  }, [search, rows]);
+  const rows = useMemo(() => {
+    return getPlayerRows(matchesData.matches as Match[]);
+  }, []);
+
+  const filteredRows = useMemo(() => {
+    if (search.length < 3) return rows;
+    return rows.filter(row => 
+      row.name.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [rows, search]);
 
   return (
     <Box
@@ -86,6 +201,7 @@ export default function TeeTimesPage() {
         flexDirection: 'column',
         alignItems: 'center',
         py: 8,
+        px: { xs: 2, sm: 4 },
       }}
     >
       <Typography variant="h3" gutterBottom sx={{ color: '#2c3e50', mb: 4 }}>
@@ -108,31 +224,26 @@ export default function TeeTimesPage() {
             width: '100%',
           }}
         >
-          <Typography
-            variant="h4"
-            sx={{
-              color: '#2c3e50',
-              fontWeight: 700,
-              textAlign: 'center',
-              mb: 2,
-            }}
-          >
+          <Typography variant="h4" sx={{ color: '#2c3e50', fontWeight: 700, textAlign: 'center', mb: 2 }}>
             Coming Soon
           </Typography>
-          <Typography
-            variant="body1"
-            sx={{
-              color: '#666666',
-              textAlign: 'center',
-              fontSize: 18,
-            }}
-          >
+          <Typography variant="body1" sx={{ color: '#666666', textAlign: 'center', fontSize: 18 }}>
             Let&apos;s be honest, you will probably be too hungover to remember your tee time.
           </Typography>
         </Box>
       ) : (
-        <Box sx={{ width: '100%', maxWidth: 900, bgcolor: '#fff', borderRadius: 3, boxShadow: '0 8px 32px rgba(0,0,0,0.10)', p: 3 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+        <Box sx={{ width: '100%', maxWidth: 1200 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#3498db' }} />
+                <Typography variant="body2" sx={{ color: '#666666' }}>Team Thompson</Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#e74c3c' }} />
+                <Typography variant="body2" sx={{ color: '#666666' }}>Team Burgess</Typography>
+              </Box>
+            </Box>
             <input
               type="text"
               placeholder="Search for Player"
@@ -148,25 +259,47 @@ export default function TeeTimesPage() {
               }}
             />
           </Box>
-          <DataGrid
-            autoHeight
-            rows={filteredRows}
-            columns={columns}
-            pageSizeOptions={[10, 20, 50]}
-            pagination
-            disableColumnMenu
+
+          <Box 
             sx={{
-              background: '#fff',
-              borderRadius: 2,
-              '& .MuiDataGrid-columnHeaders': { bgcolor: '#f5f5f5', fontWeight: 700, color: '#2c3e50' },
-              '& .MuiDataGrid-row': { fontWeight: 500 },
-              '& .MuiDataGrid-cell': { color: '#2c3e50' },
-              mb: 2,
+              bgcolor: '#ffffff',
+              borderRadius: 3,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.10)',
+              overflow: 'hidden',
             }}
-          />
-          {showNoResults && (
+          >
+            <DataGrid
+              autoHeight
+              rows={filteredRows}
+              columns={columns}
+              disableColumnMenu
+              disableRowSelectionOnClick
+              sx={{
+                border: 'none',
+                '& .MuiDataGrid-columnHeaders': {
+                  bgcolor: '#f5f5f5',
+                  fontWeight: 700,
+                  color: '#2c3e50',
+                  fontSize: '1.1rem',
+                },
+                '& .MuiDataGrid-row': {
+                  fontWeight: 500,
+                  '&:hover': {
+                    bgcolor: 'rgba(0,0,0,0.02)',
+                  },
+                },
+                '& .MuiDataGrid-cell': {
+                  color: '#2c3e50',
+                  borderBottom: '1px solid rgba(0,0,0,0.06)',
+                  fontSize: '1rem',
+                },
+              }}
+            />
+          </Box>
+
+          {search.length >= 3 && filteredRows.length === 0 && (
             <Typography variant="body1" sx={{ color: '#c0392b', mt: 2, textAlign: 'center' }}>
-              No results found.
+              No players found for &quot;{search}&quot;
             </Typography>
           )}
         </Box>

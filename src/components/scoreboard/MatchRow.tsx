@@ -5,7 +5,7 @@ import AddToCalendar from '@/components/shared/AddToCalendar';
 
 interface Player {
   name: string;
-  handicap: number;
+  handicap: number | string;
 }
 
 interface MatchRowProps {
@@ -13,44 +13,44 @@ interface MatchRowProps {
   group: number;
   time: string;
   date: string;
-  team_bolton: Player[];
-  team_ensign: Player[];
+  team_thompson: Player[];
+  team_burgess: Player[];
   winner?: string | null;
 }
 
-export default function MatchRow({ match, group, time, date, team_bolton, team_ensign, winner }: MatchRowProps) {
+export default function MatchRow({ match, group, time, date, team_thompson, team_burgess, winner }: MatchRowProps) {
   const rowBg = 'transparent';
-  let boltonBox = {};
-  let ensignBox = {};
-  let boltonStyle: SxProps<Theme> = { color: '#2c3e50' };
-  let ensignStyle: SxProps<Theme> = { color: '#2c3e50' };
+  let thompsonBox = {};
+  let burgessBox = {};
+  let thompsonStyle: SxProps<Theme> = { color: '#2c3e50' };
+  let burgessStyle: SxProps<Theme> = { color: '#2c3e50' };
   let tieBadge = null;
 
   // Parse date and time for calendar
   const [month, day, year] = date.split('/');
   const [hours, minutes] = time.split(':');
   const ampm = time.split(' ')[1];
-  const hour = ampm === 'pm' ? parseInt(hours) + 12 : parseInt(hours);
+  const hour = ampm === 'PM' ? parseInt(hours) + 12 : parseInt(hours);
   
   const startDate = new Date(parseInt(`20${year}`), parseInt(month) - 1, parseInt(day), hour, parseInt(minutes));
   const endDate = new Date(startDate.getTime() + (4 * 60 * 60 * 1000)); // 4 hours duration
 
   // Create player lists for description
-  const boltonPlayers = team_bolton.map(p => `${p.name} (HC: ${p.handicap})`).join(', ');
-  const ensignPlayers = team_ensign.map(p => `${p.name} (HC: ${p.handicap})`).join(', ');
-  const description = `Match ${match} - Group ${group}\nTeam Bolton: ${boltonPlayers}\nTeam Ensign: ${ensignPlayers}`;
+  const thompsonPlayers = team_thompson.map(p => `${p.name} (HC: ${p.handicap})`).join(', ');
+  const burgessPlayers = team_burgess.map(p => `${p.name} (HC: ${p.handicap})`).join(', ');
+  const description = `Match ${match} - Group ${group}\nTeam Thompson: ${thompsonPlayers}\nTeam Burgess: ${burgessPlayers}`;
 
-  if (winner === 'team_bolton') {
-    boltonBox = { bgcolor: 'rgba(0,0,0,0.04)', borderRadius: 1 };
-    boltonStyle = { color: '#2c3e50', fontWeight: 700 };
-  } else if (winner === 'team_ensign') {
-    ensignBox = { bgcolor: 'rgba(0,0,0,0.04)', borderRadius: 1 };
-    ensignStyle = { color: '#2c3e50', fontWeight: 700 };
+  if (winner === 'team_thompson') {
+    thompsonBox = { bgcolor: 'rgba(52, 152, 219, 0.1)', borderRadius: 1 };
+    thompsonStyle = { color: '#3498db', fontWeight: 700 };
+  } else if (winner === 'team_burgess') {
+    burgessBox = { bgcolor: 'rgba(231, 76, 60, 0.1)', borderRadius: 1 };
+    burgessStyle = { color: '#e74c3c', fontWeight: 700 };
   } else if (winner === 'tie') {
-    boltonBox = { bgcolor: 'rgba(0,0,0,0.04)', borderRadius: 1 };
-    ensignBox = { bgcolor: 'rgba(0,0,0,0.04)', borderRadius: 1 };
-    boltonStyle = { color: '#2c3e50', fontWeight: 700 };
-    ensignStyle = { color: '#2c3e50', fontWeight: 700 };
+    thompsonBox = { bgcolor: 'rgba(0,0,0,0.04)', borderRadius: 1 };
+    burgessBox = { bgcolor: 'rgba(0,0,0,0.04)', borderRadius: 1 };
+    thompsonStyle = { color: '#2c3e50', fontWeight: 700 };
+    burgessStyle = { color: '#2c3e50', fontWeight: 700 };
     tieBadge = (
       <Box sx={{ 
         bgcolor: 'rgba(0,0,0,0.06)', 
@@ -94,24 +94,24 @@ export default function MatchRow({ match, group, time, date, team_bolton, team_e
         </Typography>
         <Typography variant="body2" sx={{ color: '#666666', fontWeight: 500 }}>{time}</Typography>
       </Box>
-      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', p: 1, ...boltonBox }}>
-        <Typography variant="body2" sx={{ ...boltonStyle, fontWeight: 700 }}>
-          Team Bolton
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', p: 1, ...thompsonBox }}>
+        <Typography variant="body2" sx={{ ...thompsonStyle, fontWeight: 700 }}>
+          Team Thompson
         </Typography>
-        {team_bolton.map((p) => (
-          <Typography key={p.name} variant="body2" sx={boltonStyle}>{p.name} <span style={{ color: '#666666', fontSize: 12, fontWeight: 500 }}>({p.handicap})</span></Typography>
+        {team_thompson.map((p) => (
+          <Typography key={p.name} variant="body2" sx={thompsonStyle}>{p.name} <span style={{ color: '#666666', fontSize: 12, fontWeight: 500 }}>({p.handicap})</span></Typography>
         ))}
       </Box>
       {/* Tie badge for ties only, between teams */}
       {tieBadge && (
         <Box sx={{ display: { xs: 'block', sm: 'flex' }, alignItems: 'center', justifyContent: 'center', minWidth: 60 }}>{tieBadge}</Box>
       )}
-      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', p: 1, ...ensignBox }}>
-        <Typography variant="body2" sx={{ ...ensignStyle, fontWeight: 700 }}>
-          Team Ensign
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', p: 1, ...burgessBox }}>
+        <Typography variant="body2" sx={{ ...burgessStyle, fontWeight: 700 }}>
+          Team Burgess
         </Typography>
-        {team_ensign.map((p) => (
-          <Typography key={p.name} variant="body2" sx={ensignStyle}>{p.name} <span style={{ color: '#666666', fontSize: 12, fontWeight: 500 }}>({p.handicap})</span></Typography>
+        {team_burgess.map((p) => (
+          <Typography key={p.name} variant="body2" sx={burgessStyle}>{p.name} <span style={{ color: '#666666', fontSize: 12, fontWeight: 500 }}>({p.handicap})</span></Typography>
         ))}
       </Box>
       {/* Calendar Column - only show for upcoming matches */}

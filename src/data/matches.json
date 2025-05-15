@@ -3,194 +3,1202 @@
     {
       "match": 1,
       "group": 1,
-      "course": "Bandon Dunes",
+      "course": "Pacific Dunes",
       "date": "6/5/25",
-      "time": "7:00 am",
-      "matchType": "Best Ball",
-      "team_bolton": [
-        { "name": "Chris Bolton", "handicap": 6 },
-        { "name": "Troy McGee", "handicap": 5 }
+      "time": "9:00 AM",
+      "matchType": "Two-Man BetterBall",
+      "team_thompson": [
+        {
+          "name": "James Thompson",
+          "handicap": 12
+        },
+        {
+          "name": "Henry Wang",
+          "handicap": 9.2
+        }
       ],
-      "team_ensign": [
-        { "name": "Josh Ensign", "handicap": 10 },
-        { "name": "Nick Doyle", "handicap": 12 }
+      "team_burgess": [
+        {
+          "name": "Kirk Burgess",
+          "handicap": 13
+        },
+        {
+          "name": "Lynn Ziolko",
+          "handicap": 7.5
+        }
       ],
-      "winner": "team_bolton"
+      "winner": null
     },
     {
       "match": 2,
       "group": 2,
-      "course": "Bandon Dunes",
+      "course": "Pacific Dunes",
       "date": "6/5/25",
-      "time": "7:10 am",
-      "matchType": "Best Ball",
-      "team_bolton": [
-        { "name": "Jay Rollins", "handicap": 8 },
-        { "name": "Justin Crain", "handicap": 2 }
+      "time": "9:10 AM",
+      "matchType": "Two-Man BetterBall",
+      "team_thompson": [
+        {
+          "name": "Eric Stone",
+          "handicap": 2
+        },
+        {
+          "name": "Danny Thomson",
+          "handicap": 3.4
+        }
       ],
-      "team_ensign": [
-        { "name": "Matt Funicello", "handicap": 22 },
-        { "name": "Doug Hodges", "handicap": 25 }
+      "team_burgess": [
+        {
+          "name": "Justin Crain",
+          "handicap": 9.3
+        },
+        {
+          "name": "Ryan Tilton",
+          "handicap": 16
+        }
       ],
-      "winner": "team_ensign"
+      "winner": null
     },
     {
       "match": 3,
       "group": 3,
-      "course": "Bandon Dunes",
+      "course": "Pacific Dunes",
       "date": "6/5/25",
-      "time": "7:20 am",
-      "matchType": "Best Ball",
-      "team_bolton": [
-        { "name": "Henry Wang", "handicap": 12 },
-        { "name": "Jerry Carter", "handicap": 20 }
+      "time": "9:20 AM",
+      "matchType": "Two-Man BetterBall",
+      "team_thompson": [
+        {
+          "name": "Chris Bolton",
+          "handicap": 4.5
+        },
+        {
+          "name": "Andy Lemon",
+          "handicap": 18.7
+        }
       ],
-      "team_ensign": [
-        { "name": "Kevin Levin", "handicap": 3 },
-        { "name": "David Dorman", "handicap": 1 }
+      "team_burgess": [
+        {
+          "name": "Arash Kouhi",
+          "handicap": 12.6
+        },
+        {
+          "name": "Troy McGhee",
+          "handicap": 9.2
+        }
       ],
-      "winner": "team_ensign"
+      "winner": null
     },
     {
       "match": 4,
-      "group": 1,
+      "group": 4,
       "course": "Pacific Dunes",
-      "date": "6/6/25",
-      "time": "7:30 am",
-      "matchType": "Best Ball",
-      "team_bolton": [
-        { "name": "Chris Bolton", "handicap": 6 },
-        { "name": "Henry Wang", "handicap": 12 }
+      "date": "6/5/25",
+      "time": "9:30 AM",
+      "matchType": "Two-Man BetterBall",
+      "team_thompson": [
+        {
+          "name": "Troy Gadd",
+          "handicap": 8
+        },
+        {
+          "name": "Frank Graham",
+          "handicap": 7
+        }
       ],
-      "team_ensign": [
-        { "name": "Josh Ensign", "handicap": 10 },
-        { "name": "Kevin Levin", "handicap": 3 }
+      "team_burgess": [
+        {
+          "name": "Colton Trauter",
+          "handicap": 18
+        },
+        {
+          "name": "John Hartsell",
+          "handicap": 14.1
+        }
       ],
-      "winner": "team_ensign"
+      "winner": null
     },
     {
       "match": 5,
-      "group": 2,
+      "group": 5,
       "course": "Pacific Dunes",
-      "date": "6/6/25",
-      "time": "7:40 am",
-      "matchType": "Best Ball",
-      "team_bolton": [
-        { "name": "Jay Rollins", "handicap": 8 },
-        { "name": "Troy McGee", "handicap": 5 }
+      "date": "6/5/25",
+      "time": "9:40 AM",
+      "matchType": "Two-Man BetterBall",
+      "team_thompson": [
+        {
+          "name": "Frank Eaton",
+          "handicap": 8.5
+        },
+        {
+          "name": "Miguel Berastegui",
+          "handicap": 19
+        }
       ],
-      "team_ensign": [
-        { "name": "Nick Doyle", "handicap": 12 },
-        { "name": "David Dorman", "handicap": 1 }
+      "team_burgess": [
+        {
+          "name": "Steve Wylie",
+          "handicap": 20
+        },
+        {
+          "name": "Steve Butterfield",
+          "handicap": 20.3
+        }
       ],
-      "winner": "tie"
+      "winner": null
     },
     {
       "match": 6,
-      "group": 3,
+      "group": 6,
       "course": "Pacific Dunes",
-      "date": "6/6/25",
-      "time": "7:50 am",
-      "matchType": "Best Ball",
-      "team_bolton": [
-        { "name": "Justin Crain", "handicap": 2 },
-        { "name": "Jerry Carter", "handicap": 20 }
+      "date": "6/5/25",
+      "time": "9:50 AM",
+      "matchType": "Two-Man BetterBall",
+      "team_thompson": [
+        {
+          "name": "Taylor Martin",
+          "handicap": 10
+        },
+        {
+          "name": "Nick Kramer",
+          "handicap": 28.2
+        }
       ],
-      "team_ensign": [
-        { "name": "Matt Funicello", "handicap": 22 },
-        { "name": "Doug Hodges", "handicap": 25 }
+      "team_burgess": [
+        {
+          "name": "Chris Hahn",
+          "handicap": 11
+        },
+        {
+          "name": "Mark Wylie",
+          "handicap": 15
+        }
       ],
-      "winner": "team_bolton"
+      "winner": null
     },
     {
       "match": 7,
-      "group": 1,
-      "course": "Old Macdonald",
-      "date": "6/7/25",
-      "time": "8:00 am",
-      "matchType": "Individual",
-      "team_bolton": [
-        { "name": "Chris Bolton", "handicap": 6 }
+      "group": 7,
+      "course": "Pacific Dunes",
+      "date": "6/5/25",
+      "time": "10:10 AM",
+      "matchType": "Two-Man BetterBall",
+      "team_thompson": [
+        {
+          "name": "Chris Gamache",
+          "handicap": "30"
+        },
+        {
+          "name": "John Thomson",
+          "handicap": 13.7
+        }
       ],
-      "team_ensign": [
-        { "name": "Josh Ensign", "handicap": 10 }
+      "team_burgess": [
+        {
+          "name": "Jerry Carter",
+          "handicap": 20.6
+        },
+        {
+          "name": "Jeremiah Carter",
+          "handicap": 9
+        }
       ],
       "winner": null
     },
     {
       "match": 8,
-      "group": 1,
-      "course": "Old Macdonald",
-      "date": "6/7/25",
-      "time": "8:00 am",
-      "matchType": "Individual",
-      "team_bolton": [
-        { "name": "Jerry Carter", "handicap": 20 }
+      "group": 8,
+      "course": "Pacific Dunes",
+      "date": "6/5/25",
+      "time": "10:20 AM",
+      "matchType": "Two-Man BetterBall",
+      "team_thompson": [
+        {
+          "name": "Kary Eldredge",
+          "handicap": 9
+        },
+        {
+          "name": "Daron Moreno",
+          "handicap": 12.9
+        }
       ],
-      "team_ensign": [
-        { "name": "Doug Hodges", "handicap": 25 }
+      "team_burgess": [
+        {
+          "name": "Jon Balog",
+          "handicap": 17
+        },
+        {
+          "name": "McLayne Eldredge",
+          "handicap": 4
+        }
       ],
       "winner": null
     },
     {
       "match": 9,
-      "group": 2,
-      "course": "Old Macdonald",
-      "date": "6/7/25",
-      "time": "8:10 am",
-      "matchType": "Individual",
-      "team_bolton": [
-        { "name": "Jay Rollins", "handicap": 8 }
+      "group": 9,
+      "course": "Pacific Dunes",
+      "date": "6/5/25",
+      "time": "10:30 AM",
+      "matchType": "Two-Man BetterBall",
+      "team_thompson": [
+        {
+          "name": "Ross Steckelberg",
+          "handicap": 4
+        },
+        {
+          "name": "Chad Speas",
+          "handicap": 14.7
+        }
       ],
-      "team_ensign": [
-        { "name": "Nick Doyle", "handicap": 12 }
+      "team_burgess": [
+        {
+          "name": "Tim Wilson",
+          "handicap": 16
+        },
+        {
+          "name": "David Dorman",
+          "handicap": 1
+        }
       ],
       "winner": null
     },
     {
       "match": 10,
-      "group": 2,
-      "course": "Old Macdonald",
-      "date": "6/7/25",
-      "time": "8:10 am",
-      "matchType": "Individual",
-      "team_bolton": [
-        { "name": "Henry Wang", "handicap": 12 }
+      "group": 10,
+      "course": "Pacific Dunes",
+      "date": "6/5/25",
+      "time": "10:40 AM",
+      "matchType": "Two-Man BetterBall",
+      "team_thompson": [
+        {
+          "name": "Lynn Labrum",
+          "handicap": 19.7
+        },
+        {
+          "name": "Jeremy Rubell",
+          "handicap": 7.8
+        }
       ],
-      "team_ensign": [
-        { "name": "Kevin Levin", "handicap": 3 }
+      "team_burgess": [
+        {
+          "name": "Cody Labrum",
+          "handicap": 18
+        },
+        {
+          "name": "Matt Funicello",
+          "handicap": 15
+        }
       ],
       "winner": null
     },
     {
       "match": 11,
-      "group": 3,
-      "course": "Old Macdonald",
-      "date": "6/7/25",
-      "time": "8:20 am",
-      "matchType": "Individual",
-      "team_bolton": [
-        { "name": "Troy McGee", "handicap": 5 }
+      "group": 11,
+      "course": "Pacific Dunes",
+      "date": "6/5/25",
+      "time": "10:50 AM",
+      "matchType": "Two-Man BetterBall",
+      "team_thompson": [
+        {
+          "name": "Matt Neimeier",
+          "handicap": 10
+        },
+        {
+          "name": "Josh Ensign",
+          "handicap": 10
+        }
       ],
-      "team_ensign": [
-        { "name": "Matt Funicello", "handicap": 22 }
+      "team_burgess": [
+        {
+          "name": "Jim Mulvanny",
+          "handicap": 8.3
+        },
+        {
+          "name": "Nick Doyle",
+          "handicap": 6.9
+        }
       ],
       "winner": null
     },
     {
       "match": 12,
-      "group": 3,
-      "course": "Old Macdonald",
-      "date": "6/7/25",
-      "time": "8:20 am",
-      "matchType": "Individual",
-      "team_bolton": [
-        { "name": "Justin Crain", "handicap": 2 }
+      "group": 12,
+      "course": "Pacific Dunes",
+      "date": "6/5/25",
+      "time": "11:00 AM",
+      "matchType": "Two-Man BetterBall",
+      "team_thompson": [
+        {
+          "name": "Chris Brindle",
+          "handicap": "14"
+        },
+        {
+          "name": "Chris Ryan",
+          "handicap": 14.8
+        }
       ],
-      "team_ensign": [
-        { "name": "David Dorman", "handicap": 1 }
+      "team_burgess": [
+        {
+          "name": "Jay Rollins",
+          "handicap": 10
+        },
+        {
+          "name": "Doug Hodges",
+          "handicap": 30
+        }
+      ],
+      "winner": null
+    },
+    {
+      "match": 13,
+      "group": 13,
+      "course": "Sheep Ranch",
+      "date": "6/6/25",
+      "time": "9:10 AM",
+      "matchType": "Two-Man BetterBall",
+      "team_thompson": [
+        {
+          "name": "Chad Speas",
+          "handicap": 14.7
+        },
+        {
+          "name": "Frank Graham",
+          "handicap": 7
+        }
+      ],
+      "team_burgess": [
+        {
+          "name": "David Dorman",
+          "handicap": 1
+        },
+        {
+          "name": "Kirk Burgess",
+          "handicap": 13
+        }
+      ],
+      "winner": null
+    },
+    {
+      "match": 14,
+      "group": 14,
+      "course": "Sheep Ranch",
+      "date": "6/6/25",
+      "time": "9:20 AM",
+      "matchType": "Two-Man BetterBall",
+      "team_thompson": [
+        {
+          "name": "Matt Neimeier",
+          "handicap": 10
+        },
+        {
+          "name": "James Thompson",
+          "handicap": 12
+        }
+      ],
+      "team_burgess": [
+        {
+          "name": "McLayne Eldredge",
+          "handicap": 4
+        },
+        {
+          "name": "Lynn Ziolko",
+          "handicap": 7.5
+        }
+      ],
+      "winner": null
+    },
+    {
+      "match": 15,
+      "group": 15,
+      "course": "Sheep Ranch",
+      "date": "6/6/25",
+      "time": "9:30 AM",
+      "matchType": "Two-Man BetterBall",
+      "team_thompson": [
+        {
+          "name": "Ross Steckelberg",
+          "handicap": 4
+        },
+        {
+          "name": "Taylor Martin",
+          "handicap": 10
+        }
+      ],
+      "team_burgess": [
+        {
+          "name": "Nick Doyle",
+          "handicap": 6.9
+        },
+        {
+          "name": "Arash Kouhi",
+          "handicap": 12.6
+        }
+      ],
+      "winner": null
+    },
+    {
+      "match": 16,
+      "group": 16,
+      "course": "Sheep Ranch",
+      "date": "6/6/25",
+      "time": "9:40 AM",
+      "matchType": "Two-Man BetterBall",
+      "team_thompson": [
+        {
+          "name": "Josh Ensign",
+          "handicap": 10
+        },
+        {
+          "name": "Andy Lemon",
+          "handicap": 18.7
+        }
+      ],
+      "team_burgess": [
+        {
+          "name": "Matt Funicello",
+          "handicap": 15
+        },
+        {
+          "name": "Jeremiah Carter",
+          "handicap": 9
+        }
+      ],
+      "winner": null
+    },
+    {
+      "match": 17,
+      "group": 17,
+      "course": "Sheep Ranch",
+      "date": "6/6/25",
+      "time": "9:50 AM",
+      "matchType": "Two-Man BetterBall",
+      "team_thompson": [
+        {
+          "name": "Danny Thomson",
+          "handicap": 3.4
+        },
+        {
+          "name": "John Thomson",
+          "handicap": "13.7"
+        }
+      ],
+      "team_burgess": [
+        {
+          "name": "Colton Trauter",
+          "handicap": 18
+        },
+        {
+          "name": "Justin Crain",
+          "handicap": 9.3
+        }
+      ],
+      "winner": null
+    },
+    {
+      "match": 18,
+      "group": 18,
+      "course": "Sheep Ranch",
+      "date": "6/6/25",
+      "time": "10:10 AM",
+      "matchType": "Two-Man BetterBall",
+      "team_thompson": [
+        {
+          "name": "Kary Eldredge",
+          "handicap": 9
+        },
+        {
+          "name": "Chris Ryan",
+          "handicap": 14.8
+        }
+      ],
+      "team_burgess": [
+        {
+          "name": "John Hartsell",
+          "handicap": 14.1
+        },
+        {
+          "name": "Troy McGhee",
+          "handicap": 9.2
+        }
+      ],
+      "winner": null
+    },
+    {
+      "match": 19,
+      "group": 19,
+      "course": "Sheep Ranch",
+      "date": "6/6/25",
+      "time": "10:20 AM",
+      "matchType": "Two-Man BetterBall",
+      "team_thompson": [
+        {
+          "name": "Miguel Berastegui",
+          "handicap": 19
+        },
+        {
+          "name": "Troy Gadd",
+          "handicap": 8
+        }
+      ],
+      "team_burgess": [
+        {
+          "name": "Jon Balog",
+          "handicap": 17
+        },
+        {
+          "name": "Ryan Tilton",
+          "handicap": 16
+        }
+      ],
+      "winner": null
+    },
+    {
+      "match": 20,
+      "group": 20,
+      "course": "Sheep Ranch",
+      "date": "6/6/25",
+      "time": "10:30 AM",
+      "matchType": "Two-Man BetterBall",
+      "team_thompson": [
+        {
+          "name": "Frank Eaton",
+          "handicap": 8.5
+        },
+        {
+          "name": "Chris Brindle",
+          "handicap": "14"
+        }
+      ],
+      "team_burgess": [
+        {
+          "name": "Chris Hahn",
+          "handicap": 11
+        },
+        {
+          "name": "Tim Wilson",
+          "handicap": 16
+        }
+      ],
+      "winner": null
+    },
+    {
+      "match": 21,
+      "group": 21,
+      "course": "Sheep Ranch",
+      "date": "6/6/25",
+      "time": "10:40 AM",
+      "matchType": "Two-Man BetterBall",
+      "team_thompson": [
+        {
+          "name": "Eric Stone",
+          "handicap": 2
+        },
+        {
+          "name": "Daron Moreno",
+          "handicap": 12.9
+        }
+      ],
+      "team_burgess": [
+        {
+          "name": "Jerry Carter",
+          "handicap": 20.6
+        },
+        {
+          "name": "Jim Mulvanny",
+          "handicap": 8.3
+        }
+      ],
+      "winner": null
+    },
+    {
+      "match": 22,
+      "group": 22,
+      "course": "Sheep Ranch",
+      "date": "6/6/25",
+      "time": "10:50 AM",
+      "matchType": "Two-Man BetterBall",
+      "team_thompson": [
+        {
+          "name": "Chris Bolton",
+          "handicap": 4.5
+        },
+        {
+          "name": "Nick Kramer",
+          "handicap": "28.2"
+        }
+      ],
+      "team_burgess": [
+        {
+          "name": "Steve Wylie",
+          "handicap": "20"
+        },
+        {
+          "name": "Doug Hodges",
+          "handicap": 30
+        }
+      ],
+      "winner": null
+    },
+    {
+      "match": 23,
+      "group": 23,
+      "course": "Sheep Ranch",
+      "date": "6/6/25",
+      "time": "11:00 AM",
+      "matchType": "Two-Man BetterBall",
+      "team_thompson": [
+        {
+          "name": "Jeremy Rubell",
+          "handicap": 7.8
+        },
+        {
+          "name": "Lynn Labrum",
+          "handicap": 19.7
+        }
+      ],
+      "team_burgess": [
+        {
+          "name": "Jay Rollins",
+          "handicap": 10
+        },
+        {
+          "name": "Steve Butterfield",
+          "handicap": 20.3
+        }
+      ],
+      "winner": null
+    },
+    {
+      "match": 24,
+      "group": 24,
+      "course": "Sheep Ranch",
+      "date": "6/6/25",
+      "time": "11:10 AM",
+      "matchType": "Two-Man BetterBall",
+      "team_thompson": [
+        {
+          "name": "Henry Wang",
+          "handicap": 9.2
+        },
+        {
+          "name": "Chris Gamache",
+          "handicap": 30
+        }
+      ],
+      "team_burgess": [
+        {
+          "name": "Mark Wylie",
+          "handicap": 15
+        },
+        {
+          "name": "Cody Labrum",
+          "handicap": 18
+        }
+      ],
+      "winner": null
+    },
+    {
+      "match": 25,
+      "group": 25,
+      "course": "Bandon Dunes",
+      "date": "6/7/25",
+      "time": "10:30 AM",
+      "matchType": "Head-To-Head",
+      "team_thompson": [
+        {
+          "name": "Danny Thomson",
+          "handicap": 3.4
+        }
+      ],
+      "team_burgess": [
+        {
+          "name": "Jeremiah Carter",
+          "handicap": 9
+        }
+      ],
+      "winner": null
+    },
+    {
+      "match": 26,
+      "group": 25,
+      "course": "Bandon Dunes",
+      "date": "6/7/25",
+      "time": "10:30 AM",
+      "matchType": "Head-To-Head",
+      "team_thompson": [
+        {
+          "name": "John Thomson",
+          "handicap": "12"
+        }
+      ],
+      "team_burgess": [
+        {
+          "name": "Jerry Carter",
+          "handicap": 20.6
+        }
+      ],
+      "winner": null
+    },
+    {
+      "match": 27,
+      "group": 26,
+      "course": "Bandon Dunes",
+      "date": "6/7/25",
+      "time": "10:40 AM",
+      "matchType": "Head-To-Head",
+      "team_thompson": [
+        {
+          "name": "Henry Wang",
+          "handicap": 9.2
+        }
+      ],
+      "team_burgess": [
+        {
+          "name": "Jay Rollins",
+          "handicap": 10
+        }
+      ],
+      "winner": null
+    },
+    {
+      "match": 28,
+      "group": 26,
+      "course": "Bandon Dunes",
+      "date": "6/7/25",
+      "time": "10:40 AM",
+      "matchType": "Head-To-Head",
+      "team_thompson": [
+        {
+          "name": "Miguel Berastegui",
+          "handicap": 19
+        }
+      ],
+      "team_burgess": [
+        {
+          "name": "Colton Trauter",
+          "handicap": 18
+        }
+      ],
+      "winner": null
+    },
+    {
+      "match": 29,
+      "group": 27,
+      "course": "Bandon Dunes",
+      "date": "6/7/25",
+      "time": "10:50 AM",
+      "matchType": "Head-To-Head",
+      "team_thompson": [
+        {
+          "name": "Matt Neimeier",
+          "handicap": 10
+        }
+      ],
+      "team_burgess": [
+        {
+          "name": "Chris Hahn",
+          "handicap": 11
+        }
+      ],
+      "winner": null
+    },
+    {
+      "match": 30,
+      "group": 27,
+      "course": "Bandon Dunes",
+      "date": "6/7/25",
+      "time": "10:50 AM",
+      "matchType": "Head-To-Head",
+      "team_thompson": [
+        {
+          "name": "Chris Ryan",
+          "handicap": 14.8
+        }
+      ],
+      "team_burgess": [
+        {
+          "name": "John Hartsell",
+          "handicap": 14.1
+        }
+      ],
+      "winner": null
+    },
+    {
+      "match": 31,
+      "group": 28,
+      "course": "Bandon Dunes",
+      "date": "6/7/25",
+      "time": "11:00 AM",
+      "matchType": "Head-To-Head",
+      "team_thompson": [
+        {
+          "name": "Ross Steckelberg",
+          "handicap": 4
+        }
+      ],
+      "team_burgess": [
+        {
+          "name": "Nick Doyle",
+          "handicap": 6.9
+        }
+      ],
+      "winner": null
+    },
+    {
+      "match": 32,
+      "group": 28,
+      "course": "Bandon Dunes",
+      "date": "6/7/25",
+      "time": "11:00 AM",
+      "matchType": "Head-To-Head",
+      "team_thompson": [
+        {
+          "name": "Jeremy Rubell",
+          "handicap": 7.8
+        }
+      ],
+      "team_burgess": [
+        {
+          "name": "Troy McGhee",
+          "handicap": 9.2
+        }
+      ],
+      "winner": null
+    },
+    {
+      "match": 33,
+      "group": 29,
+      "course": "Bandon Dunes",
+      "date": "6/7/25",
+      "time": "11:10 AM",
+      "matchType": "Head-To-Head",
+      "team_thompson": [
+        {
+          "name": "Troy Gadd",
+          "handicap": 8
+        }
+      ],
+      "team_burgess": [
+        {
+          "name": "Lynn Ziolko",
+          "handicap": 7.5
+        }
+      ],
+      "winner": null
+    },
+    {
+      "match": 34,
+      "group": 29,
+      "course": "Bandon Dunes",
+      "date": "6/7/25",
+      "time": "11:10 AM",
+      "matchType": "Head-To-Head",
+      "team_thompson": [
+        {
+          "name": "Frank Eaton",
+          "handicap": 8.5
+        }
+      ],
+      "team_burgess": [
+        {
+          "name": "Jim Mulvanny",
+          "handicap": 8.3
+        }
+      ],
+      "winner": null
+    },
+    {
+      "match": 35,
+      "group": 30,
+      "course": "Bandon Dunes",
+      "date": "6/7/25",
+      "time": "11:20 AM",
+      "matchType": "Head-To-Head",
+      "team_thompson": [
+        {
+          "name": "Eric Stone",
+          "handicap": 2
+        }
+      ],
+      "team_burgess": [
+        {
+          "name": "David Dorman",
+          "handicap": 1
+        }
+      ],
+      "winner": null
+    },
+    {
+      "match": 36,
+      "group": 30,
+      "course": "Bandon Dunes",
+      "date": "6/7/25",
+      "time": "11:20 AM",
+      "matchType": "Head-To-Head",
+      "team_thompson": [
+        {
+          "name": "Taylor Martin",
+          "handicap": 10
+        }
+      ],
+      "team_burgess": [
+        {
+          "name": "Arash Kouhi",
+          "handicap": 12.6
+        }
+      ],
+      "winner": null
+    },
+    {
+      "match": 37,
+      "group": 31,
+      "course": "Bandon Dunes",
+      "date": "6/7/25",
+      "time": "11:40 AM",
+      "matchType": "Head-To-Head",
+      "team_thompson": [
+        {
+          "name": "Chad Speas",
+          "handicap": 14.7
+        }
+      ],
+      "team_burgess": [
+        {
+          "name": "Jon Balog",
+          "handicap": 17
+        }
+      ],
+      "winner": null
+    },
+    {
+      "match": 38,
+      "group": 31,
+      "course": "Bandon Dunes",
+      "date": "6/7/25",
+      "time": "11:40 AM",
+      "matchType": "Head-To-Head",
+      "team_thompson": [
+        {
+          "name": "Chris Brindle",
+          "handicap": "14"
+        }
+      ],
+      "team_burgess": [
+        {
+          "name": "Mark Wylie",
+          "handicap": 15
+        }
+      ],
+      "winner": null
+    },
+    {
+      "match": 39,
+      "group": 32,
+      "course": "Bandon Dunes",
+      "date": "6/7/25",
+      "time": "11:50 AM",
+      "matchType": "Head-To-Head",
+      "team_thompson": [
+        {
+          "name": "Kary Eldredge",
+          "handicap": 9
+        }
+      ],
+      "team_burgess": [
+        {
+          "name": "McLayne Eldredge",
+          "handicap": 4
+        }
+      ],
+      "winner": null
+    },
+    {
+      "match": 40,
+      "group": 32,
+      "course": "Bandon Dunes",
+      "date": "6/7/25",
+      "time": "11:50 AM",
+      "matchType": "Head-To-Head",
+      "team_thompson": [
+        {
+          "name": "Frank Graham",
+          "handicap": 7
+        }
+      ],
+      "team_burgess": [
+        {
+          "name": "Matt Funicello",
+          "handicap": 15
+        }
+      ],
+      "winner": null
+    },
+    {
+      "match": 41,
+      "group": 33,
+      "course": "Bandon Dunes",
+      "date": "6/7/25",
+      "time": "12:00 PM",
+      "matchType": "Head-To-Head",
+      "team_thompson": [
+        {
+          "name": "Josh Ensign",
+          "handicap": 10
+        }
+      ],
+      "team_burgess": [
+        {
+          "name": "Cody Labrum",
+          "handicap": 18
+        }
+      ],
+      "winner": null
+    },
+    {
+      "match": 42,
+      "group": 33,
+      "course": "Bandon Dunes",
+      "date": "6/7/25",
+      "time": "12:00 PM",
+      "matchType": "Head-To-Head",
+      "team_thompson": [
+        {
+          "name": "Andy Lemon",
+          "handicap": 18.7
+        }
+      ],
+      "team_burgess": [
+        {
+          "name": "Tim Wilson",
+          "handicap": 16
+        }
+      ],
+      "winner": null
+    },
+    {
+      "match": 43,
+      "group": 34,
+      "course": "Bandon Dunes",
+      "date": "6/7/25",
+      "time": "12:10 PM",
+      "matchType": "Head-To-Head",
+      "team_thompson": [
+        {
+          "name": "Lynn Labrum",
+          "handicap": 19.7
+        }
+      ],
+      "team_burgess": [
+        {
+          "name": "Steve Butterfield",
+          "handicap": 20.3
+        }
+      ],
+      "winner": null
+    },
+    {
+      "match": 44,
+      "group": 34,
+      "course": "Bandon Dunes",
+      "date": "6/7/25",
+      "time": "12:10 PM",
+      "matchType": "Head-To-Head",
+      "team_thompson": [
+        {
+          "name": "Daron Moreno",
+          "handicap": 12.9
+        }
+      ],
+      "team_burgess": [
+        {
+          "name": "Ryan Tilton",
+          "handicap": 16
+        }
+      ],
+      "winner": null
+    },
+    {
+      "match": 45,
+      "group": 35,
+      "course": "Bandon Dunes",
+      "date": "6/7/25",
+      "time": "12:20 PM",
+      "matchType": "Head-To-Head",
+      "team_thompson": [
+        {
+          "name": "Nick Kramer",
+          "handicap": 28.2
+        }
+      ],
+      "team_burgess": [
+        {
+          "name": "Steve Wylie",
+          "handicap": "20"
+        }
+      ],
+      "winner": null
+    },
+    {
+      "match": 46,
+      "group": 35,
+      "course": "Bandon Dunes",
+      "date": "6/7/25",
+      "time": "12:20 PM",
+      "matchType": "Head-To-Head",
+      "team_thompson": [
+        {
+          "name": "Chris Gamache",
+          "handicap": "30"
+        }
+      ],
+      "team_burgess": [
+        {
+          "name": "Doug Hodges",
+          "handicap": 30
+        }
+      ],
+      "winner": null
+    },
+    {
+      "match": 47,
+      "group": 36,
+      "course": "Bandon Dunes",
+      "date": "6/7/25",
+      "time": "12:30 PM",
+      "matchType": "Head-To-Head",
+      "team_thompson": [
+        {
+          "name": "James Thompson",
+          "handicap": 12
+        }
+      ],
+      "team_burgess": [
+        {
+          "name": "Kirk Burgess",
+          "handicap": 13
+        }
+      ],
+      "winner": null
+    },
+    {
+      "match": 48,
+      "group": 36,
+      "course": "Bandon Dunes",
+      "date": "6/7/25",
+      "time": "12:30 PM",
+      "matchType": "Head-To-Head",
+      "team_thompson": [
+        {
+          "name": "Chris Bolton",
+          "handicap": 4.5
+        }
+      ],
+      "team_burgess": [
+        {
+          "name": "Justin Crain",
+          "handicap": 9.3
+        }
       ],
       "winner": null
     }
   ]
-} 
+}

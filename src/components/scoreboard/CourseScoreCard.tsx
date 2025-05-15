@@ -4,17 +4,17 @@ import Typography from '@mui/material/Typography';
 interface CourseScoreCardProps {
   courseName: string;
   date: string;
-  teamBoltonTotal?: number;
-  teamEnsignTotal?: number;
+  teamThompsonTotal?: number;
+  teamBurgessTotal?: number;
   children?: React.ReactNode; // For match results or tables
 }
 
-export default function CourseScoreCard({ courseName, date, teamBoltonTotal, teamEnsignTotal, children }: CourseScoreCardProps) {
+export default function CourseScoreCard({ courseName, date, teamThompsonTotal, teamBurgessTotal, children }: CourseScoreCardProps) {
   return (
     <Box
       sx={{
         width: '100%',
-        maxWidth: 700,
+        maxWidth: 900,
         bgcolor: '#ffffff',
         borderRadius: 4,
         boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
@@ -40,7 +40,7 @@ export default function CourseScoreCard({ courseName, date, teamBoltonTotal, tea
           {date}
         </Typography>
       </Box>
-      {(teamBoltonTotal !== undefined && teamEnsignTotal !== undefined) && (
+      {(teamThompsonTotal !== undefined && teamBurgessTotal !== undefined) && (
         <Box sx={{ 
           display: 'flex', 
           alignItems: 'center', 
@@ -52,14 +52,14 @@ export default function CourseScoreCard({ courseName, date, teamBoltonTotal, tea
           bgcolor: 'rgba(0,0,0,0.02)',
           borderRadius: 2,
         }}>
-          <Typography variant="subtitle1" sx={{ color: '#2c3e50', fontWeight: 700 }}>
-            Team Bolton: {teamBoltonTotal}
+          <Typography variant="subtitle1" sx={{ color: '#3498db', fontWeight: 700 }}>
+            Team Thompson: {teamThompsonTotal}
           </Typography>
           <Typography variant="subtitle1" sx={{ color: '#666666', fontWeight: 700 }}>
             |
           </Typography>
-          <Typography variant="subtitle1" sx={{ color: '#2c3e50', fontWeight: 700 }}>
-            Team Ensign: {teamEnsignTotal}
+          <Typography variant="subtitle1" sx={{ color: '#e74c3c', fontWeight: 700 }}>
+            Team Burgess: {teamBurgessTotal}
           </Typography>
         </Box>
       )}

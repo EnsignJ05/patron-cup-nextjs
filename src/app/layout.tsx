@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
-import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
 import Link from 'next/link';
@@ -23,9 +22,8 @@ const navLinks = [
   { label: 'Home', href: '/' },
   { label: 'Teams', href: '/teams' },
   { label: 'Itinerary', href: '/itinerary' },
-  { label: 'Lodging', href: '/lodging' },
   { label: 'Tee Times', href: '/tee-times' },
-  { label: 'Gallery', href: '/gallery' },
+  { label: 'Scoreboard', href: '/scoreboard' },
 ];
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -40,7 +38,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="apple-touch-icon" sizes="180x180" href="/gallery/patron-logo.png" />
         <meta name="msapplication-TileImage" content="/gallery/patron-logo.png" />
         <meta name="msapplication-TileColor" content="#2c3e50" />
-        <meta property="og:image" content="/gallery/patron-logo.png" />
+        <meta property="og:title" content="Patron Cup" />
+        <meta property="og:description" content="Bandon Dunes Golf Resort - June 4th – 8th" />
+        <meta property="og:image" content="/patron-cup-preview.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:type" content="website" />
       </head>
       <body className={inter.className} style={{ margin: 0, background: '#f5f5f5' }}>
         <AppBar
