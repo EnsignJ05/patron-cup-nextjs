@@ -19,13 +19,13 @@ interface Match {
 
 interface Player {
   name: string;
-  handicap: number;
+  handicap: number | string;
 }
 
 interface PlayerRow {
   id: string;
   name: string;
-  handicap: number;
+  handicap: number | string;
   pacificDunes: string;
   pacificDunesGroup?: number;
   sheepRanch: string;
@@ -99,7 +99,9 @@ const columns: GridColDef[] = [
   { 
     field: 'name',
     headerName: 'Name',
-    width: 200,
+    width: 160,
+    minWidth: 120,
+    flex: 1,
     renderCell: (params) => (
       <Box sx={{ display: 'flex', alignItems: 'center' }}>
         <Typography 
@@ -107,7 +109,7 @@ const columns: GridColDef[] = [
           sx={{ 
             color: '#2c3e50',
             fontWeight: 600,
-            fontSize: '1rem',
+            fontSize: { xs: '0.875rem', sm: '1rem' },
             '&::after': {
               content: '""',
               display: 'inline-block',
@@ -126,8 +128,9 @@ const columns: GridColDef[] = [
   },
   { 
     field: 'handicap',
-    headerName: 'Handicap',
-    width: 100,
+    headerName: 'HC',
+    width: 70,
+    minWidth: 50,
     type: 'number',
     headerAlign: 'center',
     renderCell: (params) => (
@@ -137,7 +140,7 @@ const columns: GridColDef[] = [
           width: '100%',
           textAlign: 'center',
           color: '#2c3e50',
-          fontSize: '1rem',
+          fontSize: { xs: '0.875rem', sm: '1rem' },
         }}
       >
         {params.value}
@@ -146,51 +149,72 @@ const columns: GridColDef[] = [
   },
   { 
     field: 'pacificDunes',
-    headerName: 'Pacific Dunes',
-    width: 180,
+    headerName: 'Pacific',
+    width: 140,
+    minWidth: 100,
+    flex: 1,
     renderCell: (params) => (
-      <Typography variant="body1" sx={{ color: params.value ? '#2c3e50' : '#95a5a6', fontSize: '1rem' }}>
-        {params.value ? `Group ${params.row.pacificDunesGroup} : ${params.value}` : 'No Tee Time'}
+      <Typography 
+        variant="body1" 
+        sx={{ 
+          color: params.value ? '#2c3e50' : '#95a5a6', 
+          fontSize: { xs: '0.875rem', sm: '1rem' },
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+        }}
+      >
+        {params.value ? `G${params.row.pacificDunesGroup}: ${params.value}` : 'No Time'}
       </Typography>
     ),
   },
   { 
     field: 'sheepRanch',
-    headerName: 'Sheep Ranch',
-    width: 180,
+    headerName: 'Sheep',
+    width: 140,
+    minWidth: 100,
+    flex: 1,
     renderCell: (params) => (
-      <Typography variant="body1" sx={{ color: params.value ? '#2c3e50' : '#95a5a6', fontSize: '1rem' }}>
-        {params.value ? `Group ${params.row.sheepRanchGroup} : ${params.value}` : 'No Tee Time'}
+      <Typography 
+        variant="body1" 
+        sx={{ 
+          color: params.value ? '#2c3e50' : '#95a5a6', 
+          fontSize: { xs: '0.875rem', sm: '1rem' },
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+        }}
+      >
+        {params.value ? `G${params.row.sheepRanchGroup}: ${params.value}` : 'No Time'}
       </Typography>
     ),
   },
   { 
     field: 'bandonDunes',
-    headerName: 'Bandon Dunes',
-    width: 180,
+    headerName: 'Bandon',
+    width: 140,
+    minWidth: 100,
+    flex: 1,
     renderCell: (params) => (
-      <Typography variant="body1" sx={{ color: params.value ? '#2c3e50' : '#95a5a6', fontSize: '1rem' }}>
-        {params.value ? `Group ${params.row.bandonDunesGroup} : ${params.value}` : 'No Tee Time'}
+      <Typography 
+        variant="body1" 
+        sx={{ 
+          color: params.value ? '#2c3e50' : '#95a5a6', 
+          fontSize: { xs: '0.875rem', sm: '1rem' },
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+        }}
+      >
+        {params.value ? `G${params.row.bandonDunesGroup}: ${params.value}` : 'No Time'}
       </Typography>
     ),
   },
 ];
 
+const rows = getPlayerRows(matchesData.matches);
+
 export default function TeeTimesPage() {
-  const showTeeTimes = process.env.NEXT_PUBLIC_SHOW_TEE_TIMES === 'true';
-  const [search, setSearch] = useState('');
-
-  const rows = useMemo(() => {
-    return getPlayerRows(matchesData.matches as Match[]);
-  }, []);
-
-  const filteredRows = useMemo(() => {
-    if (search.length < 3) return rows;
-    return rows.filter(row => 
-      row.name.toLowerCase().includes(search.toLowerCase())
-    );
-  }, [rows, search]);
-
   return (
     <Box
       sx={{
@@ -200,110 +224,54 @@ export default function TeeTimesPage() {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        py: 8,
-        px: { xs: 2, sm: 4 },
+        py: { xs: 4, sm: 8 },
+        px: { xs: 1, sm: 4 },
       }}
     >
-      <Typography variant="h3" gutterBottom sx={{ color: '#2c3e50', mb: 4 }}>
+      <Typography 
+        variant="h3" 
+        gutterBottom 
+        sx={{ 
+          color: '#2c3e50', 
+          mb: 4,
+          fontSize: { xs: '1.75rem', sm: '2.5rem' },
+          textAlign: 'center',
+        }}
+      >
         Tee Times
       </Typography>
 
-      {!showTeeTimes ? (
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            py: 8,
-            px: 4,
-            bgcolor: '#ffffff',
-            borderRadius: 4,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-            maxWidth: '600px',
-            width: '100%',
+      <Box sx={{ height: { xs: 500, sm: 600 }, width: '100%', maxWidth: 900 }}>
+        <DataGrid
+          rows={rows}
+          columns={columns}
+          initialState={{
+            pagination: {
+              paginationModel: { page: 0, pageSize: 25 },
+            },
           }}
-        >
-          <Typography variant="h4" sx={{ color: '#2c3e50', fontWeight: 700, textAlign: 'center', mb: 2 }}>
-            Coming Soon
-          </Typography>
-          <Typography variant="body1" sx={{ color: '#666666', textAlign: 'center', fontSize: 18 }}>
-            Let&apos;s be honest, you will probably be too hungover to remember your tee time.
-          </Typography>
-        </Box>
-      ) : (
-        <Box sx={{ width: '100%', maxWidth: 1200 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#3498db' }} />
-                <Typography variant="body2" sx={{ color: '#666666' }}>Team Thompson</Typography>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#e74c3c' }} />
-                <Typography variant="body2" sx={{ color: '#666666' }}>Team Burgess</Typography>
-              </Box>
-            </Box>
-            <input
-              type="text"
-              placeholder="Search for Player"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              style={{
-                width: '220px',
-                maxWidth: '100%',
-                padding: '7px 12px',
-                borderRadius: 6,
-                border: '1px solid #ccc',
-                fontSize: 15,
-              }}
-            />
-          </Box>
-
-          <Box 
-            sx={{
-              bgcolor: '#ffffff',
-              borderRadius: 3,
-              boxShadow: '0 8px 32px rgba(0,0,0,0.10)',
-              overflow: 'hidden',
-            }}
-          >
-            <DataGrid
-              autoHeight
-              rows={filteredRows}
-              columns={columns}
-              disableColumnMenu
-              disableRowSelectionOnClick
-              sx={{
-                border: 'none',
-                '& .MuiDataGrid-columnHeaders': {
-                  bgcolor: '#f5f5f5',
-                  fontWeight: 700,
-                  color: '#2c3e50',
-                  fontSize: '1.1rem',
-                },
-                '& .MuiDataGrid-row': {
-                  fontWeight: 500,
-                  '&:hover': {
-                    bgcolor: 'rgba(0,0,0,0.02)',
-                  },
-                },
-                '& .MuiDataGrid-cell': {
-                  color: '#2c3e50',
-                  borderBottom: '1px solid rgba(0,0,0,0.06)',
-                  fontSize: '1rem',
-                },
-              }}
-            />
-          </Box>
-
-          {search.length >= 3 && filteredRows.length === 0 && (
-            <Typography variant="body1" sx={{ color: '#c0392b', mt: 2, textAlign: 'center' }}>
-              No players found for &quot;{search}&quot;
-            </Typography>
-          )}
-        </Box>
-      )}
+          pageSizeOptions={[10, 25, 50]}
+          disableRowSelectionOnClick
+          sx={{
+            bgcolor: '#ffffff',
+            borderRadius: 2,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+            border: 'none',
+            '& .MuiDataGrid-columnHeader': {
+              bgcolor: 'rgba(0,0,0,0.02)',
+              color: '#2c3e50',
+              fontWeight: 700,
+              fontSize: { xs: '0.875rem', sm: '1rem' },
+            },
+            '& .MuiDataGrid-row:hover': {
+              bgcolor: 'rgba(0,0,0,0.02)',
+            },
+            '& .MuiDataGrid-cell': {
+              padding: { xs: '8px 4px', sm: '8px 16px' },
+            },
+          }}
+        />
+      </Box>
     </Box>
   );
 } 

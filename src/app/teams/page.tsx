@@ -1,10 +1,9 @@
-'use client';
-import { Box, Typography } from '@mui/material';
+import { Box } from '@mui/material';
+import Card from '@mui/material/Card';
+import Typography from '@mui/material/Typography';
 import teamsData from '@/data/teams.json';
-import PageContainer from '@/components/layout/PageContainer';
-import ComingSoon from '@/components/shared/ComingSoon';
-import Card from '@/components/shared/Card';
 import { colors } from '@/styles/theme';
+import PageContainer from '@/components/layout/PageContainer';
 
 interface TeamMember {
   first_name: string;
@@ -84,8 +83,6 @@ function TeamCard({ teamName, players, stats }: TeamCardProps) {
 }
 
 export default function TeamsPage() {
-  const showTeams = process.env.NEXT_PUBLIC_SHOW_TEAMS === 'true';
-
   // Sort team members by handicap
   const teamThompson = [...teamsData.team_thompson].sort((a, b) => a.handicap - b.handicap);
   const teamBurgess = [...teamsData.team_burgess].sort((a, b) => a.handicap - b.handicap);
@@ -104,30 +101,26 @@ export default function TeamsPage() {
 
   return (
     <PageContainer title="Teams">
-      {!showTeams ? (
-        <ComingSoon message="The Teams Are Almost Ready... Unlike your liver after this trip." />
-      ) : (
-        <Box 
-          sx={{ 
-            display: 'flex', 
-            flexDirection: { xs: 'column', md: 'row' }, 
-            gap: 4, 
-            maxWidth: '1200px',
-            width: '100%'
-          }}
-        >
-          <TeamCard 
-            teamName="Team Thompson"
-            players={teamThompson}
-            stats={thompsonStats}
-          />
-          <TeamCard 
-            teamName="Team Burgess"
-            players={teamBurgess}
-            stats={burgessStats}
-          />
-        </Box>
-      )}
+      <Box 
+        sx={{ 
+          display: 'flex', 
+          flexDirection: { xs: 'column', md: 'row' }, 
+          gap: 4, 
+          maxWidth: '1200px',
+          width: '100%'
+        }}
+      >
+        <TeamCard 
+          teamName="Team Thompson"
+          players={teamThompson}
+          stats={thompsonStats}
+        />
+        <TeamCard 
+          teamName="Team Burgess"
+          players={teamBurgess}
+          stats={burgessStats}
+        />
+      </Box>
     </PageContainer>
   );
 } 
