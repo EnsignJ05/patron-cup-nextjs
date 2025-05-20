@@ -14,11 +14,11 @@ export default function CourseScoreCard({ courseName, date, teamThompsonTotal, t
     <Box
       sx={{
         width: '100%',
-        maxWidth: 900,
+        maxWidth: { xs: 370, sm: 900 },
         bgcolor: '#ffffff',
         borderRadius: 4,
         boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-        p: { xs: 2, sm: 3 },
+        p: { xs: 1.5, sm: 3 },
         mb: 4,
         color: '#2c3e50',
         display: 'flex',
@@ -32,11 +32,11 @@ export default function CourseScoreCard({ courseName, date, teamThompsonTotal, t
         },
       }}
     >
-      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { sm: 'center' }, justifyContent: 'space-between', mb: 1 }}>
-        <Typography variant="h5" sx={{ fontWeight: 800, color: '#2c3e50', fontSize: { xs: 20, sm: 26 } }}>
+      <Box sx={{ mb: 1, textAlign: 'center' }}>
+        <Typography variant="h5" sx={{ fontWeight: 800, color: '#2c3e50', fontSize: { xs: 20, sm: 26 }, textAlign: 'center' }}>
           {courseName}
         </Typography>
-        <Typography variant="subtitle1" sx={{ color: '#666666', fontWeight: 600, fontSize: { xs: 15, sm: 18 } }}>
+        <Typography variant="subtitle1" sx={{ color: '#666666', fontWeight: 600, fontSize: { xs: 15, sm: 18 }, textAlign: 'center' }}>
           {date}
         </Typography>
       </Box>

@@ -1,0 +1,202 @@
+{
+  "rerounds": [
+    {
+      "date": "06/04/25",
+      "course": "Preserve",
+      "time": "4:45",
+      "players": [
+        "Nick Doyle",
+        "Danny Thomson",
+        "McLayne Eldredge"
+      ]
+    },
+    {
+      "date": "06/04/25",
+      "course": "Shortys",
+      "time": "5:00",
+      "players": [
+        "Doug Hodges",
+        "Henry Wang",
+        "Frank Graham"
+      ]
+    },
+    {
+      "date": "06/04/25",
+      "course": "Shortys",
+      "time": "5:15",
+      "players": [
+        "Chris Brindle",
+        "Kirk Burgess",
+        "Kirk Burgess"
+      ]
+    },
+    {
+      "date": "06/04/25",
+      "course": "Shortys",
+      "time": "5:45",
+      "players": [
+        "Chris Gamache",
+        "Lynn Ziolko",
+        "David Dorman"
+      ]
+    },
+    {
+      "date": "06/04/25",
+      "course": "Shortys",
+      "time": "6:00",
+      "players": [
+        "Lynn Ziolko",
+        "Justin Crain",
+        "Matt Neimeier"
+      ]
+    },
+    {
+      "date": "06/04/25",
+      "course": "Preserve",
+      "time": "6:15",
+      "players": [
+        "Josh Ensign",
+        "Erik Stone",
+        "James Thompson"
+      ]
+    },
+    {
+      "date": "06/04/25",
+      "course": "Preserve",
+      "time": "6:30",
+      "players": [
+        "Ryan Tilton",
+        "Lynn Ziolko"
+      ]
+    },
+    {
+      "date": "06/04/25",
+      "course": "Preserve",
+      "time": "6:45",
+      "players": [
+        "Nick Kramer",
+        "James Thompson",
+        "Chad Speas"
+      ]
+    },
+    {
+      "date": "06/05/25",
+      "course": "Bandon Trails",
+      "time": "3:40",
+      "players": [
+        "Matt Funicello",
+        "Arash Kouhi",
+        "Arash Kouhi"
+      ]
+    },
+    {
+      "date": "06/05/25",
+      "course": "Bandon Trails",
+      "time": "3:50",
+      "players": [
+        "Kary Eldredge",
+        "Troy Gadd",
+        "Matt Funicello"
+      ]
+    },
+    {
+      "date": "06/05/25",
+      "course": "Shortys",
+      "time": "4:45",
+      "players": [
+        "Jay Rollins",
+        "Chris Bolton",
+        "Ross Steckelberg"
+      ]
+    },
+    {
+      "date": "06/05/25",
+      "course": "Shortys",
+      "time": "5:15",
+      "players": [
+        "Frank Eaton",
+        "Andy Lemon",
+        "Taylor Martin"
+      ]
+    },
+    {
+      "date": "06/05/25",
+      "course": "Shortys",
+      "time": "5:30",
+      "players": [
+        "Troy McGhee",
+        "Nick Doyle"
+      ]
+    },
+    {
+      "date": "06/06/25",
+      "course": "Shortys",
+      "time": "2:30",
+      "players": [
+        "David Dorman",
+        "Steve Butterfield",
+        "Danny Thomson"
+      ]
+    },
+    {
+      "date": "06/06/25",
+      "course": "Shortys",
+      "time": "3:00",
+      "players": [
+        "MaClayne Eldredge",
+        "Frank Graham",
+        "Josh Ensign"
+      ]
+    },
+    {
+      "date": "06/06/25",
+      "course": "Bandon Trails",
+      "time": "3:20",
+      "players": [
+        "Jerry Carter",
+        "Colton Trauter",
+        "Chris Hahn"
+      ]
+    },
+    {
+      "date": "06/06/25",
+      "course": "Bandon Trails",
+      "time": "3:30",
+      "players": [
+        "Tim Wilson",
+        "Miguel Berastegui",
+        "John Hartsell"
+      ]
+    },
+    {
+      "date": "06/06/25",
+      "course": "Old Mac",
+      "time": "4:10",
+      "players": [
+        "Jeremiah Carter",
+        "John Hartsell",
+        "Andy Lemon"
+      ]
+    },
+    {
+      "date": "06/06/25",
+      "course": "Shortys",
+      "time": "4:15",
+      "players": [
+        "Taylor Martin",
+        "Steve Wylie",
+        "John Thomson"
+      ]
+    },
+    {
+      "date": "06/06/25",
+      "course": "Shortys",
+      "time": "5:00",
+      "players": [
+        "Erik Stone",
+        "Frank Eaton",
+        "Colton Trauter"
+      ]
+    }
+  ]
+}

@@ -16,9 +16,10 @@ interface MatchRowProps {
   team_thompson: Player[];
   team_burgess: Player[];
   winner?: string | null;
+  highlightTeam?: 'Thompson' | 'Burgess';
 }
 
-export default function MatchRow({ match, group, time, date, team_thompson, team_burgess, winner }: MatchRowProps) {
+export default function MatchRow({ match, group, time, date, team_thompson, team_burgess, winner, highlightTeam }: MatchRowProps) {
   const rowBg = 'transparent';
   let thompsonBox = {};
   let burgessBox = {};
@@ -64,6 +65,23 @@ export default function MatchRow({ match, group, time, date, team_thompson, team
         TIE
       </Box>
     );
+  }
+
+  // Apply highlight styles for the player's team
+  if (highlightTeam === 'Thompson') {
+    thompsonBox = { 
+      ...thompsonBox,
+      bgcolor: 'rgba(52, 152, 219, 0.05)',
+      borderRadius: 1,
+      border: '1px solid rgba(52, 152, 219, 0.2)',
+    };
+  } else if (highlightTeam === 'Burgess') {
+    burgessBox = { 
+      ...burgessBox,
+      bgcolor: 'rgba(231, 76, 60, 0.05)',
+      borderRadius: 1,
+      border: '1px solid rgba(231, 76, 60, 0.2)',
+    };
   }
 
   return (
