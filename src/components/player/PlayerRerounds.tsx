@@ -1,21 +1,16 @@
 'use client';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import AddToCalendar from '@/components/shared/AddToCalendar';
+import { Box, Typography, Card, CardContent } from '@mui/material';
+import { getPlayerRerounds } from '@/utils/playerUtils';
+import type { Reround } from '@/utils/playerUtils';
 
-interface Reround {
-  course: string;
-  date: string;
-  time: string;
-  group?: number;
+export interface PlayerReroundsProps {
+  playerName: string;
 }
 
-interface PlayerReroundsProps {
-  rerounds: Reround[];
-}
+export default function PlayerRerounds({ playerName }: PlayerReroundsProps) {
+  const rerounds = getPlayerRerounds(playerName);
 
-export default function PlayerRerounds({ rerounds }: PlayerReroundsProps) {
-  if (!rerounds || rerounds.length === 0) {
+  if (rerounds.length === 0) {
     return (
       <Box sx={{ width: '100%', maxWidth: 900, px: { xs: 2, sm: 3 } }}>
         <Typography 
@@ -73,15 +68,15 @@ export default function PlayerRerounds({ rerounds }: PlayerReroundsProps) {
           boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
         }}
       >
-        {rerounds.map((reround, index) => {
+        {rerounds.map((reround: Reround) => {
           // Parse date and time for calendar
           const [month, day, year] = reround.date.split('/');
-          const [hours, minutes] = reround.time.split(':');
-          const ampm = reround.time.split(' ')[1];
-          const hour = ampm === 'PM' ? parseInt(hours) + 12 : parseInt(hours);
+          // const [hours, minutes] = reround.time.split(':');
+          // const ampm = reround.time.split(' ')[1];
+          // const hour = ampm === 'PM' ? parseInt(hours) + 12 : parseInt(hours);
           
-          const startDate = new Date(parseInt(`20${year}`), parseInt(month) - 1, parseInt(day), hour, parseInt(minutes));
-          const endDate = new Date(startDate.getTime() + (4 * 60 * 60 * 1000)); // 4 hours duration
+          // const startDate = new Date(parseInt(`20${year}`), parseInt(month) - 1, parseInt(day), hour, parseInt(minutes));
+          // const endDate = new Date(startDate.getTime() + (4 * 60 * 60 * 1000)); // 4 hours duration
 
           // Format date for display
           const displayDate = new Date(parseInt(`20${year}`), parseInt(month) - 1, parseInt(day));
@@ -93,75 +88,28 @@ export default function PlayerRerounds({ rerounds }: PlayerReroundsProps) {
           });
 
           return (
-            <Box
-              key={`${reround.course}-${reround.date}-${reround.time}`}
-              sx={{
-                display: 'flex',
-                flexDirection: { xs: 'column', sm: 'row' },
-                alignItems: { sm: 'center' },
-                justifyContent: 'space-between',
-                gap: 2,
-                py: 2,
-                px: 3,
-                borderBottom: index < rerounds.length - 1 ? '1px solid rgba(0,0,0,0.12)' : 'none',
-                '&:hover': {
-                  bgcolor: 'rgba(0,0,0,0.02)',
-                },
-              }}
-            >
-              <Box sx={{ flex: 1, textAlign: { xs: 'center', sm: 'left' } }}>
-                <Typography 
-                  variant="h6" 
-                  sx={{ 
-                    color: '#2c3e50',
-                    fontSize: { xs: '1.125rem', sm: '1.25rem' },
-                    fontWeight: 700,
-                    mb: 0.5,
-                    textAlign: { xs: 'center', sm: 'left' },
-                  }}
-                >
-                  {reround.course}
-                </Typography>
-                <Typography 
-                  variant="body1" 
-                  sx={{ 
-                    color: '#666666',
-                    fontSize: { xs: '0.875rem', sm: '1rem' },
-                    mb: 0.5,
-                    textAlign: { xs: 'center', sm: 'left' },
-                  }}
-                >
-                  {formattedDate}
-                </Typography>
-                <Typography 
-                  variant="body1" 
-                  sx={{ 
-                    color: '#666666',
-                    fontSize: { xs: '0.875rem', sm: '1rem' },
-                    textAlign: { xs: 'center', sm: 'left' },
-                  }}
-                >
-                  {reround.group !== undefined ? `Group ${reround.group} • ` : ''}{reround.time}
-                </Typography>
-              </Box>
-              <Box 
-                sx={{ 
-                  minWidth: 100,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <AddToCalendar
-                  title={`Golf at ${reround.course}${reround.group !== undefined ? ` - Group ${reround.group}` : ''}`}
-                  description={`Additional round at ${reround.course}${reround.group !== undefined ? ` with Group ${reround.group}` : ''}`}
-                  startDate={startDate}
-                  endDate={endDate}
-                  location="Bandon Dunes Golf Resort"
-                />
-              </Box>
-            </Box>
+            <Card key={`${reround.date}-${reround.time}`} sx={{ mb: 2 }}>
+              <CardContent sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Box>
+                  <Typography variant="subtitle1" sx={{ color: '#2c3e50', fontWeight: 500 }}>
+                    {formattedDate}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#666666' }}>
+                    {reround.time}
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="subtitle1" sx={{ color: '#2c3e50', fontWeight: 500 }}>
+                    {reround.course}
+                  </Typography>
+                  {reround.group && (
+                    <Typography variant="body2" sx={{ color: '#666666', fontStyle: 'italic' }}>
+                      Group {reround.group}
+                    </Typography>
+                  )}
+                </Box>
+              </CardContent>
+            </Card>
           );
         })}
       </Box>

@@ -1,193 +1,93 @@
 'use client';
-import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import CardMedia from '@mui/material/CardMedia';
-import Link from '@mui/material/Link';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import PhoneIcon from '@mui/icons-material/Phone';
-import LanguageIcon from '@mui/icons-material/Language';
+import { Box, Typography, Card, CardContent, CardMedia } from '@mui/material';
+import { LocationOn, Phone, Language } from '@mui/icons-material';
+import { styles } from '@/styles/pages/lodging/styles';
 
-const lodgingOptions = [
-  {
-    name: 'Bandon Dunes Resort',
-    image: '/gallery/BandonPhotos/hero.jpg',
-    description: 'Experience world-class accommodations at Bandon Dunes Golf Resort. Our rooms offer stunning views of the golf course and Pacific Ocean.',
-    address: '57744 Round Lake Drive, Bandon, OR 97411',
-    phone: '(541) 347-4380',
-    website: 'https://www.bandondunesgolf.com',
-  },
-  {
-    name: 'The Inn at Face Rock',
-    image: '/gallery/BandonPhotos/gallery-hero.webp',
-    description: 'Located just minutes from downtown Bandon, The Inn at Face Rock offers comfortable accommodations with easy access to the beach and golf courses.',
-    address: '3225 Beach Loop Dr, Bandon, OR 97411',
-    phone: '(541) 347-6000',
-    website: 'https://innatfacerock.com',
-  },
-];
+// const lodgingOptions = [
+//   {
+//     name: 'Bandon Dunes Resort',
+//     image: '/gallery/BandonPhotos/hero.jpg',
+//     description: 'Experience world-class accommodations at Bandon Dunes Golf Resort. Our rooms offer stunning views of the golf course and Pacific Ocean.',
+//     address: '57744 Round Lake Drive, Bandon, OR 97411',
+//     phone: '(541) 347-4380',
+//     website: 'https://www.bandondunesgolf.com',
+//   },
+//   {
+//     name: 'The Inn at Face Rock',
+//     image: '/gallery/BandonPhotos/gallery-hero.webp',
+//     description: 'Located just minutes from downtown Bandon, The Inn at Face Rock offers comfortable accommodations with easy access to the beach and golf courses.',
+//     address: '3225 Beach Loop Dr, Bandon, OR 97411',
+//     phone: '(541) 347-6000',
+//     website: 'https://innatfacerock.com',
+//   },
+// ];
 
 export default function LodgingPage() {
-  const showLodging = process.env.NEXT_PUBLIC_SHOW_LODGING === 'true';
+  // const showLodging = process.env.NEXT_PUBLIC_SHOW_LODGING === 'true';
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        width: '100vw',
-        background: '#f5f5f5',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        py: { xs: 4, sm: 8 },
-        px: { xs: 2, sm: 4 },
-      }}
-    >
-      <Typography 
-        variant="h3" 
-        sx={{ 
-          mb: { xs: 4, sm: 6 }, 
-          color: '#2c3e50',
-          fontWeight: 700,
-          textAlign: 'center'
-        }}
-      >
-        Lodging
+    <Box sx={styles.container}>
+      <Typography variant="h3" sx={styles.title}>
+        Lodging Options
       </Typography>
 
-      {!showLodging ? (
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            py: 8,
-            px: 4,
-            bgcolor: '#ffffff',
-            borderRadius: 4,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-            maxWidth: '600px',
-            width: '100%',
-          }}
-        >
-          <Typography
-            variant="h4"
-            sx={{
-              color: '#2c3e50',
-              fontWeight: 700,
-              textAlign: 'center',
-              mb: 2,
-            }}
-          >
-            Coming Soon
-          </Typography>
-          <Typography
-            variant="body1"
-            sx={{
-              color: '#666666',
-              textAlign: 'center',
-              fontSize: 18,
-            }}
-          >
-            Don&apos;t worry, we&apos;ll get you your room information, so you can let your &quot;friend&quot; from Tryst.com know where to expect the envelope.
-          </Typography>
+      <Box sx={styles.comingSoonContainer}>
+        <Typography variant="h4" sx={styles.comingSoonTitle}>
+          Coming Soon
+        </Typography>
+        <Typography sx={styles.comingSoonText}>
+          We are currently working on securing the best lodging options for the 2025 Patron Cup.
+          Please check back soon for updates!
+        </Typography>
+      </Box>
+
+      {/* Example of how the lodging options will look once available */}
+      <Box sx={styles.optionsContainer}>
+        <Box sx={styles.optionBox}>
+          <Card sx={styles.card}>
+            <CardMedia
+              component="img"
+              height="200"
+              image="/images/lodging-placeholder.jpg"
+              alt="Lodging Option 1"
+              sx={styles.cardMedia}
+            />
+            <CardContent>
+              <Typography variant="h5" sx={styles.cardTitle}>
+                Resort Name
+              </Typography>
+              <Typography variant="body1" sx={styles.cardDescription}>
+                Description of the resort and its amenities. This will include information about
+                the rooms, facilities, and any special features.
+              </Typography>
+              <Box sx={styles.infoRow}>
+                <LocationOn sx={styles.icon} />
+                <Typography sx={styles.infoText}>
+                  123 Resort Drive, Location, State
+                </Typography>
+              </Box>
+              <Box sx={styles.infoRow}>
+                <Phone sx={styles.icon} />
+                <Typography sx={styles.infoText}>
+                  (555) 123-4567
+                </Typography>
+              </Box>
+              <Box sx={styles.infoRow}>
+                <Language sx={styles.icon} />
+                <Typography
+                  component="a"
+                  href="https://example.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  sx={styles.link}
+                >
+                  Visit Website
+                </Typography>
+              </Box>
+            </CardContent>
+          </Card>
         </Box>
-      ) : (
-        <Box 
-          sx={{ 
-            display: 'flex', 
-            flexDirection: { xs: 'column', md: 'row' }, 
-            gap: 4, 
-            maxWidth: '1200px',
-            width: '100%'
-          }}
-        >
-          {lodgingOptions.map((option) => (
-            <Box key={option.name} sx={{ flex: 1, width: '100%' }}>
-              <Card 
-                sx={{ 
-                  height: '100%',
-                  borderRadius: 4,
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-                  transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
-                  '&:hover': {
-                    transform: 'translateY(-4px)',
-                    boxShadow: '0 12px 48px rgba(0,0,0,0.15)',
-                  },
-                }}
-              >
-                <CardMedia
-                  component="img"
-                  height="300"
-                  image={option.image}
-                  alt={option.name}
-                  sx={{ objectFit: 'cover' }}
-                />
-                <CardContent>
-                  <Typography 
-                    variant="h4" 
-                    sx={{ 
-                      mb: 2,
-                      color: '#2c3e50',
-                      fontWeight: 700,
-                    }}
-                  >
-                    {option.name}
-                  </Typography>
-                  <Typography 
-                    variant="body1" 
-                    sx={{ 
-                      mb: 3,
-                      color: '#666666',
-                    }}
-                  >
-                    {option.description}
-                  </Typography>
-                  
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
-                    <LocationOnIcon sx={{ color: '#2c3e50', mr: 1 }} />
-                    <Typography variant="body1" sx={{ color: '#2c3e50' }}>
-                      {option.address}
-                    </Typography>
-                  </Box>
-                  
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
-                    <PhoneIcon sx={{ color: '#2c3e50', mr: 1 }} />
-                    <Link 
-                      href={`tel:${option.phone}`}
-                      sx={{ 
-                        color: '#2c3e50',
-                        textDecoration: 'none',
-                        '&:hover': { textDecoration: 'underline' }
-                      }}
-                    >
-                      {option.phone}
-                    </Link>
-                  </Box>
-                  
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <LanguageIcon sx={{ color: '#2c3e50', mr: 1 }} />
-                    <Link 
-                      href={option.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      sx={{ 
-                        color: '#2c3e50',
-                        textDecoration: 'none',
-                        '&:hover': { textDecoration: 'underline' }
-                      }}
-                    >
-                      Visit Website
-                    </Link>
-                  </Box>
-                </CardContent>
-              </Card>
-            </Box>
-          ))}
-        </Box>
-      )}
+      </Box>
     </Box>
   );
 } 

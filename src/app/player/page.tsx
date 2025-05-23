@@ -1,14 +1,21 @@
 'use client';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
+import { Box, Typography, Card, CardContent, Tabs, Tab, Select, MenuItem, FormControl } from '@mui/material';
+import { styles } from '@/styles/pages/player/styles';
+import { useMediaQuery, useTheme } from '@mui/material';
+import PlayerMatches from '@/components/player/PlayerMatches';
+import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import type { SelectChangeEvent } from '@mui/material/Select';
 
 export default function PlayerPage() {
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated } = useAuth();
   const router = useRouter();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [selectedTab, setSelectedTab] = useState(0);
+  const [selectedCourse, setSelectedCourse] = useState('all');
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -16,9 +23,12 @@ export default function PlayerPage() {
     }
   }, [isAuthenticated, router]);
 
-  const handleLogout = () => {
-    logout();
-    router.push('/');
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setSelectedTab(newValue);
+  };
+
+  const handleCourseChange = (event: SelectChangeEvent) => {
+    setSelectedCourse(event.target.value as string);
   };
 
   if (!isAuthenticated) {
@@ -26,63 +36,55 @@ export default function PlayerPage() {
   }
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        width: '100vw',
-        background: '#f5f5f5',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        py: { xs: 4, sm: 8 },
-        px: { xs: 2, sm: 4 },
-      }}
-    >
-      <Typography 
-        variant="h3" 
-        sx={{ 
-          color: '#2c3e50',
-          mb: 4,
-          fontSize: { xs: '1.75rem', sm: '2.5rem' },
-          textAlign: 'center',
-        }}
-      >
+    <Box sx={styles.container}>
+      <Typography variant="h3" sx={styles.title}>
         Player Dashboard
       </Typography>
 
-      <Box
-        sx={{
-          width: '100%',
-          maxWidth: 800,
-          bgcolor: '#ffffff',
-          p: { xs: 3, sm: 4 },
-          borderRadius: 2,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-        }}
-      >
-        <Typography variant="h5" sx={{ mb: 3, color: '#2c3e50' }}>
-          Welcome, test_user!
-        </Typography>
+      <Card sx={styles.playerCard}>
+        <CardContent sx={styles.playerInfo}>
+          <Typography variant="h4" sx={styles.playerName}>
+            Player Name
+          </Typography>
+          <Box sx={styles.playerDetails}>
+            <Typography>Handicap: 10</Typography>
+            <Typography>2025 Record: 5-2-1</Typography>
+          </Box>
+        </CardContent>
+      </Card>
 
-        <Typography variant="body1" sx={{ mb: 4, color: '#666666' }}>
-          This is your private player dashboard. Here you can view your personal statistics,
-          upcoming matches, and other player-specific information.
-        </Typography>
+      <Box sx={styles.matchesContainer}>
+        {isMobile ? (
+          <FormControl fullWidth sx={styles.mobileSelect}>
+            <Select
+              value={selectedCourse}
+              onChange={handleCourseChange}
+              displayEmpty
+            >
+              <MenuItem value="all">All Matches</MenuItem>
+              <MenuItem value="course1">Course 1</MenuItem>
+              <MenuItem value="course2">Course 2</MenuItem>
+            </Select>
+          </FormControl>
+        ) : (
+          <Box sx={styles.tabsContainer}>
+            <Tabs
+              value={selectedTab}
+              onChange={handleTabChange}
+              sx={styles.tab}
+              TabIndicatorProps={{ sx: styles.tabIndicator }}
+            >
+              <Tab label="All Matches" />
+              <Tab label="Course 1" />
+              <Tab label="Course 2" />
+            </Tabs>
+          </Box>
+        )}
 
-        <Button
-          onClick={handleLogout}
-          variant="outlined"
-          sx={{
-            color: '#2c3e50',
-            borderColor: '#2c3e50',
-            '&:hover': {
-              borderColor: '#34495e',
-              bgcolor: 'rgba(44, 62, 80, 0.04)',
-            },
-          }}
-        >
-          Logout
-        </Button>
+        <PlayerMatches
+          playerName="Player Name"
+          selectedCourse={isMobile ? selectedCourse : selectedTab === 0 ? 'all' : `course${selectedTab}`}
+        />
       </Box>
     </Box>
   );

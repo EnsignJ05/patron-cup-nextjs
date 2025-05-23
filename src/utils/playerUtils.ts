@@ -1,12 +1,12 @@
 import matchesData from '@/data/matches.json';
 import reroundsData from '@/data/rerounds.json';
 
-interface Player {
+export interface Player {
   name: string;
   handicap: number | string;
 }
 
-interface Match {
+export interface Match {
   match: number;
   group: number;
   course: string;
@@ -18,7 +18,7 @@ interface Match {
   winner: string | null;
 }
 
-interface Reround {
+export interface Reround {
   course: string;
   date: string;
   time: string;
@@ -26,7 +26,7 @@ interface Reround {
   players: string[];
 }
 
-interface PlayerRecord {
+export interface PlayerRecord {
   wins: number;
   losses: number;
   ties: number;

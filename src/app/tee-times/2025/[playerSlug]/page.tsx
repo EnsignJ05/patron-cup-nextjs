@@ -1,69 +1,53 @@
 'use client';
-import { useParams } from 'next/navigation';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import { getPlayerMatches, getPlayerRerounds, getPlayerHandicap, getPlayerRecord, unformatPlayerSlug } from '@/utils/playerUtils';
+import { use } from 'react';
+import { Box, Typography, Card, CardContent } from '@mui/material';
+import { styles } from '@/styles/pages/tee-times/player/styles';
 import PlayerMatches from '@/components/player/PlayerMatches';
 import PlayerRerounds from '@/components/player/PlayerRerounds';
-import PlayerStats from '@/components/player/PlayerStats';
+import { getPlayerData } from '@/utils/playerData';
 
-export default function PlayerPage() {
-  const { playerSlug } = useParams();
-  const playerName = unformatPlayerSlug(playerSlug as string);
-  const matches = getPlayerMatches(playerName);
-  const rerounds = getPlayerRerounds(playerName);
-  const handicap = getPlayerHandicap(playerName);
-  const record = getPlayerRecord(playerName);
+export default function PlayerPage({ params }: { params: Promise<{ playerSlug: string }> }) {
+  const { playerSlug } = use(params);
+
+  const playerData = getPlayerData(playerSlug);
+  if (!playerData) {
+    return (
+      <Box sx={styles.container}>
+        <Typography variant="h3" sx={styles.title}>
+          Player Not Found
+        </Typography>
+      </Box>
+    );
+  }
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        width: '100vw',
-        background: '#f5f5f5',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        py: { xs: 4, sm: 8 },
-        px: { xs: 2, sm: 4 },
-      }}
-    >
-      <Box sx={{ width: '100%', maxWidth: 900 }}>
-        <Typography 
-          variant="h3" 
-          sx={{ 
-            color: '#2c3e50',
-            mb: 4,
-            fontSize: { xs: '1.75rem', sm: '2.5rem' },
-            textAlign: 'center',
-          }}
-        >
-          {playerName}
-        </Typography>
+    <Box sx={styles.container}>
+      <Typography variant="h3" sx={styles.title}>
+        {playerData.name}
+      </Typography>
 
-        <PlayerStats 
-          handicap={handicap}
-          record={record}
-        />
-
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <Box>
-            <Typography 
-              variant="h4" 
-              sx={{ 
-                color: '#2c3e50',
-                mb: 3,
-                fontSize: { xs: '1.5rem', sm: '2rem' },
-                textAlign: 'center',
-              }}
-            >
-              Tournament Matches
+      <Card sx={styles.playerCard}>
+        <CardContent sx={styles.playerInfo}>
+          <Typography variant="h4" sx={styles.playerName}>
+            {playerData.name}
+          </Typography>
+          <Box sx={styles.playerDetails}>
+            <Typography>Handicap: {playerData.handicap}</Typography>
+            <Typography>
+              2025 Record: {playerData.record.wins}-{playerData.record.losses}-{playerData.record.ties}
             </Typography>
-            <PlayerMatches playerName={playerName} matches={matches} />
           </Box>
+        </CardContent>
+      </Card>
 
-          <PlayerRerounds rerounds={rerounds} />
-        </Box>
+      <Box sx={styles.matchesContainer}>
+        <PlayerMatches
+          playerName={playerData.name}
+        />
+      </Box>
+
+      <Box sx={styles.reroundsContainer}>
+        <PlayerRerounds playerName={playerData.name} />
       </Box>
     </Box>
   );
