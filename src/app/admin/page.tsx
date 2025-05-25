@@ -4,13 +4,6 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Paper from '@mui/material/Paper';
 import { supabase } from '@/lib/supabaseClient';
 
 const ADMIN_USERNAME = 'admin';
@@ -23,8 +16,8 @@ export default function AdminPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [playerTestData, setPlayerTestData] = useState<any[]>([]);
   const [fetchError, setFetchError] = useState('');
+  const [players, setPlayers] = useState<any[]>([]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -37,14 +30,15 @@ export default function AdminPage() {
       setLoading(true);
       setFetchError('');
       supabase
-        .from('player_test')
-        .select('*')
+        .from('team_bandon')
+        .select('playerId, team, player(f_name, l_name, handicap)')
         .then(({ data, error }) => {
+          console.log(data);
           if (error) {
             setFetchError(error.message);
-            setPlayerTestData([]);
+            setPlayers([]);
           } else {
-            setPlayerTestData(data || []);
+            setPlayers(data || []);
           }
           setLoading(false);
         });
@@ -68,8 +62,8 @@ export default function AdminPage() {
     setUsername('');
     setPassword('');
     setError('');
-    setPlayerTestData([]);
     setFetchError('');
+    setPlayers([]);
   };
 
   if (!isLoggedIn) {
@@ -120,57 +114,161 @@ export default function AdminPage() {
     );
   }
 
+  // Group players by team using joined data
+  const thompsonPlayers = players.filter(p => p.team === 'thompson');
+  const burgessPlayers = players.filter(p => p.team === 'burgess');
+
   return (
     <Box
       sx={{
         minHeight: '100vh',
+        width: '100vw',
+        background: '#f5f5f5',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center',
-        background: '#f5f5f5',
+        py: { xs: 4, sm: 8 },
+        px: { xs: 2, sm: 4 },
       }}
     >
-      <Box sx={{ p: 4, borderRadius: 2, boxShadow: 2, background: '#fff', minWidth: 320, maxWidth: 900 }}>
-        <Typography variant="h4" sx={{ mb: 2, fontWeight: 700, color: '#2c3e50' }}>
-          Admin Dashboard
-        </Typography>
-        <Typography sx={{ mb: 3 }}>
-          Welcome, admin! (This is a protected route.)
-        </Typography>
-        <Button variant="outlined" color="secondary" onClick={handleLogout} sx={{ mb: 4 }}>
-          Logout
-        </Button>
-        <Typography variant="h6" sx={{ mb: 2 }}>
-          player_test Table
-        </Typography>
-        {loading && <Typography>Loading...</Typography>}
-        {fetchError && <Typography color="error">{fetchError}</Typography>}
-        {!loading && !fetchError && playerTestData.length > 0 && (
-          <TableContainer component={Paper} sx={{ maxHeight: 400 }}>
-            <Table size="small" stickyHeader>
-              <TableHead>
-                <TableRow>
-                  {Object.keys(playerTestData[0]).map((key) => (
-                    <TableCell key={key}>{key}</TableCell>
-                  ))}
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {playerTestData.map((row, idx) => (
-                  <TableRow key={idx}>
-                    {Object.values(row).map((value, i) => (
-                      <TableCell key={i}>{String(value)}</TableCell>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-        {!loading && !fetchError && playerTestData.length === 0 && (
-          <Typography>No data found in player_test table.</Typography>
-        )}
+      <Typography
+        variant="h3"
+        sx={{
+          color: '#2c3e50',
+          mb: 4,
+          fontSize: { xs: '1.75rem', sm: '2.5rem' },
+          textAlign: 'center',
+        }}
+      >
+        Admin: Teams (from Database)
+      </Typography>
+      <Typography
+        variant="body2"
+        sx={{
+          color: '#2c3e50',
+          mb: 4,
+          textAlign: 'center',
+          fontWeight: 700,
+          fontStyle: 'italic',
+          maxWidth: 600,
+        }}
+      >
+        This is a live view of teams from the Supabase database.
+      </Typography>
+      <Button variant="outlined" color="secondary" onClick={handleLogout} sx={{ mb: 4 }}>
+        Logout
+      </Button>
+      {loading && <Typography>Loading...</Typography>}
+      {fetchError && <Typography color="error">{fetchError}</Typography>}
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          gap: 4,
+          width: '100%',
+          maxWidth: 900,
+        }}
+      >
+        {/* Team Thompson */}
+        <Box
+          sx={{
+            flex: 1,
+            bgcolor: '#ffffff',
+            borderRadius: 2,
+            p: 3,
+            boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+          }}
+        >
+          <Typography
+            variant="h4"
+            sx={{
+              color: '#3498db',
+              mb: 3,
+              fontSize: { xs: '1.5rem', sm: '1.75rem' },
+              fontWeight: 700,
+            }}
+          >
+            Team Thompson
+          </Typography>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 1,
+            }}
+          >
+            {thompsonPlayers.map((player, idx) => (
+              <Typography
+                key={idx}
+                variant="body1"
+                sx={{
+                  color: '#1976d2',
+                  py: 0.5,
+                  cursor: 'default',
+                  textDecoration: 'underline',
+                  fontSize: { xs: '1rem', sm: '1.1rem' },
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
+                {player.player?.f_name} {player.player?.l_name}
+                <span style={{ color: '#666666', fontSize: 14, marginLeft: 8 }}>
+                  ({player.player?.handicap})
+                </span>
+              </Typography>
+            ))}
+          </Box>
+        </Box>
+        {/* Team Burgess */}
+        <Box
+          sx={{
+            flex: 1,
+            bgcolor: '#ffffff',
+            borderRadius: 2,
+            p: 3,
+            boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+          }}
+        >
+          <Typography
+            variant="h4"
+            sx={{
+              color: '#e74c3c',
+              mb: 3,
+              fontSize: { xs: '1.5rem', sm: '1.75rem' },
+              fontWeight: 700,
+            }}
+          >
+            Team Burgess
+          </Typography>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 1,
+            }}
+          >
+            {burgessPlayers.map((player, idx) => (
+              <Typography
+                key={idx}
+                variant="body1"
+                sx={{
+                  color: '#1976d2',
+                  py: 0.5,
+                  cursor: 'default',
+                  textDecoration: 'underline',
+                  fontSize: { xs: '1rem', sm: '1.1rem' },
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
+                {player.player?.f_name} {player.player?.l_name}
+                <span style={{ color: '#666666', fontSize: 14, marginLeft: 8 }}>
+                  ({player.player?.handicap})
+                </span>
+              </Typography>
+            ))}
+          </Box>
+        </Box>
       </Box>
     </Box>
   );
