@@ -3,92 +3,92 @@
     {
       "first_name": "Eric",
       "last_name": "Stone",
-      "handicap": 2
+      "handicap": 1.1
     },
     {
       "first_name": "Danny",
       "last_name": "Thomson",
-      "handicap": 3.4
+      "handicap": 1.1
     },
     {
       "first_name": "Ross",
       "last_name": "Steckelberg",
-      "handicap": 4
+      "handicap": 4.7
     },
     {
       "first_name": "Chris",
       "last_name": "Bolton",
-      "handicap": 4.5
+      "handicap": 6.3
     },
     {
       "first_name": "Frank",
       "last_name": "Graham",
-      "handicap": 7
+      "handicap": 7.9
     },
     {
       "first_name": "Jeremy",
       "last_name": "Rubell",
-      "handicap": 7.8
+      "handicap": 12.2
     },
     {
       "first_name": "Troy",
       "last_name": "Gadd",
-      "handicap": 8
+      "handicap": 8.2
     },
     {
       "first_name": "Frank",
       "last_name": "Eaton",
-      "handicap": 8.5
+      "handicap": 8.9
     },
     {
       "first_name": "Kary",
       "last_name": "Eldredge",
-      "handicap": 9
+      "handicap": 12
     },
     {
       "first_name": "Henry",
       "last_name": "Wang",
-      "handicap": 9.2
+      "handicap": 7.7
     },
     {
       "first_name": "Taylor",
       "last_name": "Martin",
-      "handicap": 10
+      "handicap": 6.1
     },
     {
       "first_name": "Matt",
       "last_name": "Neimeier",
-      "handicap": 10
+      "handicap": 13
     },
     {
       "first_name": "Josh",
       "last_name": "Ensign",
-      "handicap": 10
+      "handicap": 10.4
     },
     {
       "first_name": "James",
       "last_name": "Thompson",
-      "handicap": 12
+      "handicap": 14.2
     },
     {
       "first_name": "Daron",
       "last_name": "Moreno",
-      "handicap": 12.9
+      "handicap": 11.7
     },
     {
       "first_name": "John",
       "last_name": "Thomson",
-      "handicap": 13.7
+      "handicap": 13.8
     },
     {
       "first_name": "Chris",
       "last_name": "Brindle",
-      "handicap": 14
+      "handicap": 15
     },
     {
       "first_name": "Chad",
       "last_name": "Speas",
-      "handicap": 14.7
+      "handicap": 13
     },
     {
       "first_name": "Chris",
@@ -98,22 +98,22 @@
     {
       "first_name": "Miguel",
       "last_name": "Berastegui",
-      "handicap": 19
+      "handicap": 18
     },
     {
       "first_name": "Andy",
       "last_name": "Lemon",
-      "handicap": 18.7
+      "handicap": 20.4
     },
     {
       "first_name": "Lynn",
       "last_name": "Labrum",
-      "handicap": 19.7
+      "handicap": 19.5
     },
     {
       "first_name": "Nick",
       "last_name": "Kramer",
-      "handicap": 28.2
+      "handicap": 22
     },
     {
       "first_name": "Chris",
@@ -125,52 +125,52 @@
     {
       "first_name": "David",
       "last_name": "Dorman",
-      "handicap": 1
+      "handicap": 2
     },
     {
       "first_name": "McLayne",
       "last_name": "Eldredge",
-      "handicap": 4
+      "handicap": 3
     },
     {
       "first_name": "Jeremiah",
       "last_name": "Carter",
-      "handicap": 1
+      "handicap": 1.8
     },
     {
       "first_name": "Nick",
       "last_name": "Doyle",
-      "handicap": 6.9
+      "handicap": 10.8
     },
     {
       "first_name": "Lynn",
       "last_name": "Ziolk",
-      "handicap": 7.5
+      "handicap": 6.5
     },
     {
       "first_name": "Jim",
       "last_name": "Mulvanny",
-      "handicap": 8.3
+      "handicap": 10.1
     },
     {
       "first_name": "Troy",
       "last_name": "McGhee",
-      "handicap": 9.2
+      "handicap": 10
     },
     {
       "first_name": "Jay",
       "last_name": "Rollins",
-      "handicap": 10
+      "handicap": 12.4
     },
     {
       "first_name": "Justin",
       "last_name": "Crain",
-      "handicap": 9.3
+      "handicap": 5.2
     },
     {
       "first_name": "Chris",
       "last_name": "Hahn",
-      "handicap": 11
+      "handicap": 11.4
     },
     {
       "first_name": "Arash",
@@ -180,12 +180,12 @@
     {
       "first_name": "Kirk",
       "last_name": "Burgess",
-      "handicap": 13
+      "handicap": 10.4
     },
     {
       "first_name": "John",
       "last_name": "Hartsell",
-      "handicap": 14.1
+      "handicap": 17
     },
     {
       "first_name": "Matt",
@@ -195,17 +195,17 @@
     {
       "first_name": "Mark",
       "last_name": "Wylie",
-      "handicap": 15
+      "handicap": 14
     },
     {
       "first_name": "Tim",
       "last_name": "Wilson",
-      "handicap": 16
+      "handicap": 14.2
     },
     {
       "first_name": "Ryan",
       "last_name": "Tilton",
-      "handicap": 16
+      "handicap": 17.9
     },
     {
       "first_name": "Jon",
@@ -220,22 +220,22 @@
     {
       "first_name": "Colton",
       "last_name": "Trauter",
-      "handicap": 19
+      "handicap": 10.8
     },
     {
       "first_name": "Steve",
       "last_name": "Wylie",
-      "handicap": 20
+      "handicap": 19.2
     },
     {
       "first_name": "Steve",
       "last_name": "Butterfield",
-      "handicap": 20.3
+      "handicap": 18.8
     },
     {
       "first_name": "Jerry",
       "last_name": "Carter",
-      "handicap": 20.6
+      "handicap": 19
     },
     {
       "first_name": "Doug",

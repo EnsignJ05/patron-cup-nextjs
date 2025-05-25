@@ -10,11 +10,11 @@
       "team_thompson": [
         {
           "name": "James Thompson",
-          "handicap": 12
+          "handicap": 14.2
         },
         {
           "name": "Henry Wang",
-          "handicap": 9.2
+          "handicap": 7.7
         }
       ],
       "team_burgess": [
@@ -391,7 +391,7 @@
         },
         {
           "name": "James Thompson",
-          "handicap": 12
+          "handicap": 14.2
         }
       ],
       "team_burgess": [
@@ -677,7 +677,7 @@
       "team_thompson": [
         {
           "name": "Henry Wang",
-          "handicap": 9.2
+          "handicap": 7.7
         },
         {
           "name": "Chris Gamache",
@@ -748,7 +748,7 @@
       "team_thompson": [
         {
           "name": "Henry Wang",
-          "handicap": 9.2
+          "handicap": 7.7
         }
       ],
       "team_burgess": [
@@ -1168,7 +1168,7 @@
       "team_thompson": [
         {
           "name": "James Thompson",
-          "handicap": 12
+          "handicap": 14.2
         }
       ],
       "team_burgess": [
