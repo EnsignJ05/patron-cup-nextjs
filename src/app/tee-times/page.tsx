@@ -9,8 +9,8 @@ import SearchIcon from '@mui/icons-material/Search';
 import { getAllPlayersAndMatches } from '@/lib/getAllPlayersAndMatches';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import { formatPlayerSlug } from '@/utils/playerUtils';
-import useMediaQuery from '@mui/material/useMediaQuery';
-import { useTheme } from '@mui/material/styles';
+// import useMediaQuery from '@mui/material/useMediaQuery';
+// import { useTheme } from '@mui/material/styles';
 
 const columns: GridColDef[] = [
   { 
@@ -148,8 +148,8 @@ const columns: GridColDef[] = [
 export default function TeeTimesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [playerRows, setPlayerRows] = useState<any[]>([]);
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  // const theme = useTheme();
+  // const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   useEffect(() => {
     getAllPlayersAndMatches()
@@ -214,9 +214,8 @@ export default function TeeTimesPage() {
     );
   }, [searchQuery, playerRows]);
 
-  // Define columns for mobile and desktop
-  const mobileColumns = columns.slice(0, 2); // Name and Handicap only
-  const desktopColumns = columns; // All columns
+  // Always show all columns, even on mobile
+  const allColumns = columns;
 
   return (
     <Box
@@ -306,10 +305,10 @@ export default function TeeTimesPage() {
           Click on a player&apos;s name to view their match schedule and additional rounds
         </Typography>
 
-        <Box sx={{ height: { xs: 500, sm: 600 } }}>
+        <Box sx={{ width: '100%', overflowX: 'auto', height: { xs: 500, sm: 600 } }}>
           <DataGrid
             rows={filteredRows}
-            columns={isMobile ? mobileColumns : desktopColumns}
+            columns={allColumns}
             initialState={{
               pagination: {
                 paginationModel: { page: 0, pageSize: 25 },
@@ -321,6 +320,7 @@ export default function TeeTimesPage() {
             pageSizeOptions={[10, 25, 50]}
             disableRowSelectionOnClick
             sx={{
+              minWidth: 600,
               bgcolor: '#ffffff',
               borderRadius: 2,
               boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
@@ -329,13 +329,14 @@ export default function TeeTimesPage() {
                 bgcolor: 'rgba(0,0,0,0.02)',
                 color: '#2c3e50',
                 fontWeight: 700,
-                fontSize: { xs: '0.875rem', sm: '1rem' },
+                fontSize: { xs: '0.8rem', sm: '1rem' },
               },
               '& .MuiDataGrid-row:hover': {
                 bgcolor: 'rgba(0,0,0,0.02)',
               },
               '& .MuiDataGrid-cell': {
-                padding: { xs: '8px 4px', sm: '8px 16px' },
+                padding: { xs: '6px 2px', sm: '8px 16px' },
+                fontSize: { xs: '0.8rem', sm: '1rem' },
               },
             }}
           />
