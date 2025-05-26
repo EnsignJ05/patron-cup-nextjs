@@ -52,6 +52,7 @@ export default function Home() {
             wordBreak: 'break-word',
             color: '#2c3e50',
             textShadow: '0 2px 12px rgba(0,0,0,0.1)',
+            whiteSpace: 'nowrap',
           }}
         >
           Patron Cup 2025
