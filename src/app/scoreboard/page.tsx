@@ -57,9 +57,15 @@ export default function ScoreboardPage() {
   }, []);
 
   // Group matches by course
-  const pacificMatches = matches.filter(m => m.course === 'Pacific Dunes');
-  const sheepRanchMatches = matches.filter(m => m.course === 'Sheep Ranch');
-  const bandonMatches = matches.filter(m => m.course === 'Bandon Dunes');
+  const pacificMatches = matches
+    .filter(m => m.course === 'Pacific Dunes')
+    .sort((a, b) => a.match - b.match);
+  const sheepRanchMatches = matches
+    .filter(m => m.course === 'Sheep Ranch')
+    .sort((a, b) => a.match - b.match);
+  const bandonMatches = matches
+    .filter(m => m.course === 'Bandon Dunes')
+    .sort((a, b) => a.match - b.match);
 
   // Calculate team totals
   const pacificTotals = getTeamTotals(pacificMatches);

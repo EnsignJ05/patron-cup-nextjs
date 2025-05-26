@@ -87,7 +87,7 @@ export default function ItineraryPage() {
           <Typography variant="h5" sx={{ fontWeight: 600, color: '#2c3e50', mb: 2 }}>
             Wednesday
           </Typography>
-          <Typography variant="body1" sx={{ mb: 2 }}>
+          <Typography variant="body1" sx={{ mb: 2, color: '#2c3e50' }}>
             Arrival on property. Your rooms will be under your name and are in the Chrome Lake Cottages. Please, each guy needs to check in individually so you can set up your on-resort profile AND collect your goodie bag at the front desk.
             <br /><br />
             Your &ldquo;Goodie Bag&rdquo; will contain your shirt, vest, hat, and drink tickets (explained below).
@@ -104,7 +104,7 @@ export default function ItineraryPage() {
           <Typography variant="h5" sx={{ fontWeight: 600, color: '#2c3e50', mb: 2 }}>
             Thursday
           </Typography>
-          <Typography variant="body1" sx={{ mb: 2 }}>
+          <Typography variant="body1" sx={{ mb: 2, color: '#2c3e50' }}>
             First official day of 2025 Patron Cup! We are playing Pacific Dunes and the format will be 2-Man Better Ball. This is a simple format, most of you have played it many times, where we will be taking the better net score from the two-some and comparing it against the better score of your competitors two-some. A win on the hole is a +1, tie is a 0, and a loss is a -1. Please turn in your COMPLETED score card clearly showing points and winner to your captain or your captain&apos;s designated scorer (bitch).
             <br /><br />
             We have arranged breakfast (Burritos and Sandwiches) on/near the first tee for each day. Please grab ONE and enjoy a cocktail at the bar we will also have on the tee for you. The drink tickets provided in your goodie bag will be used for your drink, the bartender will handle the rest. If you don&apos;t want to use your drink coupon, share it with your partner or other cuppers, the point of this thing is to have fun, low stress, get drunk if you can. If you want an additional drink, or you forget your ticket, they can bill to your room for you.
@@ -119,7 +119,7 @@ export default function ItineraryPage() {
           <Typography variant="h5" sx={{ fontWeight: 600, color: '#2c3e50', mb: 2 }}>
             Friday
           </Typography>
-          <Typography variant="body1" sx={{ mb: 2 }}>
+          <Typography variant="body1" sx={{ mb: 2, color: '#2c3e50' }}>
             Day two of the Patron Cup! We should have updated scores for everybody in the morning so you know where you stand! Day two is also a 2-Man Better Ball but will be at Sheep Ranch, the newest course on property. Know that Sheep Ranch is the longest jaunt for all of the course to get to, so allow time to get there and stretch. Like Day one we will have breakfast burritos and sandwiches on/near the tee box and a bar for morning libations.
             <br /><br />
             DAY TWO TWIST! Unlike Day 1 when everybody is settling in and Day 3 when everybody is dialed to try and win their individual match, Day 2 is about the true spirit of Patron Cup…. debauchery and pirate behavior. With that said, your committee has provided a special rule for Day 2, SHOTGUN MULLIGANS!!! If a shot would like to be retaken, anywhere on the hole, a golfer can earn a mulligan by doing a shot of booze or shotgunning a beer/seltzer. If you don&apos;t drink and your partner is willing to fall on the sword for you, your partner can be designated to drink for you. The beer or shot must be taken PRIOR to the second shot being made. We will have Fireball shots on the first tee for you to put in your bag, 8 per two-some pair, so grab them and make your caddie carry your booze. If you don&apos;t want fireball, figure it out, we aren&apos;t picky what you choose as long as it&apos;s boozy.
@@ -134,7 +134,7 @@ export default function ItineraryPage() {
           <Typography variant="h5" sx={{ fontWeight: 600, color: '#2c3e50', mb: 2 }}>
             Saturday
           </Typography>
-          <Typography variant="body1" sx={{ mb: 2 }}>
+          <Typography variant="body1" sx={{ mb: 2, color: '#2c3e50' }}>
             Day three of the Patron Cup, singles matches! Day three is always the highlight day, your chance to compete head-to-head. There are 24 matches on day three meaning 24 points can trade places. As many of you know, we have seen plenty of Patron Cups won and lost due to play of Day three. Day three is scored the same as the prior days however it&apos;s just your individual score vs your competitor&apos;s individual score, no teamwork here.
             <br /><br />
             We DO NOT have breakfast on the tee this morning due to the later start. Please plan breakfast and morning drinks accordingly.

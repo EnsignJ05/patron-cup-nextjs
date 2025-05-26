@@ -17,6 +17,7 @@ import { Analytics } from '@vercel/analytics/react';
 import { Inter } from 'next/font/google';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
+import './globals.css';
 
 const inter = Inter({ subsets: ['latin'], weight: ['400', '700'] });
 
@@ -30,7 +31,7 @@ const navLinks = [
 
 function NavigationContent() {
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, isAdmin, logout } = useAuth();
   const router = useRouter();
 
   const handleLogout = () => {
@@ -103,25 +104,27 @@ function NavigationContent() {
           ))}
           {isAuthenticated && (
             <>
-              <Button
-                component={Link}
-                href="/player"
-                sx={{
-                  color: '#2c3e50',
-                  fontWeight: 600,
-                  fontSize: 18,
-                  textTransform: 'none',
-                  fontFamily: inter.style.fontFamily,
-                  background: 'none',
-                  boxShadow: 'none',
-                  px: 1.5,
-                  '&:hover': {
-                    background: 'rgba(0,0,0,0.03)',
-                  },
-                }}
-              >
-                Dashboard
-              </Button>
+              {isAdmin && (
+                <Button
+                  component={Link}
+                  href="/admin/scoreboard"
+                  sx={{
+                    color: '#2c3e50',
+                    fontWeight: 600,
+                    fontSize: 18,
+                    textTransform: 'none',
+                    fontFamily: inter.style.fontFamily,
+                    background: 'none',
+                    boxShadow: 'none',
+                    px: 1.5,
+                    '&:hover': {
+                      background: 'rgba(0,0,0,0.03)',
+                    },
+                  }}
+                >
+                  Admin
+                </Button>
+              )}
               <Button
                 onClick={handleLogout}
                 sx={{
@@ -184,28 +187,33 @@ function NavigationContent() {
               ))}
               {isAuthenticated && (
                 <>
+                  {isAdmin && (
+                    <ListItem disablePadding>
+                      <ListItemButton
+                        component={Link}
+                        href="/admin/scoreboard"
+                        onClick={() => setDrawerOpen(false)}
+                        sx={{
+                          fontWeight: 600,
+                          fontSize: 18,
+                          fontFamily: inter.style.fontFamily,
+                          color: '#2c3e50',
+                          py: 2,
+                          '&:hover': {
+                            background: 'rgba(0,0,0,0.03)',
+                          },
+                        }}
+                      >
+                        <ListItemText primary="Admin" />
+                      </ListItemButton>
+                    </ListItem>
+                  )}
                   <ListItem disablePadding>
                     <ListItemButton
-                      component={Link}
-                      href="/player"
-                      onClick={() => setDrawerOpen(false)}
-                      sx={{
-                        fontWeight: 600,
-                        fontSize: 18,
-                        fontFamily: inter.style.fontFamily,
-                        color: '#2c3e50',
-                        py: 2,
-                        '&:hover': {
-                          background: 'rgba(0,0,0,0.03)',
-                        },
+                      onClick={() => {
+                        handleLogout();
+                        setDrawerOpen(false);
                       }}
-                    >
-                      <ListItemText primary="Dashboard" />
-                    </ListItemButton>
-                  </ListItem>
-                  <ListItem disablePadding>
-                    <ListItemButton
-                      onClick={handleLogout}
                       sx={{
                         fontWeight: 600,
                         fontSize: 18,
