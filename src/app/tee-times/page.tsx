@@ -1,106 +1,16 @@
 'use client';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import Link from 'next/link';
 import TextField from '@mui/material/TextField';
 import InputAdornment from '@mui/material/InputAdornment';
 import SearchIcon from '@mui/icons-material/Search';
-import matchesData from '@/data/matches.json';
+import { getAllPlayersAndMatches } from '@/lib/getAllPlayersAndMatches';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import { formatPlayerSlug } from '@/utils/playerUtils';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
-
-interface Match {
-  match: number;
-  group: number;
-  course: string;
-  date: string;
-  time: string;
-  matchType: string;
-  team_thompson: Player[];
-  team_burgess: Player[];
-  winner: string | null;
-}
-
-interface Player {
-  name: string;
-  handicap: number | string;
-}
-
-interface PlayerRow {
-  id: string;
-  name: string;
-  handicap: number | string;
-  pacificDunes: string;
-  pacificDunesGroup?: number;
-  sheepRanch: string;
-  sheepRanchGroup?: number;
-  bandonDunes: string;
-  bandonDunesGroup?: number;
-  team: 'Thompson' | 'Burgess';
-}
-
-function getPlayerRows(matches: Match[]): PlayerRow[] {
-  const playerMap = new Map<string, PlayerRow>();
-
-  matches.forEach(match => {
-    // Process Team Thompson players
-    match.team_thompson.forEach(player => {
-      if (!playerMap.has(player.name)) {
-        playerMap.set(player.name, {
-          id: player.name,
-          name: player.name,
-          handicap: player.handicap,
-          pacificDunes: '',
-          sheepRanch: '',
-          bandonDunes: '',
-          team: 'Thompson'
-        });
-      }
-      const playerRow = playerMap.get(player.name)!;
-      if (match.course === 'Pacific Dunes') {
-        playerRow.pacificDunes = match.time;
-        playerRow.pacificDunesGroup = match.group;
-      } else if (match.course === 'Sheep Ranch') {
-        playerRow.sheepRanch = match.time;
-        playerRow.sheepRanchGroup = match.group;
-      } else if (match.course === 'Bandon Dunes') {
-        playerRow.bandonDunes = match.time;
-        playerRow.bandonDunesGroup = match.group;
-      }
-    });
-
-    // Process Team Burgess players
-    match.team_burgess.forEach(player => {
-      if (!playerMap.has(player.name)) {
-        playerMap.set(player.name, {
-          id: player.name,
-          name: player.name,
-          handicap: player.handicap,
-          pacificDunes: '',
-          sheepRanch: '',
-          bandonDunes: '',
-          team: 'Burgess'
-        });
-      }
-      const playerRow = playerMap.get(player.name)!;
-      if (match.course === 'Pacific Dunes') {
-        playerRow.pacificDunes = match.time;
-        playerRow.pacificDunesGroup = match.group;
-      } else if (match.course === 'Sheep Ranch') {
-        playerRow.sheepRanch = match.time;
-        playerRow.sheepRanchGroup = match.group;
-      } else if (match.course === 'Bandon Dunes') {
-        playerRow.bandonDunes = match.time;
-        playerRow.bandonDunesGroup = match.group;
-      }
-    });
-  });
-
-  return Array.from(playerMap.values());
-}
 
 const columns: GridColDef[] = [
   { 
@@ -235,18 +145,74 @@ const columns: GridColDef[] = [
   },
 ];
 
-const rows = getPlayerRows(matchesData.matches);
-
 export default function TeeTimesPage() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [playerRows, setPlayerRows] = useState<any[]>([]);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
+  useEffect(() => {
+    getAllPlayersAndMatches()
+      .then(({ matches, players }) => {
+        // Build player rows from matches and players
+        const playerMap = new Map();
+        matches.forEach(match => {
+          // Helper to add or update a player row
+          function addPlayerRow(playerId: any, team: 'Thompson' | 'Burgess', course: string, time: string, group: number) {
+            if (!playerId) return;
+            const player = players.find((p: any) => p.id === playerId);
+            if (!player) return;
+            const id = player.id;
+            const name = `${player.f_name} ${player.l_name}`;
+            if (!playerMap.has(id)) {
+              playerMap.set(id, {
+                id,
+                name,
+                f_name: player.f_name,
+                l_name: player.l_name,
+                handicap: player.handicap,
+                pacificDunes: '',
+                sheepRanch: '',
+                bandonDunes: '',
+                team,
+              });
+            }
+            const row = playerMap.get(id);
+            if (course === 'Pacific Dunes') {
+              row.pacificDunes = time;
+              row.pacificDunesGroup = group;
+            } else if (course === 'Sheep Ranch') {
+              row.sheepRanch = time;
+              row.sheepRanchGroup = group;
+            } else if (course === 'Bandon Dunes') {
+              row.bandonDunes = time;
+              row.bandonDunesGroup = group;
+            }
+          }
+          addPlayerRow(match.thompson_player1, 'Thompson', match.course, match.time, match.group);
+          addPlayerRow(match.thompson_player2, 'Thompson', match.course, match.time, match.group);
+          addPlayerRow(match.burgess_player1, 'Burgess', match.course, match.time, match.group);
+          addPlayerRow(match.burgess_player2, 'Burgess', match.course, match.time, match.group);
+        });
+        // Sort by last name, then first name
+        const rows = Array.from(playerMap.values()).sort((a: any, b: any) => {
+          if (a.l_name === b.l_name) {
+            return a.f_name.localeCompare(b.f_name);
+          }
+          return a.l_name.localeCompare(b.l_name);
+        });
+        setPlayerRows(rows);
+      })
+      .catch((err) => {
+        console.error('Error fetching data:', err);
+      });
+  }, []);
+
   const filteredRows = useMemo(() => {
-    return rows.filter(row => 
+    return playerRows.filter(row => 
       row.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }, [searchQuery]);
+  }, [searchQuery, playerRows]);
 
   // Define columns for mobile and desktop
   const mobileColumns = columns.slice(0, 2); // Name and Handicap only

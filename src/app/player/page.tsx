@@ -82,7 +82,7 @@ export default function PlayerPage() {
         )}
 
         <PlayerMatches
-          playerName="Player Name"
+          playerId="1"
           selectedCourse={isMobile ? selectedCourse : selectedTab === 0 ? 'all' : `course${selectedTab}`}
         />
       </Box>
