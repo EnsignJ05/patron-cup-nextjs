@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { supabase } from '@/lib/supabaseClient';
+import Link from 'next/link';
 
 export default function TeamsPage() {
   const [players, setPlayers] = useState<any[]>([]);
@@ -103,24 +104,29 @@ export default function TeamsPage() {
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             {thompsonPlayers.map((player, idx) => (
-              <Typography
+              <Link 
                 key={idx}
-                variant="body1"
-                sx={{
-                  color: '#1976d2',
-                  py: 0.5,
-                  cursor: 'pointer',
-                  textDecoration: 'underline',
-                  fontSize: { xs: '1rem', sm: '1.1rem' },
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
+                href={`/tee-times/2025/${player.player?.f_name.toLowerCase()}-${player.player?.l_name.toLowerCase()}`}
+                style={{ textDecoration: 'none' }}
               >
-                {player.player?.f_name} {player.player?.l_name}
-                <span style={{ color: '#666666', fontSize: 14, marginLeft: 8 }}>
-                  ({player.player?.handicap})
-                </span>
-              </Typography>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    color: '#1976d2',
+                    py: 0.5,
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                    fontSize: { xs: '1rem', sm: '1.1rem' },
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                >
+                  {player.player?.f_name} {player.player?.l_name}
+                  <span style={{ color: '#666666', fontSize: 14, marginLeft: 8 }}>
+                    ({player.player?.handicap})
+                  </span>
+                </Typography>
+              </Link>
             ))}
           </Box>
         </Box>
@@ -148,24 +154,29 @@ export default function TeamsPage() {
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             {burgessPlayers.map((player, idx) => (
-              <Typography
+              <Link 
                 key={idx}
-                variant="body1"
-                sx={{
-                  color: '#1976d2',
-                  py: 0.5,
-                  cursor: 'pointer',
-                  textDecoration: 'underline',
-                  fontSize: { xs: '1rem', sm: '1.1rem' },
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
+                href={`/tee-times/2025/${player.player?.f_name.toLowerCase()}-${player.player?.l_name.toLowerCase()}`}
+                style={{ textDecoration: 'none' }}
               >
-                {player.player?.f_name} {player.player?.l_name}
-                <span style={{ color: '#666666', fontSize: 14, marginLeft: 8 }}>
-                  ({player.player?.handicap})
-                </span>
-              </Typography>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    color: '#1976d2',
+                    py: 0.5,
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                    fontSize: { xs: '1rem', sm: '1.1rem' },
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                >
+                  {player.player?.f_name} {player.player?.l_name}
+                  <span style={{ color: '#666666', fontSize: 14, marginLeft: 8 }}>
+                    ({player.player?.handicap})
+                  </span>
+                </Typography>
+              </Link>
             ))}
           </Box>
         </Box>
