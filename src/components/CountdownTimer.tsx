@@ -200,7 +200,7 @@ export default function CountdownTimer() {
                 sx={{
                   color: '#3498db',
                   fontWeight: 500,
-                  fontSize: { xs: '0.9rem', sm: '1rem' },
+                  fontSize: { xs: '0.75rem', sm: '1rem' },
                   textTransform: 'uppercase',
                   borderBottom: '2px solid #3498db',
                   letterSpacing: '0.05em',
@@ -238,7 +238,7 @@ export default function CountdownTimer() {
                 sx={{
                   color: '#e74c3c',
                   fontWeight: 500,
-                  fontSize: { xs: '0.9rem', sm: '1rem' },
+                  fontSize: { xs: '0.75rem', sm: '1rem' },
                   textTransform: 'uppercase',
                   borderBottom: '2px solid #e74c3c',
                   letterSpacing: '0.05em',

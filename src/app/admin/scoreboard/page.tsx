@@ -164,7 +164,7 @@ export default function AdminScoreboardPage() {
         }}
       >
         <Box sx={{ textAlign: 'center' }}>
-          <Typography variant="h4" sx={{ color: '#3498db', fontWeight: 700, mb: 1 }}>
+          <Typography variant="h4" sx={{ color: '#3498db', fontWeight: 700, mb: 1, fontSize: { xs: '0.75rem', sm: '1.25rem' } }}>
             Team Thompson
           </Typography>
           <Typography variant="h2" sx={{ color: '#3498db', fontWeight: 800 }}>
@@ -173,7 +173,7 @@ export default function AdminScoreboardPage() {
         </Box>
         <Typography variant="h3" sx={{ color: '#666666', fontWeight: 300 }}>vs</Typography>
         <Box sx={{ textAlign: 'center' }}>
-          <Typography variant="h4" sx={{ color: '#e74c3c', fontWeight: 700, mb: 1 }}>
+          <Typography variant="h4" sx={{ color: '#e74c3c', fontWeight: 700, mb: 1, fontSize: { xs: '0.75rem', sm: '1.25rem' } }}>
             Team Burgess
           </Typography>
           <Typography variant="h2" sx={{ color: '#e74c3c', fontWeight: 800 }}>
@@ -215,7 +215,7 @@ export default function AdminScoreboardPage() {
           <CourseScoreCard 
             courseName="Pacific Dunes" 
             date="June 5, 2025" 
-            teamThompsonTotal={pacificTotals.thompson} 
+            teamThompsonTotal={pacificTotals.thompson}
             teamBurgessTotal={pacificTotals.burgess}
           >
             {pacificMatches.map((match) => (
@@ -289,7 +289,7 @@ export default function AdminScoreboardPage() {
           <CourseScoreCard 
             courseName="Sheep Ranch" 
             date="June 6, 2025" 
-            teamThompsonTotal={sheepRanchTotals.thompson} 
+            teamThompsonTotal={sheepRanchTotals.thompson}
             teamBurgessTotal={sheepRanchTotals.burgess}
           >
             {sheepRanchMatches.map((match) => (
@@ -363,7 +363,7 @@ export default function AdminScoreboardPage() {
           <CourseScoreCard 
             courseName="Bandon Dunes" 
             date="June 7, 2025" 
-            teamThompsonTotal={bandonTotals.thompson} 
+            teamThompsonTotal={bandonTotals.thompson}
             teamBurgessTotal={bandonTotals.burgess}
           >
             {bandonMatches.map((match) => (

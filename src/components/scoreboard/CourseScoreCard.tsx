@@ -52,13 +52,13 @@ export default function CourseScoreCard({ courseName, date, teamThompsonTotal, t
           bgcolor: 'rgba(0,0,0,0.02)',
           borderRadius: 2,
         }}>
-          <Typography variant="subtitle1" sx={{ color: '#3498db', fontWeight: 700 }}>
+          <Typography variant="subtitle1" sx={{ color: '#3498db', fontWeight: 700, fontSize: { xs: '0.8rem', sm: '1rem' } }}>
             Team Thompson: {teamThompsonTotal}
           </Typography>
-          <Typography variant="subtitle1" sx={{ color: '#666666', fontWeight: 700 }}>
+          <Typography variant="subtitle1" sx={{ color: '#666666', fontWeight: 700, fontSize: { xs: '0.8rem', sm: '1rem' } }}>
             |
           </Typography>
-          <Typography variant="subtitle1" sx={{ color: '#e74c3c', fontWeight: 700 }}>
+          <Typography variant="subtitle1" sx={{ color: '#e74c3c', fontWeight: 700, fontSize: { xs: '0.8rem', sm: '1rem' } }}>
             Team Burgess: {teamBurgessTotal}
           </Typography>
         </Box>
