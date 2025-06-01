@@ -9,8 +9,6 @@ import SearchIcon from '@mui/icons-material/Search';
 import { getAllPlayersAndMatches } from '@/lib/getAllPlayersAndMatches';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import { formatPlayerSlug } from '@/utils/playerUtils';
-// import useMediaQuery from '@mui/material/useMediaQuery';
-// import { useTheme } from '@mui/material/styles';
 
 const columns: GridColDef[] = [
   { 

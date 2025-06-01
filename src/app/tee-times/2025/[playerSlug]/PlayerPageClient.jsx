@@ -6,20 +6,7 @@ import PlayerMatches from '@/components/player/PlayerMatches';
 import PlayerRerounds from '@/components/player/PlayerRerounds';
 import { supabase } from '@/lib/supabaseClient';
 import { unformatPlayerSlug } from '@/utils/playerUtils';
-
-function getPlayerRecord(playerId, matches) {
-  let wins = 0, losses = 0, ties = 0;
-  matches.forEach(match => {
-    const isThompson = match.thompson_player1 === playerId || match.thompson_player2 === playerId;
-    const isBurgess = match.burgess_player1 === playerId || match.burgess_player2 === playerId;
-    if (!isThompson && !isBurgess) return;
-    if (match.winner === 'tie') ties++;
-    else if (isThompson && match.winner === 'team_thompson') wins++;
-    else if (isBurgess && match.winner === 'team_burgess') wins++;
-    else if (match.winner) losses++;
-  });
-  return { wins, losses, ties };
-}
+import { getPlayerRecord } from '@/lib/getPlayerRecord';
 
 export default function PlayerPageClient({ playerSlug }) {
   const [player, setPlayer] = useState(null);
@@ -39,7 +26,7 @@ export default function PlayerPageClient({ playerSlug }) {
       .eq('f_name', f_name)
       .eq('l_name', l_name)
       .single()
-      .then(({ data: playerData, error: playerError }) => {
+      .then(async ({ data: playerData, error: playerError }) => {
         if (playerError || !playerData) {
           setPlayer(null);
           setRecord({ wins: 0, losses: 0, ties: 0 });
@@ -47,20 +34,10 @@ export default function PlayerPageClient({ playerSlug }) {
           return;
         }
         setPlayer(playerData);
-        // Query for matches where player is in any slot
-        supabase
-          .from('match_bandon')
-          .select('*')
-          .or(`thompson_player1.eq.${playerData.id},thompson_player2.eq.${playerData.id},burgess_player1.eq.${playerData.id},burgess_player2.eq.${playerData.id}`)
-          .then(({ data: matches, error: matchError }) => {
-            if (matchError) {
-              setRecord({ wins: 0, losses: 0, ties: 0 });
-              setLoading(false);
-              return;
-            }
-            setRecord(getPlayerRecord(playerData.id, matches || []));
-            setLoading(false);
-          });
+        // Use new getPlayerRecord function
+        const record = await getPlayerRecord(f_name, l_name);
+        setRecord(record || { wins: 0, losses: 0, ties: 0 });
+        setLoading(false);
       });
   }, [playerSlug]);
 
