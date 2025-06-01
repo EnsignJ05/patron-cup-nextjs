@@ -98,6 +98,13 @@ export default function ItineraryPage() {
             <br /><br />
             No dinner plans, the hope is that we congregate after rounds and dinners at the Bunker Bar or one of the other bars on property. Signal will be the best option for this. Weather permitting we likely will have an annual Patron Walk-About down 18 of Bandon, grab a little whiskey and stretch the legs, perhaps Dr Balog will find the ocean again.
           </Typography>
+          <Box sx={{ width: '100%', maxWidth: 500, mx: 'auto', mb: 2 }}>
+            <video controls style={{ width: '100%', borderRadius: 8, background: '#000' }}>
+              <source src="/gallery/Balog_Pebble.mp4" type="video/mp4" />
+              <source src="/gallery/Balog_Pebble.mov" type="video/quicktime" />
+              Your browser does not support the video tag.
+            </video>
+          </Box>
         </TabPanel>
 
         <TabPanel value={selectedTab} index={1}>
