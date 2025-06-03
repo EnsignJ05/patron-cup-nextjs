@@ -56,6 +56,52 @@ function buildTeamPlayers(match: any, team: 'thompson' | 'burgess') {
   }
 }
 
+// Helper to increment/decrement a player's record
+async function updatePlayerRecord(playerId: number, field: 'wins' | 'losses' | 'ties', delta: number) {
+  // Fetch current record
+  const { data: record } = await supabase
+    .from('records_bandon')
+    .select('id, wins, losses, ties')
+    .eq('playerId', playerId)
+    .single();
+
+  let newRecord = { wins: 0, losses: 0, ties: 0 };
+  if (record) {
+    newRecord = {
+      wins: record.wins ?? 0,
+      losses: record.losses ?? 0,
+      ties: record.ties ?? 0,
+    };
+  }
+  newRecord[field] = Math.max(0, (newRecord[field] ?? 0) + delta);
+
+  // Update the record
+  await supabase
+    .from('records_bandon')
+    .update({
+      wins: newRecord.wins,
+      losses: newRecord.losses,
+      ties: newRecord.ties,
+    })
+    .eq('playerId', playerId);
+}
+
+// Helper to update all players in a match for a given result
+async function updateRecordsForResult(match: any, result: string | null, delta: number) {
+  const thompsonPlayers = [match.thompson_player1, match.thompson_player2].filter(Boolean).map(p => p?.id);
+  const burgessPlayers = [match.burgess_player1, match.burgess_player2].filter(Boolean).map(p => p?.id);
+  if (result === 'team_thompson') {
+    for (const id of thompsonPlayers) await updatePlayerRecord(id, 'wins', delta);
+    for (const id of burgessPlayers) await updatePlayerRecord(id, 'losses', delta);
+  } else if (result === 'team_burgess') {
+    for (const id of burgessPlayers) await updatePlayerRecord(id, 'wins', delta);
+    for (const id of thompsonPlayers) await updatePlayerRecord(id, 'losses', delta);
+  } else if (result === 'tie') {
+    for (const id of thompsonPlayers) await updatePlayerRecord(id, 'ties', delta);
+    for (const id of burgessPlayers) await updatePlayerRecord(id, 'ties', delta);
+  }
+}
+
 export default function AdminScoreboardPage() {
   const { isAuthenticated, isAdmin } = useAuth();
   const router = useRouter();
@@ -93,14 +139,28 @@ export default function AdminScoreboardPage() {
   const handleMatchResultChange = async (matchId: number, newResult: string | null) => {
     console.log('handleMatchResultChange', matchId, newResult);
     try {
+      // Find the match and previous result
+      const match = matches.find(m => m.id === matchId);
+      if (!match) throw new Error('Match not found');
+      const prevResult = match.winner || 'none';
+
+      // 1. Decrement previous result (if not none)
+      if (prevResult && prevResult !== 'none') {
+        await updateRecordsForResult(match, prevResult, -1);
+      }
+      // 2. Increment new result (if not none)
+      if (newResult && newResult !== 'none') {
+        await updateRecordsForResult(match, newResult, 1);
+      }
+
+      // 3. Update match result in DB
       const { error } = await supabase
         .from('match_bandon')
         .update({ winner: newResult === 'none' ? null : newResult })
         .eq('id', matchId);
-
       if (error) throw error;
 
-      // Update local state
+      // 4. Update local state
       setMatches(matches.map(match => 
         match.id === matchId 
           ? { ...match, winner: newResult === 'none' ? null : newResult }

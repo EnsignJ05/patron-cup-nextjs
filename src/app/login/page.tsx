@@ -21,7 +21,7 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    console.log('Attempting login with:', { username, password });
+    // console.log('Attempting login with:', { username, password });
 
     try {
       const success = await login(username, password);
