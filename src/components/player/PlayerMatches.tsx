@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Tabs from '@mui/material/Tabs';
@@ -10,189 +10,167 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import CourseScoreCard from '@/components/scoreboard/CourseScoreCard';
 import MatchRow from '@/components/scoreboard/MatchRow';
-import { getPlayerTeam, getPlayerMatches } from '@/utils/playerUtils';
-import type { Match } from '@/utils/playerUtils';
-
-// interface Player {
-//   name: string;
-//   handicap: number | string;
-// }
+import { supabase } from '@/lib/supabaseClient';
 
 export interface PlayerMatchesProps {
-  playerName: string;
+  playerId?: string;
   selectedCourse?: string;
 }
 
-const COURSE_OPTIONS = [
-  { label: 'All Matches', value: 'all' },
-  { label: 'Pacific Dunes', value: 'Pacific Dunes' },
-  { label: 'Sheep Ranch', value: 'Sheep Ranch' },
-  { label: 'Bandon Dunes', value: 'Bandon Dunes' },
-];
-
-export default function PlayerMatches({ playerName, selectedCourse: selectedCourseProp }: PlayerMatchesProps) {
+export default function PlayerMatches({ playerId: propPlayerId, selectedCourse: selectedCourseProp }: PlayerMatchesProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [selectedCourse, setSelectedCourse] = useState(selectedCourseProp || 'all');
-  const [selectedTab, setSelectedTab] = useState(0);
+  const [matches, setMatches] = useState<any[]>([]);
+  const [players, setPlayers] = useState<Record<string, any>>({});
+  const [loading, setLoading] = useState(true);
 
-  const matches = getPlayerMatches(playerName);
-  const filteredMatches = selectedCourse === 'all'
-    ? matches
-    : matches.filter(match => match.course === selectedCourse);
+  useEffect(() => {
+    setLoading(true);
+    // Query for matches where player is in any slot
+    supabase
+      .from('match_bandon')
+      .select('*')
+      .or(`thompson_player1.eq.${propPlayerId},thompson_player2.eq.${propPlayerId},burgess_player1.eq.${propPlayerId},burgess_player2.eq.${propPlayerId}`)
+      .then(({ data: matches, error: matchError }) => {
+        if (matchError) {
+          setMatches([]);
+          setLoading(false);
+          return;
+        }
+        setMatches(matches || []);
+        
+        // Get all unique player IDs from matches
+        const playerIds = new Set<string>();
+        matches?.forEach(match => {
+          ['thompson_player1', 'thompson_player2', 'burgess_player1', 'burgess_player2'].forEach(field => {
+            if (match[field]) playerIds.add(match[field]);
+          });
+        });
 
-  // Mobile dropdown handler
-  const handleDropdownChange = (event: SelectChangeEvent<string>) => {
+        // Fetch player data for all players in matches
+        if (playerIds.size > 0) {
+          supabase
+            .from('player')
+            .select('*')
+            .in('id', Array.from(playerIds))
+            .then(({ data: playerData, error: playerError }) => {
+              if (!playerError && playerData) {
+                const playerMap = playerData.reduce((acc, player) => {
+                  acc[player.id] = player;
+                  return acc;
+                }, {});
+                setPlayers(playerMap);
+              }
+              setLoading(false);
+            });
+        } else {
+          setLoading(false);
+        }
+      });
+  }, [propPlayerId]);
+
+  const handleCourseChange = (event: SelectChangeEvent) => {
     setSelectedCourse(event.target.value);
-    // Also update tab index for consistency if needed
-    const idx = COURSE_OPTIONS.findIndex(opt => opt.value === event.target.value);
-    setSelectedTab(idx === -1 ? 0 : idx);
   };
 
-  // Desktop tab handler
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setSelectedTab(newValue);
-    setSelectedCourse(COURSE_OPTIONS[newValue].value);
+  const handleTabChange = (event: React.SyntheticEvent, newValue: string) => {
+    setSelectedCourse(newValue);
   };
 
-  // Mobile rendering
-  if (isMobile) {
+  const filteredMatches = matches.filter(match => 
+    selectedCourse === 'all' || match.course === selectedCourse
+  );
+
+  function buildTeam(match: any, playerFields: string[]) {
+    return playerFields
+      .map(field => match[field])
+      .filter(Boolean)
+      .map(playerId => {
+        const player = players[playerId];
+        return {
+          name: player ? `${player.f_name} ${player.l_name}` : 'Unknown Player',
+          handicap: player?.handicap || 0
+        };
+      });
+  }
+
+  if (loading) {
     return (
-      <Box sx={{ width: '100%', maxWidth: 900, px: { xs: 2, sm: 3 } }}>
-        <Box sx={{ mb: 2, display: 'flex', justifyContent: 'center' }}>
-          <Select
-            value={selectedCourse}
-            onChange={handleDropdownChange}
-            size="small"
-            sx={{
-              bgcolor: '#fff',
-              borderRadius: 2,
-              maxWidth: 220,
-              width: '100%',
-              mx: 'auto',
-              textAlign: 'center',
-              '& .MuiSelect-select': {
-                textAlign: 'center',
-              },
-            }}
-          >
-            {COURSE_OPTIONS.map(option => (
-              <MenuItem key={option.value} value={option.value} sx={{ textAlign: 'center' }}>{option.label}</MenuItem>
-            ))}
-          </Select>
-        </Box>
-        {filteredMatches.length === 0 ? (
-          <Typography variant="body1" sx={{ color: '#666666', fontStyle: 'italic', mt: 2, textAlign: 'center' }}>
-            No matches found.
-          </Typography>
-        ) : (
-          <Box sx={{ mt: 2 }}>
-            <CourseScoreCard courseName={selectedCourse !== 'all' ? selectedCourse : ''} date={
-              selectedCourse === 'Pacific Dunes' ? 'June 5, 2025' :
-              selectedCourse === 'Sheep Ranch' ? 'June 6, 2025' :
-              selectedCourse === 'Bandon Dunes' ? 'June 7, 2025' : ''
-            }>
-              {filteredMatches.map((match: Match) => (
-                <MatchRow
-                  key={match.match}
-                  match={match.match}
-                  group={match.group}
-                  time={match.time}
-                  date={match.date}
-                  team_thompson={match.team_thompson}
-                  team_burgess={match.team_burgess}
-                  winner={match.winner}
-                  highlightTeam={getPlayerTeam(playerName, match)}
-                />
-              ))}
-            </CourseScoreCard>
-          </Box>
-        )}
+      <Box sx={{ textAlign: 'center', py: 4 }}>
+        <Typography variant="body1" sx={{ color: '#666666' }}>
+          Loading matches...
+        </Typography>
       </Box>
     );
   }
 
-  // Desktop rendering
   return (
-    <Box sx={{ width: '100%', maxWidth: 900, px: { xs: 2, sm: 3 } }}>
-      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+    <Box>
+      {isMobile ? (
+        <Select
+          value={selectedCourse}
+          onChange={handleCourseChange}
+          fullWidth
+          sx={{ mb: 3 }}
+        >
+          <MenuItem value="all">All Courses</MenuItem>
+          <MenuItem value="Pacific Dunes">Pacific Dunes</MenuItem>
+          <MenuItem value="Sheep Ranch">Sheep Ranch</MenuItem>
+          <MenuItem value="Bandon Dunes">Bandon Dunes</MenuItem>
+        </Select>
+      ) : (
         <Tabs
-          value={selectedTab}
+          value={selectedCourse}
           onChange={handleTabChange}
-          variant="fullWidth"
+          centered
           sx={{
+            mb: 3,
             '& .MuiTab-root': {
               color: '#666666',
-              fontWeight: 600,
-              fontSize: { xs: '0.9rem', sm: '1rem' },
-              textTransform: 'none',
               '&.Mui-selected': {
-                color: '#2c3e50',
+                color: '#1976d2',
               },
             },
             '& .MuiTabs-indicator': {
-              backgroundColor: '#2c3e50',
+              backgroundColor: '#1976d2',
             },
           }}
         >
-          {COURSE_OPTIONS.map((option) => (
-            <Tab key={option.value} label={option.label} />
-          ))}
+          <Tab label="All Courses" value="all" />
+          <Tab label="Pacific Dunes" value="Pacific Dunes" />
+          <Tab label="Sheep Ranch" value="Sheep Ranch" />
+          <Tab label="Bandon Dunes" value="Bandon Dunes" />
         </Tabs>
-      </Box>
-      <Box sx={{ mt: 2 }}>
-        {filteredMatches.length === 0 ? (
-          <Typography variant="body1" sx={{ color: '#666666', fontStyle: 'italic', mt: 2, textAlign: 'center' }}>
-            No matches found.
-          </Typography>
-        ) : (
+      )}
+
+      {filteredMatches.length === 0 ? (
+        <Typography variant="body1" sx={{ color: '#666666', fontStyle: 'italic', mt: 2, textAlign: 'center' }}>
+          No matches found.
+        </Typography>
+      ) : (
+        <Box sx={{ mt: 2 }}>
           <CourseScoreCard courseName={selectedCourse !== 'all' ? selectedCourse : ''} date={
             selectedCourse === 'Pacific Dunes' ? 'June 5, 2025' :
             selectedCourse === 'Sheep Ranch' ? 'June 6, 2025' :
             selectedCourse === 'Bandon Dunes' ? 'June 7, 2025' : ''
           }>
-            {filteredMatches.map((match: Match) => (
+            {filteredMatches.map((match: any) => (
               <MatchRow
                 key={match.match}
                 match={match.match}
                 group={match.group}
                 time={match.time}
                 date={match.date}
-                team_thompson={match.team_thompson}
-                team_burgess={match.team_burgess}
+                team_thompson={buildTeam(match, ['thompson_player1', 'thompson_player2'])}
+                team_burgess={buildTeam(match, ['burgess_player1', 'burgess_player2'])}
                 winner={match.winner}
-                highlightTeam={getPlayerTeam(playerName, match)}
+                highlightTeam={match.thompson_player1 === propPlayerId || match.thompson_player2 === propPlayerId ? 'Thompson' : 'Burgess'}
               />
             ))}
           </CourseScoreCard>
-        )}
-      </Box>
+        </Box>
+      )}
     </Box>
   );
-}
-
-// interface TabPanelProps {
-//   children?: React.ReactNode;
-//   index: number;
-//   value: number;
-// }
-
-// function TabPanel(props: TabPanelProps) {
-//   const { children, value, index, ...other } = props;
-
-//   return (
-//     <div
-//       role="tabpanel"
-//       hidden={value !== index}
-//       id={`course-tabpanel-${index}`}
-//       aria-labelledby={`course-tab-${index}`}
-//       {...other}
-//     >
-//       {value === index && (
-//         <Box sx={{ py: 3 }}>
-//           {children}
-//         </Box>
-//       )}
-//     </div>
-//   );
-// } 
+} 

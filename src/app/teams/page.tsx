@@ -1,30 +1,34 @@
 'use client';
+import { useEffect, useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
+import { supabase } from '@/lib/supabaseClient';
 import Link from 'next/link';
-import matchesData from '@/data/matches.json';
-
-interface Player {
-  name: string;
-  handicap: number | string;
-}
-
-function getTeamPlayers(team: 'Thompson' | 'Burgess'): Player[] {
-  const playerMap = new Map<string, Player>();
-  matchesData.matches.forEach(match => {
-    const teamPlayers = team === 'Thompson' ? match.team_thompson : match.team_burgess;
-    teamPlayers.forEach(player => {
-      if (!playerMap.has(player.name)) {
-        playerMap.set(player.name, player);
-      }
-    });
-  });
-  return Array.from(playerMap.values()).sort((a, b) => a.name.localeCompare(b.name));
-}
 
 export default function TeamsPage() {
-  const thompsonPlayers = getTeamPlayers('Thompson');
-  const burgessPlayers = getTeamPlayers('Burgess');
+  const [players, setPlayers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState('');
+
+  useEffect(() => {
+    setLoading(true);
+    setFetchError('');
+    supabase
+      .from('team_bandon')
+      .select('playerId, team, player(f_name, l_name, handicap)')
+      .then(({ data, error }) => {
+        if (error) {
+          setFetchError(error.message);
+          setPlayers([]);
+        } else {
+          setPlayers(data || []);
+        }
+        setLoading(false);
+      });
+  }, []);
+
+  const thompsonPlayers = players.filter(p => p.team === 'thompson');
+  const burgessPlayers = players.filter(p => p.team === 'burgess');
 
   return (
     <Box
@@ -65,6 +69,9 @@ export default function TeamsPage() {
         Click on a player&apos;s name to view their match schedule and additional rounds
       </Typography>
 
+      {loading && <Typography>Loading...</Typography>}
+      {fetchError && <Typography color="error">{fetchError}</Typography>}
+
       <Box 
         sx={{ 
           display: 'flex', 
@@ -96,26 +103,28 @@ export default function TeamsPage() {
             Team Thompson
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            {thompsonPlayers.map((player) => (
+            {thompsonPlayers.map((player, idx) => (
               <Link 
-                key={player.name}
-                href={`/tee-times/2025/${player.name.toLowerCase().replace(/\s+/g, '-')}`}
+                key={idx}
+                href={`/tee-times/2025/${player.player?.f_name.toLowerCase()}-${player.player?.l_name.toLowerCase()}`}
                 style={{ textDecoration: 'none' }}
               >
-                <Typography 
-                  variant="body1" 
-                  sx={{ 
+                <Typography
+                  variant="body1"
+                  sx={{
                     color: '#1976d2',
                     py: 0.5,
                     cursor: 'pointer',
                     textDecoration: 'underline',
-                    '&:hover': {
-                      color: '#1565c0',
-                      textDecoration: 'underline',
-                    },
+                    fontSize: { xs: '1rem', sm: '1.1rem' },
+                    display: 'flex',
+                    alignItems: 'center',
                   }}
                 >
-                  {player.name} <span style={{ color: '#666666', fontSize: 14 }}>({player.handicap})</span>
+                  {player.player?.f_name} {player.player?.l_name}
+                  <span style={{ color: '#666666', fontSize: 14, marginLeft: 8 }}>
+                    ({player.player?.handicap})
+                  </span>
                 </Typography>
               </Link>
             ))}
@@ -144,26 +153,28 @@ export default function TeamsPage() {
             Team Burgess
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            {burgessPlayers.map((player) => (
+            {burgessPlayers.map((player, idx) => (
               <Link 
-                key={player.name}
-                href={`/tee-times/2025/${player.name.toLowerCase().replace(/\s+/g, '-')}`}
+                key={idx}
+                href={`/tee-times/2025/${player.player?.f_name.toLowerCase()}-${player.player?.l_name.toLowerCase()}`}
                 style={{ textDecoration: 'none' }}
               >
-                <Typography 
-                  variant="body1" 
-                  sx={{ 
+                <Typography
+                  variant="body1"
+                  sx={{
                     color: '#1976d2',
                     py: 0.5,
                     cursor: 'pointer',
                     textDecoration: 'underline',
-                    '&:hover': {
-                      color: '#1565c0',
-                      textDecoration: 'underline',
-                    },
+                    fontSize: { xs: '1rem', sm: '1.1rem' },
+                    display: 'flex',
+                    alignItems: 'center',
                   }}
                 >
-                  {player.name} <span style={{ color: '#666666', fontSize: 14 }}>({player.handicap})</span>
+                  {player.player?.f_name} {player.player?.l_name}
+                  <span style={{ color: '#666666', fontSize: 14, marginLeft: 8 }}>
+                    ({player.player?.handicap})
+                  </span>
                 </Typography>
               </Link>
             ))}
