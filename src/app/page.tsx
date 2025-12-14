@@ -12,12 +12,11 @@ import CountdownTimer from '@/components/CountdownTimer';
 const playfair = Playfair_Display({ subsets: ['latin'], weight: ['700'] });
 const inter = Inter({ subsets: ['latin'], weight: ['400', '700'] });
 
-const bandonImages = [
-  '/gallery/BandonPhotos/tee-times-hero.jpg',
-  '/gallery/BandonPhotos/scoreboard-hero.jpg',
-  '/gallery/BandonPhotos/gallery-hero.webp',
-  '/gallery/BandonPhotos/itinerary-hero.jpg',
-  '/gallery/BandonPhotos/hero.jpg',
+const bigCedarImages = [
+  '/gallery/BigCedarPhotos/BigCedar.jpg',
+  '/gallery/BigCedarPhotos/Cliffhangers.jpg',
+  '/gallery/BigCedarPhotos/Ozark.jpg',
+  '/gallery/BigCedarPhotos/PV19.jpg',
 ];
 
 export default function Home() {
@@ -55,7 +54,7 @@ export default function Home() {
             whiteSpace: 'nowrap',
           }}
         >
-          Patron Cup 2025
+          Patron Cup 2026
         </Typography>
       </Box>
       
@@ -74,7 +73,7 @@ export default function Home() {
           autoplaySpeed={3500}
           arrows={false}
         >
-          {bandonImages.map((src, idx) => (
+          {bigCedarImages.map((src, idx) => (
             <Box key={src} sx={{ position: 'relative', width: '100%', height: { xs: 220, sm: 340, md: 420 }, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: 5, boxShadow: '0 8px 32px rgba(0,0,0,0.25)' }}>
               <Image
                 src={src}
@@ -100,7 +99,7 @@ export default function Home() {
             wordBreak: 'break-word',
           }}
         >
-          Bandon Dunes Golf Resort
+          Big Cedar Lodge
         </Typography>
         <Typography
           variant="h5"
@@ -113,7 +112,7 @@ export default function Home() {
             wordBreak: 'break-word',
           }}
         >
-          June 4th – 8th
+          April 22nd – 26th
         </Typography>
       </Box>
     </Box>

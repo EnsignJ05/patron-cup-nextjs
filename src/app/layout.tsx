@@ -23,10 +23,11 @@ const inter = Inter({ subsets: ['latin'], weight: ['400', '700'] });
 
 const navLinks = [
   { label: 'Home', href: '/' },
-  { label: 'Teams', href: '/teams' },
-  { label: 'Itinerary', href: '/itinerary' },
-  { label: 'Tee Times', href: '/tee-times' },
-  { label: 'Scoreboard', href: '/scoreboard' },
+  // { label: 'Teams', href: '/teams' },
+  // { label: 'Itinerary', href: '/itinerary' },
+  // { label: 'Tee Times', href: '/tee-times' },
+  // { label: 'Scoreboard', href: '/scoreboard' },
+  { label: 'FAQ', href: '/faq' },
 ];
 
 function NavigationContent() {

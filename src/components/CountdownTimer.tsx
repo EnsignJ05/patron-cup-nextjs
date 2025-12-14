@@ -28,7 +28,8 @@ export default function CountdownTimer() {
         return { days: 0, hours: 0, minutes: 0, seconds: 0 };
       }
 
-      const teeOffDate = new Date('2025-06-05T09:00:00-08:00'); // 9 AM PST on June 5th, 2025
+      // April 22, 2026 at 9:00 am Central Standard Time (CST is UTC-6)
+      const teeOffDate = new Date('2026-04-22T09:00:00-06:00');
       const difference = teeOffDate.getTime() - new Date().getTime();
 
       if (difference > 0) {
