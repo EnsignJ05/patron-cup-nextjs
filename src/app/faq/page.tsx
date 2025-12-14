@@ -39,7 +39,7 @@ const faqData = [
           <strong>Thursday:</strong> Buffalo Ridge
         </Typography>
         <Typography variant="body1" sx={{ mb: 1 }}>
-          <strong>Friday:</strong> Payne's Valley + Cliffhangers
+          <strong>Friday:</strong> Payne&apos;s Valley + Cliffhangers
         </Typography>
         <Typography variant="body1">
           <strong>Saturday:</strong> Ozarks National
@@ -52,7 +52,7 @@ const faqData = [
     answer: (
       <Box>
         <Typography variant="body1" sx={{ mb: 2 }}>
-          We're staying in shared cabins on property:
+          We&apos;re staying in shared cabins on property:
         </Typography>
         <Typography variant="body1" sx={{ mb: 1 }}>
           • <strong>3 x 4-Bedroom Cabins</strong> (Sleeps 8) — includes putting green and pool
