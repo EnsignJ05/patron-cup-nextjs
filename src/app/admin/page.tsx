@@ -30,10 +30,9 @@ export default function AdminPage() {
       setLoading(true);
       setFetchError('');
       supabase
-        .from('team_bandon')
-        .select('playerId, team, player(f_name, l_name, handicap)')
+        .from('branson_roster')
+        .select('f_name, l_name, handicap, team')
         .then(({ data, error }) => {
-          console.log(data);
           if (error) {
             setFetchError(error.message);
             setPlayers([]);
@@ -115,8 +114,8 @@ export default function AdminPage() {
   }
 
   // Group players by team using joined data
-  const thompsonPlayers = players.filter(p => p.team === 'thompson');
-  const burgessPlayers = players.filter(p => p.team === 'burgess');
+  const thompsonPlayers = players.filter(p => p.team === 1);
+  const berasteguiPlayers = players.filter(p => p.team === 2);
 
   return (
     <Box
@@ -211,15 +210,15 @@ export default function AdminPage() {
                   alignItems: 'center',
                 }}
               >
-                {player.player?.f_name} {player.player?.l_name}
+                {player.f_name} {player.l_name}
                 <span style={{ color: '#666666', fontSize: 14, marginLeft: 8 }}>
-                  ({player.player?.handicap})
+                  ({player.handicap})
                 </span>
               </Typography>
             ))}
           </Box>
         </Box>
-        {/* Team Burgess */}
+        {/* Team Berastegui */}
         <Box
           sx={{
             flex: 1,
@@ -238,7 +237,7 @@ export default function AdminPage() {
               fontWeight: 700,
             }}
           >
-            Team Burgess
+            Team Berastegui
           </Typography>
           <Box
             sx={{
@@ -247,7 +246,7 @@ export default function AdminPage() {
               gap: 1,
             }}
           >
-            {burgessPlayers.map((player, idx) => (
+            {berasteguiPlayers.map((player, idx) => (
               <Typography
                 key={idx}
                 variant="body1"
@@ -261,9 +260,9 @@ export default function AdminPage() {
                   alignItems: 'center',
                 }}
               >
-                {player.player?.f_name} {player.player?.l_name}
+                {player.f_name} {player.l_name}
                 <span style={{ color: '#666666', fontSize: 14, marginLeft: 8 }}>
-                  ({player.player?.handicap})
+                  ({player.handicap})
                 </span>
               </Typography>
             ))}

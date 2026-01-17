@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { supabase } from '@/lib/supabaseClient';
-import Link from 'next/link';
 
 export default function TeamsPage() {
   const [players, setPlayers] = useState<any[]>([]);
@@ -14,8 +13,8 @@ export default function TeamsPage() {
     setLoading(true);
     setFetchError('');
     supabase
-      .from('team_bandon')
-      .select('playerId, team, player(f_name, l_name, handicap)')
+      .from('branson_roster')
+      .select('f_name, l_name, handicap, team')
       .then(({ data, error }) => {
         if (error) {
           setFetchError(error.message);
@@ -27,8 +26,8 @@ export default function TeamsPage() {
       });
   }, []);
 
-  const thompsonPlayers = players.filter(p => p.team === 'thompson');
-  const burgessPlayers = players.filter(p => p.team === 'burgess');
+  const thompsonPlayers = players.filter(p => p.team === 1);
+  const berasteguiPlayers = players.filter(p => p.team === 2);
 
   return (
     <Box
@@ -104,29 +103,22 @@ export default function TeamsPage() {
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             {thompsonPlayers.map((player, idx) => (
-              <Link 
+              <Typography
                 key={idx}
-                href={`/tee-times/2025/${player.player?.f_name.toLowerCase()}-${player.player?.l_name.toLowerCase()}`}
-                style={{ textDecoration: 'none' }}
+                variant="body1"
+                sx={{
+                  color: '#1976d2',
+                  py: 0.5,
+                  fontSize: { xs: '1rem', sm: '1.1rem' },
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
               >
-                <Typography
-                  variant="body1"
-                  sx={{
-                    color: '#1976d2',
-                    py: 0.5,
-                    cursor: 'pointer',
-                    textDecoration: 'underline',
-                    fontSize: { xs: '1rem', sm: '1.1rem' },
-                    display: 'flex',
-                    alignItems: 'center',
-                  }}
-                >
-                  {player.player?.f_name} {player.player?.l_name}
-                  <span style={{ color: '#666666', fontSize: 14, marginLeft: 8 }}>
-                    ({player.player?.handicap})
-                  </span>
-                </Typography>
-              </Link>
+                {player.f_name} {player.l_name}
+                <span style={{ color: '#666666', fontSize: 14, marginLeft: 8 }}>
+                  ({player.handicap})
+                </span>
+              </Typography>
             ))}
           </Box>
         </Box>
@@ -150,33 +142,26 @@ export default function TeamsPage() {
               fontWeight: 700,
             }}
           >
-            Team Burgess
+            Team Berastegui
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            {burgessPlayers.map((player, idx) => (
-              <Link 
+            {berasteguiPlayers.map((player, idx) => (
+              <Typography
                 key={idx}
-                href={`/tee-times/2025/${player.player?.f_name.toLowerCase()}-${player.player?.l_name.toLowerCase()}`}
-                style={{ textDecoration: 'none' }}
+                variant="body1"
+                sx={{
+                  color: '#1976d2',
+                  py: 0.5,
+                  fontSize: { xs: '1rem', sm: '1.1rem' },
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
               >
-                <Typography
-                  variant="body1"
-                  sx={{
-                    color: '#1976d2',
-                    py: 0.5,
-                    cursor: 'pointer',
-                    textDecoration: 'underline',
-                    fontSize: { xs: '1rem', sm: '1.1rem' },
-                    display: 'flex',
-                    alignItems: 'center',
-                  }}
-                >
-                  {player.player?.f_name} {player.player?.l_name}
-                  <span style={{ color: '#666666', fontSize: 14, marginLeft: 8 }}>
-                    ({player.player?.handicap})
-                  </span>
-                </Typography>
-              </Link>
+                {player.f_name} {player.l_name}
+                <span style={{ color: '#666666', fontSize: 14, marginLeft: 8 }}>
+                  ({player.handicap})
+                </span>
+              </Typography>
             ))}
           </Box>
         </Box>
