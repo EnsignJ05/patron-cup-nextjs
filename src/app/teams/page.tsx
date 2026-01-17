@@ -28,6 +28,8 @@ export default function TeamsPage() {
 
   const thompsonPlayers = players.filter(p => p.team === 1);
   const berasteguiPlayers = players.filter(p => p.team === 2);
+  const sortByLastName = (list: any[]) =>
+    [...list].sort((a, b) => a.l_name.localeCompare(b.l_name));
 
   return (
     <Box
@@ -102,7 +104,7 @@ export default function TeamsPage() {
             Team Thompson
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            {thompsonPlayers.map((player, idx) => (
+            {sortByLastName(thompsonPlayers).map((player, idx) => (
               <Typography
                 key={idx}
                 variant="body1"
@@ -145,7 +147,7 @@ export default function TeamsPage() {
             Team Berastegui
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            {berasteguiPlayers.map((player, idx) => (
+            {sortByLastName(berasteguiPlayers).map((player, idx) => (
               <Typography
                 key={idx}
                 variant="body1"
