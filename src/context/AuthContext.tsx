@@ -1,50 +1,89 @@
 'use client';
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
+import type { User } from '@supabase/supabase-js';
+import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
+
+type UserRole = 'committee' | 'player' | null;
 
 interface AuthContextType {
-  isAuthenticated: boolean;
-  isAdmin: boolean;
-  login: (username: string, password: string) => Promise<boolean>;
-  logout: () => void;
+  user: User | null;
+  role: UserRole;
+  mustChangePassword: boolean;
+  loading: boolean;
+  signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
+  const [user, setUser] = useState<User | null>(null);
+  const [role, setRole] = useState<UserRole>(null);
+  const [mustChangePassword, setMustChangePassword] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const login = async (username: string, password: string) => {
-    // Check against environment variables
-    const adminUsername = process.env.NEXT_PUBLIC_ADMIN_USERNAME;
-    const adminPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD;
-    const userUsername = process.env.NEXT_PUBLIC_USER_USERNAME;
-    const userPassword = process.env.NEXT_PUBLIC_USER_PASSWORD;
+  useEffect(() => {
+    let isMounted = true;
 
-    // Check for admin login
-    if (username === adminUsername && password === adminPassword) {
-      setIsAuthenticated(true);
-      setIsAdmin(true);
-      return true;
-    }
+    const loadSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!isMounted) return;
+      setUser(data.session?.user ?? null);
+      setLoading(false);
+    };
 
-    // Check for regular user login
-    if (username === userUsername && password === userPassword) {
-      setIsAuthenticated(true);
-      setIsAdmin(false);
-      return true;
-    }
+    loadSession();
 
-    return false;
-  };
+    const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
 
-  const logout = () => {
-    setIsAuthenticated(false);
-    setIsAdmin(false);
+    return () => {
+      isMounted = false;
+      subscription.subscription.unsubscribe();
+    };
+  }, [supabase]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadRole = async () => {
+      if (!user) {
+        if (isMounted) setRole(null);
+        if (isMounted) setMustChangePassword(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role, must_change_password')
+        .eq('player_id', user.id)
+        .single();
+
+      if (!isMounted) return;
+      if (error) {
+        setRole(null);
+        setMustChangePassword(false);
+        return;
+      }
+
+      setRole((data?.role as UserRole) ?? null);
+      setMustChangePassword(Boolean(data?.must_change_password));
+    };
+
+    loadRole();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [supabase, user]);
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, isAdmin, login, logout }}>
+    <AuthContext.Provider value={{ user, role, mustChangePassword, loading, signOut }}>
       {children}
     </AuthContext.Provider>
   );
@@ -56,4 +95,4 @@ export function useAuth() {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-} 
+}

@@ -15,6 +15,7 @@
 
 # next.js
 /.next/
+/.npm-cache/
 /out/
 
 # production
