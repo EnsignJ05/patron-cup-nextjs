@@ -31,7 +31,7 @@ export async function POST(request: Request) {
   const { data: profile } = await supabase
     .from('profiles')
     .select('role')
-    .eq('id', user.id)
+    .eq('player_id', user.id)
     .single();
 
   if (profile?.role !== 'committee') {
@@ -63,7 +63,7 @@ export async function POST(request: Request) {
   }
 
   const { error: profileError } = await adminClient.from('profiles').insert({
-    id: createdUser.user.id,
+    player_id: createdUser.user.id,
     role,
     must_change_password: true,
   });
