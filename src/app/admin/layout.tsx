@@ -11,12 +11,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   const { data: profile } = await supabase
-    .from('profiles')
+    .from('players')
     .select('role')
-    .eq('player_id', user.id)
+    .eq('auth_user_id', user.id)
     .single();
 
-  if (profile?.role !== 'committee') {
+  if (profile?.role !== 'committee' && profile?.role !== 'admin') {
     redirect('/unauthorized');
   }
 

@@ -9,7 +9,7 @@ import {
   Typography,
 } from '@mui/material';
 
-type InviteRole = 'committee' | 'player';
+type InviteRole = 'committee' | 'player' | 'admin';
 
 const PASSWORD_LENGTH = 12;
 const PASSWORD_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
@@ -31,6 +31,8 @@ function generateTempPassword(length = PASSWORD_LENGTH) {
 
 export default function AdminInvitePage() {
   const [email, setEmail] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [role, setRole] = useState<InviteRole>('player');
   const [tempPassword, setTempPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -55,6 +57,8 @@ export default function AdminInvitePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email,
+          firstName,
+          lastName,
           tempPassword,
           role,
         }),
@@ -67,7 +71,12 @@ export default function AdminInvitePage() {
         return;
       }
 
-      setSuccess(`Invite created for ${email}. Temporary password: ${tempPassword}`);
+      setSuccess(`Invite created for ${firstName} ${lastName} (${email}). Temporary password: ${tempPassword}`);
+      // Reset form
+      setEmail('');
+      setFirstName('');
+      setLastName('');
+      setTempPassword('');
     } catch (err) {
       console.error('Invite error:', err);
       setError('An unexpected error occurred.');
@@ -99,10 +108,10 @@ export default function AdminInvitePage() {
         }}
       >
         <Typography variant="h4" sx={{ mb: 1.5, fontWeight: 700, color: '#2c3e50' }}>
-          Admin: Invite User
+          Invite Player
         </Typography>
         <Typography variant="body2" sx={{ mb: 3, color: '#666' }}>
-          Create a user and generate a temporary password. New users must change it on first login.
+          Create a user account and generate a temporary password. New users must change their password on first login.
         </Typography>
 
         {error && (
@@ -118,6 +127,22 @@ export default function AdminInvitePage() {
 
         <form onSubmit={handleSubmit}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField
+                label="First Name"
+                value={firstName}
+                onChange={(event) => setFirstName(event.target.value)}
+                required
+                fullWidth
+              />
+              <TextField
+                label="Last Name"
+                value={lastName}
+                onChange={(event) => setLastName(event.target.value)}
+                required
+                fullWidth
+              />
+            </Box>
             <TextField
               label="Email"
               type="email"
@@ -137,6 +162,7 @@ export default function AdminInvitePage() {
             >
               <option value="player">Player</option>
               <option value="committee">Committee</option>
+              <option value="admin">Admin</option>
             </TextField>
             <TextField
               label="Temporary password"
@@ -154,10 +180,10 @@ export default function AdminInvitePage() {
               type="submit"
               variant="contained"
               size="large"
-              disabled={submitting}
+              disabled={submitting || !firstName || !lastName || !email || !tempPassword}
               sx={{ mt: 1 }}
             >
-              {submitting ? 'Creating invite...' : 'Create invite'}
+              {submitting ? 'Creating invite...' : 'Send Invite'}
             </Button>
           </Box>
         </form>

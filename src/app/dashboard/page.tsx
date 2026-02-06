@@ -1,6 +1,7 @@
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
+import Avatar from '@mui/material/Avatar';
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabaseServer';
 import DashboardProfileForm from '@/components/player/DashboardProfileForm';
@@ -14,26 +15,25 @@ export default async function DashboardPage() {
     redirect('/login?next=/dashboard');
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role, player_id')
-    .eq('player_id', user.id)
+  // Get player record (which contains the role)
+  const { data: playerRecord, error: playerError } = await supabase
+    .from('players')
+    .select('id, first_name, last_name, current_handicap, email, phone, role, profile_image_url')
+    .eq('auth_user_id', user.id)
     .single();
 
-  const role = profile?.role;
-  if (role !== 'player' && role !== 'committee') {
+  console.log('Dashboard page query:', {
+    userId: user.id,
+    email: user.email,
+    playerRecord,
+    playerError
+  });
+
+  const role = playerRecord?.role;
+  if (!role || (role !== 'player' && role !== 'committee' && role !== 'admin')) {
+    console.log('Redirecting to unauthorized - role check failed:', { role });
     redirect('/unauthorized');
   }
-
-  const metadata = user.user_metadata ?? {};
-  const playerId = profile?.player_id;
-  const { data: playerRecord } = playerId
-    ? await supabase
-        .from('player')
-        .select('f_name, l_name, handicap')
-        .eq('id', playerId)
-        .single()
-    : { data: null };
 
   return (
     <Box
@@ -47,6 +47,22 @@ export default async function DashboardPage() {
         px: { xs: 2, sm: 4 },
       }}
     >
+      {playerRecord && (
+        <Avatar
+          src={playerRecord.profile_image_url || undefined}
+          alt={`${playerRecord.first_name} ${playerRecord.last_name}`}
+          sx={{
+            width: 100,
+            height: 100,
+            mb: 2,
+            fontSize: '2.5rem',
+            bgcolor: '#1976d2',
+          }}
+        >
+          {!playerRecord.profile_image_url && `${playerRecord.first_name[0]}${playerRecord.last_name[0]}`}
+        </Avatar>
+      )}
+      
       <Typography variant="h3" sx={{ mb: 3, fontWeight: 700, color: '#2c3e50' }}>
         Player Dashboard
       </Typography>
@@ -65,13 +81,18 @@ export default async function DashboardPage() {
         <Typography variant="body2" sx={{ mb: 2, color: '#666' }}>
           Signed in as {user.email}
         </Typography>
-        <Typography variant="body2" sx={{ mb: 1, color: '#666' }}>
-          Player ID: {playerId ?? 'Not linked'}
-        </Typography>
         {playerRecord && (
-          <Typography variant="body2" sx={{ mb: 3, color: '#666' }}>
-            Player record: {playerRecord.f_name} {playerRecord.l_name} (HCP {playerRecord.handicap ?? 'N/A'})
-          </Typography>
+          <>
+            <Typography variant="body2" sx={{ mb: 1, color: '#666' }}>
+              Name: {playerRecord.first_name} {playerRecord.last_name}
+            </Typography>
+            <Typography variant="body2" sx={{ mb: 1, color: '#666' }}>
+              Role: {playerRecord.role}
+            </Typography>
+            <Typography variant="body2" sx={{ mb: 3, color: '#666' }}>
+              Handicap: {playerRecord.current_handicap ?? 'Not set'}
+            </Typography>
+          </>
         )}
         {!playerRecord && (
           <Typography variant="body2" sx={{ mb: 3, color: '#666' }}>
@@ -82,9 +103,12 @@ export default async function DashboardPage() {
           Update your profile
         </Typography>
         <DashboardProfileForm
-          preferredName={metadata.preferred_name ?? ''}
-          phone={metadata.phone ?? ''}
-          handicap={metadata.handicap ?? ''}
+          playerId={playerRecord?.id ?? ''}
+          firstName={playerRecord?.first_name ?? ''}
+          lastName={playerRecord?.last_name ?? ''}
+          phone={playerRecord?.phone ?? ''}
+          handicap={playerRecord?.current_handicap?.toString() ?? ''}
+          profileImageUrl={playerRecord?.profile_image_url ?? ''}
         />
       </Paper>
     </Box>
