@@ -1,6 +1,7 @@
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
+import Avatar from '@mui/material/Avatar';
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabaseServer';
 import DashboardProfileForm from '@/components/player/DashboardProfileForm';
@@ -17,7 +18,7 @@ export default async function DashboardPage() {
   // Get player record (which contains the role)
   const { data: playerRecord, error: playerError } = await supabase
     .from('players')
-    .select('id, first_name, last_name, current_handicap, email, phone, role')
+    .select('id, first_name, last_name, current_handicap, email, phone, role, profile_image_url')
     .eq('auth_user_id', user.id)
     .single();
 
@@ -46,6 +47,22 @@ export default async function DashboardPage() {
         px: { xs: 2, sm: 4 },
       }}
     >
+      {playerRecord && (
+        <Avatar
+          src={playerRecord.profile_image_url || undefined}
+          alt={`${playerRecord.first_name} ${playerRecord.last_name}`}
+          sx={{
+            width: 100,
+            height: 100,
+            mb: 2,
+            fontSize: '2.5rem',
+            bgcolor: '#1976d2',
+          }}
+        >
+          {!playerRecord.profile_image_url && `${playerRecord.first_name[0]}${playerRecord.last_name[0]}`}
+        </Avatar>
+      )}
+      
       <Typography variant="h3" sx={{ mb: 3, fontWeight: 700, color: '#2c3e50' }}>
         Player Dashboard
       </Typography>
@@ -91,6 +108,7 @@ export default async function DashboardPage() {
           lastName={playerRecord?.last_name ?? ''}
           phone={playerRecord?.phone ?? ''}
           handicap={playerRecord?.current_handicap?.toString() ?? ''}
+          profileImageUrl={playerRecord?.profile_image_url ?? ''}
         />
       </Paper>
     </Box>
