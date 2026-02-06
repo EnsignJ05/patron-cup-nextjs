@@ -6,13 +6,16 @@ import TextField from '@mui/material/TextField';
 import Alert from '@mui/material/Alert';
 
 type ProfileFormProps = {
-  preferredName: string;
+  playerId: string;
+  firstName: string;
+  lastName: string;
   phone: string;
   handicap: string;
 };
 
-export default function DashboardProfileForm({ preferredName, phone, handicap }: ProfileFormProps) {
-  const [nameValue, setNameValue] = useState(preferredName);
+export default function DashboardProfileForm({ playerId, firstName, lastName, phone, handicap }: ProfileFormProps) {
+  const [firstNameValue, setFirstNameValue] = useState(firstName);
+  const [lastNameValue, setLastNameValue] = useState(lastName);
   const [phoneValue, setPhoneValue] = useState(phone);
   const [handicapValue, setHandicapValue] = useState(handicap);
   const [saving, setSaving] = useState(false);
@@ -30,7 +33,8 @@ export default function DashboardProfileForm({ preferredName, phone, handicap }:
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          preferredName: nameValue,
+          firstName: firstNameValue,
+          lastName: lastNameValue,
           phone: phoneValue,
           handicap: handicapValue,
         }),
@@ -55,10 +59,18 @@ export default function DashboardProfileForm({ preferredName, phone, handicap }:
       {error && <Alert severity="error">{error}</Alert>}
       {success && <Alert severity="success">{success}</Alert>}
       <TextField
-        label="Preferred name"
-        value={nameValue}
-        onChange={(event) => setNameValue(event.target.value)}
+        label="First name"
+        value={firstNameValue}
+        onChange={(event) => setFirstNameValue(event.target.value)}
         fullWidth
+        required
+      />
+      <TextField
+        label="Last name"
+        value={lastNameValue}
+        onChange={(event) => setLastNameValue(event.target.value)}
+        fullWidth
+        required
       />
       <TextField
         label="Phone"
@@ -68,6 +80,7 @@ export default function DashboardProfileForm({ preferredName, phone, handicap }:
       />
       <TextField
         label="Handicap"
+        type="number"
         value={handicapValue}
         onChange={(event) => setHandicapValue(event.target.value)}
         fullWidth

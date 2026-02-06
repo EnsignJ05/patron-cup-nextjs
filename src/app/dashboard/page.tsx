@@ -14,26 +14,25 @@ export default async function DashboardPage() {
     redirect('/login?next=/dashboard');
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role, player_id')
-    .eq('player_id', user.id)
+  // Get player record (which contains the role)
+  const { data: playerRecord, error: playerError } = await supabase
+    .from('players')
+    .select('id, first_name, last_name, current_handicap, email, phone, role')
+    .eq('auth_user_id', user.id)
     .single();
 
-  const role = profile?.role;
-  if (role !== 'player' && role !== 'committee') {
+  console.log('Dashboard page query:', {
+    userId: user.id,
+    email: user.email,
+    playerRecord,
+    playerError
+  });
+
+  const role = playerRecord?.role;
+  if (!role || (role !== 'player' && role !== 'committee' && role !== 'admin')) {
+    console.log('Redirecting to unauthorized - role check failed:', { role });
     redirect('/unauthorized');
   }
-
-  const metadata = user.user_metadata ?? {};
-  const playerId = profile?.player_id;
-  const { data: playerRecord } = playerId
-    ? await supabase
-        .from('player')
-        .select('f_name, l_name, handicap')
-        .eq('id', playerId)
-        .single()
-    : { data: null };
 
   return (
     <Box
@@ -65,13 +64,18 @@ export default async function DashboardPage() {
         <Typography variant="body2" sx={{ mb: 2, color: '#666' }}>
           Signed in as {user.email}
         </Typography>
-        <Typography variant="body2" sx={{ mb: 1, color: '#666' }}>
-          Player ID: {playerId ?? 'Not linked'}
-        </Typography>
         {playerRecord && (
-          <Typography variant="body2" sx={{ mb: 3, color: '#666' }}>
-            Player record: {playerRecord.f_name} {playerRecord.l_name} (HCP {playerRecord.handicap ?? 'N/A'})
-          </Typography>
+          <>
+            <Typography variant="body2" sx={{ mb: 1, color: '#666' }}>
+              Name: {playerRecord.first_name} {playerRecord.last_name}
+            </Typography>
+            <Typography variant="body2" sx={{ mb: 1, color: '#666' }}>
+              Role: {playerRecord.role}
+            </Typography>
+            <Typography variant="body2" sx={{ mb: 3, color: '#666' }}>
+              Handicap: {playerRecord.current_handicap ?? 'Not set'}
+            </Typography>
+          </>
         )}
         {!playerRecord && (
           <Typography variant="body2" sx={{ mb: 3, color: '#666' }}>
@@ -82,9 +86,11 @@ export default async function DashboardPage() {
           Update your profile
         </Typography>
         <DashboardProfileForm
-          preferredName={metadata.preferred_name ?? ''}
-          phone={metadata.phone ?? ''}
-          handicap={metadata.handicap ?? ''}
+          playerId={playerRecord?.id ?? ''}
+          firstName={playerRecord?.first_name ?? ''}
+          lastName={playerRecord?.last_name ?? ''}
+          phone={playerRecord?.phone ?? ''}
+          handicap={playerRecord?.current_handicap?.toString() ?? ''}
         />
       </Paper>
     </Box>
