@@ -3,7 +3,7 @@ import { createContext, useContext, useEffect, useMemo, useState, ReactNode } fr
 import type { User } from '@supabase/supabase-js';
 import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
 
-type UserRole = 'committee' | 'player' | null;
+type UserRole = 'committee' | 'player' | 'admin' | null;
 
 interface AuthContextType {
   user: User | null;
