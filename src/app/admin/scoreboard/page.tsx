@@ -9,8 +9,6 @@ import { getAllPlayersAndMatches } from '@/lib/getAllPlayersAndMatches';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import ToggleButton from '@mui/material/ToggleButton';
 import { supabase } from '@/lib/supabaseClient';
-import { useAuth } from '@/context/AuthContext';
-import { useRouter } from 'next/navigation';
 
 function TabPanel(props: { children?: React.ReactNode; index: number; value: number }) {
   const { children, value, index, ...other } = props;
@@ -103,17 +101,10 @@ async function updateRecordsForResult(match: any, result: string | null, delta: 
 }
 
 export default function AdminScoreboardPage() {
-  const { isAuthenticated, isAdmin } = useAuth();
-  const router = useRouter();
   const [selectedTab, setSelectedTab] = useState(0);
   const [matches, setMatches] = useState<any[]>([]);
 
   useEffect(() => {
-    if (!isAuthenticated || !isAdmin) {
-      router.push('/login');
-      return;
-    }
-
     getAllPlayersAndMatches()
       .then(({ matches, players }) => {
         const playerMap = new Map(players.map((p: any) => [p.id, p]));
@@ -130,7 +121,7 @@ export default function AdminScoreboardPage() {
         console.error(err);
         setMatches([]);
       });
-  }, [isAuthenticated, isAdmin, router]);
+  }, []);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setSelectedTab(newValue);
@@ -188,10 +179,6 @@ export default function AdminScoreboardPage() {
   const bandonTotals = getTeamTotals(bandonMatches);
   const teamThompsonScore = bandonTotals.thompson + pacificTotals.thompson + sheepRanchTotals.thompson;
   const teamBurgessScore = bandonTotals.burgess + pacificTotals.burgess + sheepRanchTotals.burgess;
-
-  if (!isAuthenticated || !isAdmin) {
-    return null;
-  }
 
   return (
     <Box
