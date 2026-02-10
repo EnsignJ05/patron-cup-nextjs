@@ -3,24 +3,21 @@ import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
 import Avatar from '@mui/material/Avatar';
 import { redirect } from 'next/navigation';
-import { createSupabaseServerClient } from '@/lib/supabaseServer';
+import { getCachedUser, getCachedPlayerProfile } from '@/lib/supabaseServer';
 import DashboardProfileForm from '@/components/player/DashboardProfileForm';
 
+// Revalidate every 60 seconds for better performance
+export const revalidate = 60;
+
 export default async function DashboardPage() {
-  const supabase = await createSupabaseServerClient();
-  const { data } = await supabase.auth.getUser();
-  const user = data.user;
+  const user = await getCachedUser();
 
   if (!user) {
     redirect('/login?next=/dashboard');
   }
 
-  // Get player record (which contains the role)
-  const { data: playerRecord, error: playerError } = await supabase
-    .from('players')
-    .select('id, first_name, last_name, current_handicap, email, phone, role, profile_image_url')
-    .eq('auth_user_id', user.id)
-    .single();
+  // Get player record (which contains the role) - reuses cached data from layout
+  const { data: playerRecord, error: playerError } = await getCachedPlayerProfile(user.id);
 
   console.log('Dashboard page query:', {
     userId: user.id,

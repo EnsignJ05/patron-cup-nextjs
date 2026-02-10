@@ -55,9 +55,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       const { data, error } = await supabase
-        .from('profiles')
-        .select('role, must_change_password')
-        .eq('player_id', user.id)
+        .from('players')
+        .select('role')
+        .eq('auth_user_id', user.id)
         .single();
 
       if (!isMounted) return;
@@ -68,7 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       setRole((data?.role as UserRole) ?? null);
-      setMustChangePassword(Boolean(data?.must_change_password));
+      setMustChangePassword(false); // Can add must_change_password to players table if needed
     };
 
     loadRole();

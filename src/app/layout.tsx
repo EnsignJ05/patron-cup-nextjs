@@ -35,8 +35,8 @@ function NavigationContent() {
   const { user, role, signOut } = useAuth();
   const router = useRouter();
   const isAuthenticated = Boolean(user);
-  const isAdmin = role === 'committee';
-  const canAccessDashboard = role === 'player' || role === 'committee';
+  const isAdmin = role === 'committee' || role === 'admin';
+  const canAccessDashboard = role === 'player' || role === 'committee' || role === 'admin';
 
   const handleLogout = async () => {
     await signOut();
@@ -107,32 +107,53 @@ function NavigationContent() {
             </Button>
           ))}
           {isAuthenticated && canAccessDashboard && (
-            <Button
-              component={Link}
-              href="/dashboard"
-              sx={{
-                color: '#2c3e50',
-                fontWeight: 600,
-                fontSize: 18,
-                textTransform: 'none',
-                fontFamily: inter.style.fontFamily,
-                background: 'none',
-                boxShadow: 'none',
-                px: 1.5,
-                '&:hover': {
-                  background: 'rgba(0,0,0,0.03)',
-                },
-              }}
-            >
-              Dashboard
-            </Button>
+            <>
+              <Button
+                component={Link}
+                href="/dashboard"
+                sx={{
+                  color: '#2c3e50',
+                  fontWeight: 600,
+                  fontSize: 18,
+                  textTransform: 'none',
+                  fontFamily: inter.style.fontFamily,
+                  background: 'none',
+                  boxShadow: 'none',
+                  px: 1.5,
+                  '&:hover': {
+                    background: 'rgba(0,0,0,0.03)',
+                  },
+                }}
+              >
+                Dashboard
+              </Button>
+              <Button
+                component={Link}
+                href="/players"
+                sx={{
+                  color: '#2c3e50',
+                  fontWeight: 600,
+                  fontSize: 18,
+                  textTransform: 'none',
+                  fontFamily: inter.style.fontFamily,
+                  background: 'none',
+                  boxShadow: 'none',
+                  px: 1.5,
+                  '&:hover': {
+                    background: 'rgba(0,0,0,0.03)',
+                  },
+                }}
+              >
+                Players
+              </Button>
+            </>
           )}
           {isAuthenticated && (
             <>
               {isAdmin && (
                 <Button
                   component={Link}
-                  href="/admin/scoreboard"
+                  href="/admin/dashboard"
                   sx={{
                     color: '#2c3e50',
                     fontWeight: 600,
@@ -232,25 +253,46 @@ function NavigationContent() {
                 </ListItem>
               ))}
               {isAuthenticated && canAccessDashboard && (
-                <ListItem disablePadding>
-                  <ListItemButton
-                    component={Link}
-                    href="/dashboard"
-                    onClick={() => setDrawerOpen(false)}
-                    sx={{
-                      fontWeight: 600,
-                      fontSize: 18,
-                      fontFamily: inter.style.fontFamily,
-                      color: '#2c3e50',
-                      py: 2,
-                      '&:hover': {
-                        background: 'rgba(0,0,0,0.03)',
-                      },
-                    }}
-                  >
-                    <ListItemText primary="Dashboard" />
-                  </ListItemButton>
-                </ListItem>
+                <>
+                  <ListItem disablePadding>
+                    <ListItemButton
+                      component={Link}
+                      href="/dashboard"
+                      onClick={() => setDrawerOpen(false)}
+                      sx={{
+                        fontWeight: 600,
+                        fontSize: 18,
+                        fontFamily: inter.style.fontFamily,
+                        color: '#2c3e50',
+                        py: 2,
+                        '&:hover': {
+                          background: 'rgba(0,0,0,0.03)',
+                        },
+                      }}
+                    >
+                      <ListItemText primary="Dashboard" />
+                    </ListItemButton>
+                  </ListItem>
+                  <ListItem disablePadding>
+                    <ListItemButton
+                      component={Link}
+                      href="/players"
+                      onClick={() => setDrawerOpen(false)}
+                      sx={{
+                        fontWeight: 600,
+                        fontSize: 18,
+                        fontFamily: inter.style.fontFamily,
+                        color: '#2c3e50',
+                        py: 2,
+                        '&:hover': {
+                          background: 'rgba(0,0,0,0.03)',
+                        },
+                      }}
+                    >
+                      <ListItemText primary="Players" />
+                    </ListItemButton>
+                  </ListItem>
+                </>
               )}
               {isAuthenticated && (
                 <>

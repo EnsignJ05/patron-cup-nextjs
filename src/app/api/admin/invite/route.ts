@@ -102,6 +102,7 @@ export async function POST(request: Request) {
       .update({ 
         auth_user_id: createdUser.user.id,
         role: role,
+        status: 'active',
       })
       .eq('id', existingPlayer.id);
 
@@ -117,7 +118,7 @@ export async function POST(request: Request) {
       first_name: firstName || 'New',
       last_name: lastName || 'Player',
       role: role,
-      status: 'pending',
+      status: 'active',
     });
 
     if (playerError) {
