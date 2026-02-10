@@ -9,14 +9,15 @@ import PlayerMatches from '@/components/player/PlayerMatches';
 import PlayerRerounds from '@/components/player/PlayerRerounds';
 import PlayerStats from '@/components/player/PlayerStats';
 
-export default async function PlayerProfilePage({ params }: { params: { playerId: string } }) {
+export default async function PlayerProfilePage({ params }: { params: Promise<{ playerId: string }> }) {
   const supabase = await createSupabaseServerClient();
+  const { playerId } = await params;
   
   // Get the player info
   const { data: player, error } = await supabase
     .from('players')
     .select('*')
-    .eq('id', params.playerId)
+    .eq('id', playerId)
     .single();
 
   if (error || !player) {
@@ -47,7 +48,7 @@ export default async function PlayerProfilePage({ params }: { params: { playerId
   const { data: matchPlayers } = await supabase
     .from('match_players')
     .select('is_winner, match:matches(is_halved)')
-    .eq('player_id', params.playerId);
+    .eq('player_id', playerId);
 
   let wins = 0;
   let losses = 0;
