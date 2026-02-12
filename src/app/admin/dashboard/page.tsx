@@ -12,6 +12,7 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import ScoreboardIcon from '@mui/icons-material/Scoreboard';
 import FlightIcon from '@mui/icons-material/Flight';
 import HotelIcon from '@mui/icons-material/Hotel';
+import LockResetIcon from '@mui/icons-material/LockReset';
 
 const adminSections = [
   {
@@ -20,6 +21,13 @@ const adminSections = [
     href: '/admin/players',
     icon: PeopleIcon,
     color: '#3498db',
+  },
+  {
+    title: 'Reset Passwords',
+    description: 'Set temporary passwords and require password changes',
+    href: '/admin/reset-password',
+    icon: LockResetIcon,
+    color: '#1f8a70',
   },
   {
     title: 'Events',
