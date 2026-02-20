@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabaseServer';
 import { createSupabaseAdminClient } from '@/lib/supabaseAdmin';
+import { isAdminRole, tempPasswordPolicy } from '@/lib/authConfig';
+import { fetchPlayerRoleByAuthUserId } from '@/lib/repositories/players';
 
 function normalizeEmail(value: unknown) {
   if (typeof value !== 'string') return '';
@@ -21,13 +23,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { data: currentPlayer } = await supabase
-    .from('players')
-    .select('role')
-    .eq('auth_user_id', user.id)
-    .single();
+  const { data: currentPlayer } = await fetchPlayerRoleByAuthUserId(supabase, user.id);
 
-  if (!currentPlayer || !['committee', 'admin'].includes(currentPlayer.role)) {
+  if (!currentPlayer || !isAdminRole(currentPlayer.role)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
@@ -39,8 +37,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid payload.' }, { status: 400 });
   }
 
-  if (tempPassword.length < 8) {
-    return NextResponse.json({ error: 'Temporary password must be at least 8 characters.' }, { status: 400 });
+  if (tempPassword.length < tempPasswordPolicy.minLength) {
+    return NextResponse.json(
+      { error: `Temporary password must be at least ${tempPasswordPolicy.minLength} characters.` },
+      { status: 400 },
+    );
   }
 
   const adminClient = createSupabaseAdminClient();

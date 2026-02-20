@@ -16,6 +16,7 @@ import ListItemText from '@mui/material/ListItemText';
 import { Analytics } from '@vercel/analytics/react';
 import { Inter } from 'next/font/google';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { canAccessDashboard, isAdminRole } from '@/lib/authConfig';
 import { useRouter } from 'next/navigation';
 import './globals.css';
 
@@ -35,8 +36,8 @@ function NavigationContent() {
   const { user, role, signOut } = useAuth();
   const router = useRouter();
   const isAuthenticated = Boolean(user);
-  const isAdmin = role === 'committee' || role === 'admin';
-  const canAccessDashboard = role === 'player' || role === 'committee' || role === 'admin';
+  const isAdmin = isAdminRole(role);
+  const hasDashboardAccess = canAccessDashboard(role);
 
   const handleLogout = async () => {
     await signOut();
@@ -106,7 +107,7 @@ function NavigationContent() {
               {link.label}
             </Button>
           ))}
-          {isAuthenticated && canAccessDashboard && (
+          {isAuthenticated && hasDashboardAccess && (
             <>
               <Button
                 component={Link}
@@ -252,7 +253,7 @@ function NavigationContent() {
                   </ListItemButton>
                 </ListItem>
               ))}
-              {isAuthenticated && canAccessDashboard && (
+              {isAuthenticated && hasDashboardAccess && (
                 <>
                   <ListItem disablePadding>
                     <ListItemButton

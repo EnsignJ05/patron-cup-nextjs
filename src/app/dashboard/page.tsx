@@ -4,6 +4,7 @@ import Paper from '@mui/material/Paper';
 import Avatar from '@mui/material/Avatar';
 import { redirect } from 'next/navigation';
 import { getCachedUser, getCachedPlayerProfile } from '@/lib/supabaseServer';
+import { canAccessDashboard } from '@/lib/authConfig';
 import DashboardProfileForm from '@/components/player/DashboardProfileForm';
 
 // Revalidate every 60 seconds for better performance
@@ -26,8 +27,8 @@ export default async function DashboardPage() {
     playerError
   });
 
-  const role = playerRecord?.role;
-  if (!role || (role !== 'player' && role !== 'committee' && role !== 'admin')) {
+  const role = playerRecord?.role ?? null;
+  if (!canAccessDashboard(role)) {
     console.log('Redirecting to unauthorized - role check failed:', { role });
     redirect('/unauthorized');
   }
