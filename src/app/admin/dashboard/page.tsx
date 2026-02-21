@@ -65,9 +65,9 @@ const adminSections = [
     color: '#9b59b6',
   },
   {
-    title: 'Tee Times',
-    description: 'Schedule tee times and assign players',
-    href: '/admin/tee-times',
+    title: 'Match Setup',
+    description: 'Assign players to matches and finalize pairings',
+    href: '/admin/matches/setup',
     icon: AccessTimeIcon,
     color: '#f39c12',
   },
