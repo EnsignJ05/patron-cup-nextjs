@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Table from '@mui/material/Table';
@@ -47,20 +47,9 @@ export default function EventParticipantsPage() {
   const [editingParticipant, setEditingParticipant] = useState<ParticipantWithPlayer | null>(null);
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
 
-  const supabase = createSupabaseBrowserClient();
+  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
-  useEffect(() => {
-    fetchEvents();
-    fetchPlayers();
-  }, []);
-
-  useEffect(() => {
-    if (selectedEvent) {
-      fetchParticipants();
-    }
-  }, [selectedEvent]);
-
-  async function fetchEvents() {
+  const fetchEvents = useCallback(async () => {
     const { data, error } = await supabase
       .from('events')
       .select('*')
@@ -74,9 +63,9 @@ export default function EventParticipantsPage() {
         setSelectedEvent(data[0].id);
       }
     }
-  }
+  }, [supabase]);
 
-  async function fetchPlayers() {
+  const fetchPlayers = useCallback(async () => {
     const { data, error } = await supabase
       .from('players')
       .select('*')
@@ -88,9 +77,9 @@ export default function EventParticipantsPage() {
     } else {
       setPlayers(data || []);
     }
-  }
+  }, [supabase]);
 
-  async function fetchParticipants() {
+  const fetchParticipants = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('event_participants')
@@ -104,7 +93,18 @@ export default function EventParticipantsPage() {
       setParticipants(data || []);
     }
     setLoading(false);
-  }
+  }, [selectedEvent, supabase]);
+
+  useEffect(() => {
+    fetchEvents();
+    fetchPlayers();
+  }, [fetchEvents, fetchPlayers]);
+
+  useEffect(() => {
+    if (selectedEvent) {
+      fetchParticipants();
+    }
+  }, [selectedEvent, fetchParticipants]);
 
   const participantPlayerIds = participants.map((p) => p.player_id);
   const availablePlayers = players.filter((p) => !participantPlayerIds.includes(p.id));

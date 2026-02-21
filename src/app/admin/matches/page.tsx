@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
@@ -45,7 +45,7 @@ export default function MatchesAdminPage() {
 
   const matchTypeOptions = ['Two Man Better Ball', 'Head to Head'];
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     
     const [matchesRes, eventsRes, coursesRes] = await Promise.all([
@@ -64,11 +64,11 @@ export default function MatchesAdminPage() {
     if (coursesRes.data) setCourses(coursesRes.data);
     
     setLoading(false);
-  };
+  }, [supabase]);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const handleAdd = () => {
     const activeEvent = events.find(e => e.is_active) || events[0];
@@ -317,7 +317,7 @@ export default function MatchesAdminPage() {
               <Select
                 value={editingMatch?.event_id || ''}
                 label="Event"
-                onChange={(e) => setEditingMatch({ ...editingMatch, event_id: e.target.value, team1_id: null, team2_id: null })}
+                onChange={(e) => setEditingMatch({ ...editingMatch, event_id: e.target.value })}
               >
                 {events.map((event) => (
                   <MenuItem key={event.id} value={event.id}>

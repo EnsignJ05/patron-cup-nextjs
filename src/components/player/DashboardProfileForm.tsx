@@ -9,7 +9,6 @@ import Avatar from '@mui/material/Avatar';
 import IconButton from '@mui/material/IconButton';
 import PhotoCamera from '@mui/icons-material/PhotoCamera';
 import CircularProgress from '@mui/material/CircularProgress';
-import Typography from '@mui/material/Typography';
 
 type ProfileFormProps = {
   playerId: string;
@@ -21,7 +20,7 @@ type ProfileFormProps = {
   readOnly?: boolean;
 };
 
-export default function DashboardProfileForm({ playerId, firstName, lastName, phone, handicap, profileImageUrl = '', readOnly = false }: ProfileFormProps) {
+export default function DashboardProfileForm({ firstName, lastName, phone, handicap, profileImageUrl = '', readOnly = false }: ProfileFormProps) {
   const router = useRouter();
   const [firstNameValue, setFirstNameValue] = useState(firstName);
   const [lastNameValue, setLastNameValue] = useState(lastName);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -89,7 +89,7 @@ export default function MatchSetupAdminPage() {
     loadEvents();
   }, [supabase, searchParams]);
 
-  const fetchEventData = async (eventId: string) => {
+  const fetchEventData = useCallback(async (eventId: string) => {
     setLoading(true);
     setError('');
 
@@ -126,12 +126,12 @@ export default function MatchSetupAdminPage() {
     setTeamRosters(rosterRes.data || []);
     setMatchPlayers(matchPlayersRes.data || []);
     setLoading(false);
-  };
+  }, [supabase]);
 
   useEffect(() => {
     if (!selectedEventId) return;
     fetchEventData(selectedEventId);
-  }, [selectedEventId]);
+  }, [selectedEventId, fetchEventData]);
 
   const matchDates = useMemo(() => {
     const dates = Array.from(new Set(matches.map((match) => match.match_date))).sort();

@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Link from 'next/link';
@@ -15,13 +15,9 @@ export default function TeamsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const supabase = createSupabaseBrowserClient();
+  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
-  useEffect(() => {
-    fetchTeamsAndPlayers();
-  }, []);
-
-  async function fetchTeamsAndPlayers() {
+  const fetchTeamsAndPlayers = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
@@ -75,7 +71,11 @@ export default function TeamsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [supabase]);
+
+  useEffect(() => {
+    fetchTeamsAndPlayers();
+  }, [fetchTeamsAndPlayers]);
 
   // Determine team colors dynamically or use defaults
   const getTeamColor = (teamName: string, color?: string | null) => {

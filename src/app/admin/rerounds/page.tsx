@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Table from '@mui/material/Table';
@@ -50,21 +50,9 @@ export default function ReroundsPage() {
   const [selectedReround, setSelectedReround] = useState<ReroundWithRelations | null>(null);
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
 
-  const supabase = createSupabaseBrowserClient();
+  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
-  useEffect(() => {
-    fetchEvents();
-    fetchPlayers();
-    fetchCourses();
-  }, []);
-
-  useEffect(() => {
-    if (selectedEvent) {
-      fetchRerounds();
-    }
-  }, [selectedEvent]);
-
-  async function fetchEvents() {
+  const fetchEvents = useCallback(async () => {
     const { data, error } = await supabase
       .from('events')
       .select('*')
@@ -78,9 +66,9 @@ export default function ReroundsPage() {
         setSelectedEvent(data[0].id);
       }
     }
-  }
+  }, [supabase]);
 
-  async function fetchPlayers() {
+  const fetchPlayers = useCallback(async () => {
     const { data, error } = await supabase
       .from('players')
       .select('*')
@@ -92,9 +80,9 @@ export default function ReroundsPage() {
     } else {
       setPlayers(data || []);
     }
-  }
+  }, [supabase]);
 
-  async function fetchCourses() {
+  const fetchCourses = useCallback(async () => {
     const { data, error } = await supabase.from('courses').select('*').order('name');
 
     if (error) {
@@ -102,9 +90,9 @@ export default function ReroundsPage() {
     } else {
       setCourses(data || []);
     }
-  }
+  }, [supabase]);
 
-  async function fetchRerounds() {
+  const fetchRerounds = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('rerounds')
@@ -119,7 +107,19 @@ export default function ReroundsPage() {
       setRerounds(data || []);
     }
     setLoading(false);
-  }
+  }, [selectedEvent, supabase]);
+
+  useEffect(() => {
+    fetchEvents();
+    fetchPlayers();
+    fetchCourses();
+  }, [fetchEvents, fetchPlayers, fetchCourses]);
+
+  useEffect(() => {
+    if (selectedEvent) {
+      fetchRerounds();
+    }
+  }, [selectedEvent, fetchRerounds]);
 
   async function handleSave(formData: FormData) {
     const reroundData = {

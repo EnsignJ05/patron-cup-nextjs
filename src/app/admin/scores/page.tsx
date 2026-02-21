@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
@@ -44,7 +44,7 @@ export default function ScoresAdminPage() {
   const [selectedEventId, setSelectedEventId] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     
     const [scoresRes, eventsRes, coursesRes, playersRes] = await Promise.all([
@@ -65,11 +65,11 @@ export default function ScoresAdminPage() {
     if (playersRes.data) setPlayers(playersRes.data);
     
     setLoading(false);
-  };
+  }, [supabase]);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const handleAdd = () => {
     const activeEvent = events.find(e => e.is_active) || events[0];
