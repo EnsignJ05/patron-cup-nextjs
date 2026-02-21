@@ -7,8 +7,8 @@ import { getCachedUser, getCachedPlayerProfile } from '@/lib/supabaseServer';
 import { canAccessDashboard } from '@/lib/authConfig';
 import DashboardProfileForm from '@/components/player/DashboardProfileForm';
 
-// Revalidate every 60 seconds for better performance
-export const revalidate = 60;
+// Revalidate every 5 seconds to show updated profile images quickly
+export const revalidate = 5;
 
 export default async function DashboardPage() {
   const user = await getCachedUser();

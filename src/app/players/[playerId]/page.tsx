@@ -6,7 +6,7 @@ import { createSupabaseServerClient } from '@/lib/supabaseServer';
 import { notFound } from 'next/navigation';
 import DashboardProfileForm from '@/components/player/DashboardProfileForm';
 import PlayerMatches from '@/components/player/PlayerMatches';
-import PlayerRerounds from '@/components/player/PlayerRerounds';
+// import PlayerRerounds from '@/components/player/PlayerRerounds';
 import PlayerStats from '@/components/player/PlayerStats';
 
 export default async function PlayerProfilePage({ params }: { params: Promise<{ playerId: string }> }) {
@@ -37,11 +37,10 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
       .eq('auth_user_id', currentUser.id)
       .single();
 
-    // Can edit if: same player, admin, or committee
+    // Can edit if: same player or admin
     canEdit = 
       currentPlayerRecord?.id === player.id || 
-      currentPlayerRecord?.role === 'admin' || 
-      currentPlayerRecord?.role === 'committee';
+      currentPlayerRecord?.role === 'admin';
   }
 
   // Calculate player's record from match_players
@@ -161,7 +160,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
       </Paper>
 
       {/* Player Rerounds */}
-      <Paper
+      {/* <Paper
         elevation={2}
         sx={{
           width: '100%',
@@ -174,7 +173,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
           Re-Rounds
         </Typography>
         <PlayerRerounds playerName={`${player.first_name} ${player.last_name}`} />
-      </Paper>
+      </Paper> */}
     </Box>
   );
 }
