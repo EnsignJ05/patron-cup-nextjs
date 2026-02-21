@@ -41,6 +41,9 @@ export default function MatchesAdminPage() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [matchToDelete, setMatchToDelete] = useState<Match | null>(null);
   const [selectedEventId, setSelectedEventId] = useState<string>('');
+  const [bulkPlayerCount, setBulkPlayerCount] = useState('');
+
+  const matchTypeOptions = ['Two Man Better Ball', 'Head to Head'];
 
   const fetchData = async () => {
     setLoading(true);
@@ -71,11 +74,11 @@ export default function MatchesAdminPage() {
     const activeEvent = events.find(e => e.is_active) || events[0];
     setEditingMatch({ 
       event_id: selectedEventId || activeEvent?.id,
-      match_number: 1,
       match_date: new Date().toISOString().split('T')[0],
-      match_type: 'Two-Man Better Ball',
+      match_type: 'Two Man Better Ball',
       is_halved: false,
     });
+    setBulkPlayerCount('');
     setDialogOpen(true);
   };
 
@@ -113,7 +116,7 @@ export default function MatchesAdminPage() {
 
     const matchData = {
       event_id: editingMatch.event_id,
-      match_number: editingMatch.match_number,
+      match_number: editingMatch.match_number || 1,
       group_number: editingMatch.group_number || null,
       course_id: editingMatch.course_id || null,
       match_date: editingMatch.match_date,
@@ -122,6 +125,12 @@ export default function MatchesAdminPage() {
       winner_team_id: editingMatch.winner_team_id || null,
       is_halved: editingMatch.is_halved || false,
       notes: editingMatch.notes || null,
+    };
+
+    const getPlayersPerMatch = (matchType: string) => {
+      if (matchType === 'Two Man Better Ball') return 4;
+      if (matchType === 'Head to Head') return 2;
+      return null;
     };
 
     if (editingMatch.id) {
@@ -136,15 +145,49 @@ export default function MatchesAdminPage() {
       }
       setSuccess('Match updated successfully');
     } else {
+      const totalPlayers = parseInt(bulkPlayerCount, 10);
+      const playersPerMatch = getPlayersPerMatch(editingMatch.match_type || '');
+
+      if (!totalPlayers || totalPlayers <= 0) {
+        setError('Please enter a valid number of players.');
+        return;
+      }
+
+      if (!playersPerMatch) {
+        setError('Please select a valid match type.');
+        return;
+      }
+
+      if (totalPlayers % playersPerMatch !== 0) {
+        setError(`Total players must be divisible by ${playersPerMatch}.`);
+        return;
+      }
+
+      const matchCount = totalPlayers / playersPerMatch;
+      const existingMaxMatchNumber = Math.max(
+        0,
+        ...matches
+          .filter((match) => match.event_id === editingMatch.event_id)
+          .map((match) => match.match_number || 0)
+      );
+      const bulkMatches = Array.from({ length: matchCount }, (_, index) => ({
+        ...matchData,
+        match_number: existingMaxMatchNumber + index + 1,
+        group_number: null,
+        match_time: null,
+        winner_team_id: null,
+        is_halved: false,
+      }));
+
       const { error } = await supabase
         .from('matches')
-        .insert([matchData]);
+        .insert(bulkMatches);
 
       if (error) {
         setError(error.message);
         return;
       }
-      setSuccess('Match added successfully');
+      setSuccess(`${matchCount} matches added successfully`);
     }
 
     setDialogOpen(false);
@@ -162,7 +205,9 @@ export default function MatchesAdminPage() {
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleDateString();
+    const [year, month, day] = dateStr.split('-').map(Number);
+    if (!year || !month || !day) return dateStr;
+    return new Date(year, month - 1, day).toLocaleDateString();
   };
 
   return (
@@ -186,7 +231,7 @@ export default function MatchesAdminPage() {
             onClick={handleAdd}
             sx={{ bgcolor: '#2c3e50' }}
           >
-            Add Match
+            Add Matches
           </Button>
         </Box>
       </Box>
@@ -214,10 +259,8 @@ export default function MatchesAdminPage() {
         <Table>
           <TableHead>
             <TableRow sx={{ bgcolor: '#2c3e50' }}>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>#</TableCell>
               <TableCell sx={{ color: 'white', fontWeight: 600 }}>Date</TableCell>
               <TableCell sx={{ color: 'white', fontWeight: 600 }}>Time</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Group</TableCell>
               <TableCell sx={{ color: 'white', fontWeight: 600 }}>Course</TableCell>
               <TableCell sx={{ color: 'white', fontWeight: 600 }}>Match Type</TableCell>
               <TableCell sx={{ color: 'white', fontWeight: 600 }} align="right">Actions</TableCell>
@@ -226,19 +269,17 @@ export default function MatchesAdminPage() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={7} align="center">Loading...</TableCell>
+                <TableCell colSpan={5} align="center">Loading...</TableCell>
               </TableRow>
             ) : filteredMatches.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} align="center">No matches found</TableCell>
+                <TableCell colSpan={5} align="center">No matches found</TableCell>
               </TableRow>
             ) : (
               filteredMatches.map((match) => (
                 <TableRow key={match.id} hover>
-                  <TableCell>{match.match_number}</TableCell>
                   <TableCell>{formatDate(match.match_date)}</TableCell>
-                  <TableCell>{match.match_time || '-'}</TableCell>
-                  <TableCell>{match.group_number ?? '-'}</TableCell>
+                  <TableCell>{match.match_time || 'TBD'}</TableCell>
                   <TableCell>{match.course?.name || '-'}</TableCell>
                   <TableCell>{match.match_type}</TableCell>
                   <TableCell align="right">
@@ -267,7 +308,7 @@ export default function MatchesAdminPage() {
       {/* Edit/Add Match Dialog */}
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="md" fullWidth>
         <DialogTitle>
-          {editingMatch?.id ? 'Edit Match' : 'Add Match'}
+          {editingMatch?.id ? 'Edit Match' : 'Add Matches'}
         </DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, mt: 1 }}>
@@ -286,36 +327,6 @@ export default function MatchesAdminPage() {
               </Select>
             </FormControl>
             <TextField
-              label="Match Number"
-              type="number"
-              value={editingMatch?.match_number || ''}
-              onChange={(e) => setEditingMatch({ ...editingMatch, match_number: parseInt(e.target.value) })}
-              required
-              fullWidth
-            />
-            <TextField
-              label="Group Number"
-              type="number"
-              value={editingMatch?.group_number || ''}
-              onChange={(e) => setEditingMatch({ ...editingMatch, group_number: e.target.value ? parseInt(e.target.value) : null })}
-              fullWidth
-            />
-            <FormControl fullWidth>
-              <InputLabel>Course</InputLabel>
-              <Select
-                value={editingMatch?.course_id || ''}
-                label="Course"
-                onChange={(e) => setEditingMatch({ ...editingMatch, course_id: e.target.value || null })}
-              >
-                <MenuItem value="">Select Course</MenuItem>
-                {eventCourses.map((course) => (
-                  <MenuItem key={course.id} value={course.id}>
-                    {course.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <TextField
               label="Match Date"
               type="date"
               value={editingMatch?.match_date || ''}
@@ -324,22 +335,59 @@ export default function MatchesAdminPage() {
               fullWidth
               InputLabelProps={{ shrink: true }}
             />
-            <TextField
-              label="Match Time"
-              type="time"
-              value={editingMatch?.match_time || ''}
-              onChange={(e) => setEditingMatch({ ...editingMatch, match_time: e.target.value })}
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-            />
-            <TextField
-              label="Match Type"
-              value={editingMatch?.match_type || ''}
-              onChange={(e) => setEditingMatch({ ...editingMatch, match_type: e.target.value })}
-              required
-              fullWidth
-              placeholder="e.g., Two-Man Better Ball, Singles"
-            />
+            <FormControl fullWidth required>
+              <InputLabel>Match Type</InputLabel>
+              <Select
+                value={editingMatch?.match_type || ''}
+                label="Match Type"
+                onChange={(e) => setEditingMatch({ ...editingMatch, match_type: e.target.value })}
+              >
+                {matchTypeOptions.map((matchType) => (
+                  <MenuItem key={matchType} value={matchType}>
+                    {matchType}
+                  </MenuItem>
+                ))}
+                {editingMatch?.match_type && !matchTypeOptions.includes(editingMatch.match_type) ? (
+                  <MenuItem value={editingMatch.match_type}>{editingMatch.match_type}</MenuItem>
+                ) : null}
+              </Select>
+            </FormControl>
+            {!editingMatch?.id ? (
+              <TextField
+                label="Number of Players"
+                type="number"
+                value={bulkPlayerCount}
+                onChange={(e) => setBulkPlayerCount(e.target.value)}
+                required
+                fullWidth
+              />
+            ) : (
+              <FormControl fullWidth>
+                <InputLabel>Course</InputLabel>
+                <Select
+                  value={editingMatch?.course_id || ''}
+                  label="Course"
+                  onChange={(e) => setEditingMatch({ ...editingMatch, course_id: e.target.value || null })}
+                >
+                  <MenuItem value="">Select Course</MenuItem>
+                  {eventCourses.map((course) => (
+                    <MenuItem key={course.id} value={course.id}>
+                      {course.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+            {editingMatch?.id ? (
+              <TextField
+                label="Match Time"
+                type="time"
+                value={editingMatch?.match_time || ''}
+                onChange={(e) => setEditingMatch({ ...editingMatch, match_time: e.target.value })}
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+              />
+            ) : null}
             <TextField
               label="Notes"
               value={editingMatch?.notes || ''}
@@ -363,7 +411,7 @@ export default function MatchesAdminPage() {
       <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)}>
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
-          Are you sure you want to delete Match #{matchToDelete?.match_number}?
+          Are you sure you want to delete this match?
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteConfirmOpen(false)}>Cancel</Button>
