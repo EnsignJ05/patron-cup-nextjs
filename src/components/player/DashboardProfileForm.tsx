@@ -1,5 +1,6 @@
 'use client';
 import { useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
@@ -19,7 +20,8 @@ type ProfileFormProps = {
   readOnly?: boolean;
 };
 
-export default function DashboardProfileForm({ playerId, firstName, lastName, phone, handicap, profileImageUrl = '', readOnly = false }: ProfileFormProps) {
+export default function DashboardProfileForm({ firstName, lastName, phone, handicap, profileImageUrl = '', readOnly = false }: ProfileFormProps) {
+  const router = useRouter();
   const [firstNameValue, setFirstNameValue] = useState(firstName);
   const [lastNameValue, setLastNameValue] = useState(lastName);
   const [phoneValue, setPhoneValue] = useState(phone);
@@ -41,9 +43,9 @@ export default function DashboardProfileForm({ playerId, firstName, lastName, ph
       return;
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setError('Image size must be less than 5MB');
+    // Validate file size (max 500KB)
+    if (file.size > 500 * 1024) {
+      setError('Image size must be less than 500KB');
       return;
     }
 
@@ -65,6 +67,9 @@ export default function DashboardProfileForm({ playerId, firstName, lastName, ph
       }
 
       setProfileImage(result.imageUrl);
+      
+      // Refresh the page to update server component data
+      router.refresh();
       setSuccess('Profile picture updated!');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to upload image';
@@ -118,6 +123,13 @@ export default function DashboardProfileForm({ playerId, firstName, lastName, ph
           src={profileImage || undefined}
           alt={`${firstNameValue} ${lastNameValue}`}
           sx={{ width: 80, height: 80, fontSize: '2rem', bgcolor: '#1976d2' }}
+          imgProps={{
+            onError: (e) => {
+              console.error('Avatar image failed to load:', profileImage);
+              console.error('Error:', e);
+            },
+            crossOrigin: 'anonymous'
+          }}
         >
           {!profileImage && firstNameValue && lastNameValue && `${firstNameValue[0]}${lastNameValue[0]}`}
         </Avatar>

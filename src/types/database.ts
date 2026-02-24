@@ -106,56 +106,23 @@ export interface CourseHole {
   created_at: string;
 }
 
-export interface TeeTime {
-  id: string;
-  event_id: string;
-  course_id: string;
-  tee_date: string;
-  tee_time: string;
-  group_number: number | null;
-  notes: string | null;
-  created_at: string;
-  updated_at: string;
-  // Joined data
-  event?: Event;
-  course?: Course;
-}
-
-export interface TeeTimePlayer {
-  id: string;
-  tee_time_id: string;
-  player_id: string;
-  cart_partner_id: string | null;
-  created_at: string;
-  // Joined data
-  player?: Player;
-  tee_time?: TeeTime;
-}
-
 export interface Match {
   id: string;
   event_id: string;
-  tee_time_id: string | null;
   match_number: number;
   group_number: number | null;
   course_id: string | null;
   match_date: string;
   match_time: string | null;
   match_type: string;
-  team1_id: string | null;
-  team2_id: string | null;
   winner_team_id: string | null;
   is_halved: boolean;
-  points_team1: number;
-  points_team2: number;
   notes: string | null;
   created_at: string;
   updated_at: string;
   // Joined data
   event?: Event;
   course?: Course;
-  team1?: Team;
-  team2?: Team;
   winner_team?: Team;
 }
 
@@ -283,8 +250,10 @@ export interface Reround {
   course_id: string;
   reround_date: string;
   reround_time: string | null;
-  max_players: number | null;
-  notes: string | null;
+  player1_id: string | null;
+  player2_id: string | null;
+  player3_id: string | null;
+  player4_id: string | null;
   created_at: string;
   updated_at: string;
   // Joined data

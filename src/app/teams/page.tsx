@@ -1,35 +1,90 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import { supabase } from '@/lib/supabaseClient';
+import Link from 'next/link';
+import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
+import type { Team, Player, TeamRoster } from '@/types/database';
+
+interface TeamWithPlayers extends Team {
+  players: (TeamRoster & { player: Player })[];
+}
 
 export default function TeamsPage() {
-  const [players, setPlayers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [fetchError, setFetchError] = useState('');
+  const [teams, setTeams] = useState<TeamWithPlayers[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
+
+  const fetchTeamsAndPlayers = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError('');
+
+      // First, get the active event
+      const { data: activeEvent, error: eventError } = await supabase
+        .from('events')
+        .select('id')
+        .eq('is_active', true)
+        .single();
+
+      if (eventError || !activeEvent) {
+        setError('No active event found');
+        setLoading(false);
+        return;
+      }
+
+      // Get teams for the active event
+      const { data: teamsData, error: teamsError } = await supabase
+        .from('teams')
+        .select('*')
+        .eq('event_id', activeEvent.id)
+        .order('name');
+
+      if (teamsError) {
+        setError(teamsError.message);
+        setLoading(false);
+        return;
+      }
+
+      // For each team, get their roster with player details
+      const teamsWithPlayers = await Promise.all(
+        (teamsData || []).map(async (team) => {
+          const { data: rosterData } = await supabase
+            .from('team_rosters')
+            .select('*, player:players(*)')
+            .eq('team_id', team.id)
+            .order('player(last_name)');
+
+          return {
+            ...team,
+            players: rosterData || [],
+          };
+        })
+      );
+
+      setTeams(teamsWithPlayers);
+    } catch (err) {
+      setError('Failed to load teams');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [supabase]);
 
   useEffect(() => {
-    setLoading(true);
-    setFetchError('');
-    supabase
-      .from('branson_roster')
-      .select('f_name, l_name, handicap, team')
-      .then(({ data, error }) => {
-        if (error) {
-          setFetchError(error.message);
-          setPlayers([]);
-        } else {
-          setPlayers(data || []);
-        }
-        setLoading(false);
-      });
-  }, []);
+    fetchTeamsAndPlayers();
+  }, [fetchTeamsAndPlayers]);
 
-  const thompsonPlayers = players.filter(p => p.team === 1);
-  const berasteguiPlayers = players.filter(p => p.team === 2);
-  const sortByLastName = (list: any[]) =>
-    [...list].sort((a, b) => a.l_name.localeCompare(b.l_name));
+  // Determine team colors dynamically or use defaults
+  const getTeamColor = (teamName: string, color?: string | null) => {
+    if (color) return color;
+    // Default colors based on team name
+    if (teamName.toLowerCase().includes('thompson')) return '#3498db';
+    if (teamName.toLowerCase().includes('berastegui')) return '#e74c3c';
+    return '#3498db';
+  };
 
   return (
     <Box
@@ -71,7 +126,7 @@ export default function TeamsPage() {
       </Typography>
 
       {loading && <Typography>Loading...</Typography>}
-      {fetchError && <Typography color="error">{fetchError}</Typography>}
+      {error && <Typography color="error">{error}</Typography>}
 
       <Box 
         sx={{ 
@@ -82,91 +137,81 @@ export default function TeamsPage() {
           maxWidth: 900,
         }}
       >
-        {/* Team Thompson */}
-        <Box 
-          sx={{ 
-            flex: 1,
-            bgcolor: '#ffffff',
-            borderRadius: 2,
-            p: 3,
-            boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
-          }}
-        >
-          <Typography 
-            variant="h4" 
-            sx={{ 
-              color: '#3498db',
-              mb: 3,
-              fontSize: { xs: '1.5rem', sm: '1.75rem' },
-              fontWeight: 700,
-            }}
-          >
-            Team Thompson
-          </Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            {sortByLastName(thompsonPlayers).map((player, idx) => (
-              <Typography
-                key={idx}
-                variant="body1"
-                sx={{
-                  color: '#1976d2',
-                  py: 0.5,
-                  fontSize: { xs: '1rem', sm: '1.1rem' },
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
-              >
-                {player.f_name} {player.l_name}
-                <span style={{ color: '#666666', fontSize: 14, marginLeft: 8 }}>
-                  ({player.handicap})
-                </span>
-              </Typography>
-            ))}
-          </Box>
-        </Box>
+        {teams.map((team) => {
+          const teamColor = getTeamColor(team.name, team.color);
+          const sortedPlayers = [...team.players].sort((a, b) => 
+            a.player.last_name.localeCompare(b.player.last_name)
+          );
 
-        {/* Team Burgess */}
-        <Box 
-          sx={{ 
-            flex: 1,
-            bgcolor: '#ffffff',
-            borderRadius: 2,
-            p: 3,
-            boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
-          }}
-        >
-          <Typography 
-            variant="h4" 
-            sx={{ 
-              color: '#e74c3c',
-              mb: 3,
-              fontSize: { xs: '1.5rem', sm: '1.75rem' },
-              fontWeight: 700,
-            }}
-          >
-            Team Berastegui
-          </Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            {sortByLastName(berasteguiPlayers).map((player, idx) => (
-              <Typography
-                key={idx}
-                variant="body1"
-                sx={{
-                  color: '#1976d2',
-                  py: 0.5,
-                  fontSize: { xs: '1rem', sm: '1.1rem' },
-                  display: 'flex',
-                  alignItems: 'center',
+          return (
+            <Box 
+              key={team.id}
+              sx={{ 
+                flex: 1,
+                bgcolor: '#ffffff',
+                borderRadius: 2,
+                p: 3,
+                boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+              }}
+            >
+              <Typography 
+                variant="h4" 
+                sx={{ 
+                  color: teamColor,
+                  mb: 3,
+                  fontSize: { xs: '1.5rem', sm: '1.75rem' },
+                  fontWeight: 700,
                 }}
               >
-                {player.f_name} {player.l_name}
-                <span style={{ color: '#666666', fontSize: 14, marginLeft: 8 }}>
-                  ({player.handicap})
-                </span>
+                {team.name}
               </Typography>
-            ))}
-          </Box>
-        </Box>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                {sortedPlayers.map((roster) => {
+                  const player = roster.player;
+                  const handicap = roster.handicap_at_event ?? player.current_handicap;
+
+                  return (
+                    <Box
+                      key={roster.id}
+                      sx={{
+                        py: 0.5,
+                      }}
+                    >
+                      <Link 
+                        href={`/players/${player.id}`}
+                        style={{
+                          textDecoration: 'none',
+                          color: '#1976d2',
+                          fontSize: '1.1rem',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <Typography
+                          component="span"
+                          sx={{
+                            color: '#1976d2',
+                            fontSize: { xs: '1rem', sm: '1.1rem' },
+                            '&:hover': {
+                              textDecoration: 'underline',
+                            },
+                          }}
+                        >
+                          {player.first_name} {player.last_name}
+                        </Typography>
+                        {handicap !== null && (
+                          <span style={{ color: '#666666', fontSize: 14, marginLeft: 8 }}>
+                            ({handicap})
+                          </span>
+                        )}
+                      </Link>
+                    </Box>
+                  );
+                })}
+              </Box>
+            </Box>
+          );
+        })}
       </Box>
     </Box>
   );

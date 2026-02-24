@@ -34,19 +34,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'File must be an image' }, { status: 400 });
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      return NextResponse.json({ error: 'File size must be less than 5MB' }, { status: 400 });
+    // Validate file size (max 500KB)
+    if (file.size > 500 * 1024) {
+      return NextResponse.json({ error: 'File size must be less than 500KB' }, { status: 400 });
     }
 
-    // Create a unique filename
+    // Create a unique filename with user folder for security
     const fileExt = file.name.split('.').pop();
-    const fileName = `${playerRecord.id}-${Date.now()}.${fileExt}`;
-    const filePath = `profile-images/${fileName}`;
+    const fileName = `${Date.now()}.${fileExt}`;
+    const filePath = `${user.id}/${fileName}`;
 
     // Upload to Supabase Storage
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('player-profiles')
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
       .upload(filePath, file, {
         cacheControl: '3600',
         upsert: true,
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
 
     // Get public URL
     const { data: urlData } = supabase.storage
-      .from('player-profiles')
+      .from('avatars')
       .getPublicUrl(filePath);
 
     const imageUrl = urlData.publicUrl;

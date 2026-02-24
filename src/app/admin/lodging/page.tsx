@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
@@ -49,7 +49,7 @@ export default function LodgingAdminPage() {
   const [assignments, setAssignments] = useState<(LodgingAssignment & { player?: Player })[]>([]);
   const [selectedPlayerId, setSelectedPlayerId] = useState('');
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     
     const [lodgingsRes, eventsRes, playersRes] = await Promise.all([
@@ -68,11 +68,11 @@ export default function LodgingAdminPage() {
     if (playersRes.data) setPlayers(playersRes.data);
     
     setLoading(false);
-  };
+  }, [supabase]);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const handleAdd = () => {
     const activeEvent = events.find(e => e.is_active) || events[0];

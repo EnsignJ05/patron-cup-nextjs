@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabaseClient';
+import { fetchBandonPlayerRecordByName } from '@/lib/repositories/bandon';
 
 export interface PlayerRecord {
   wins: number;
@@ -13,34 +14,12 @@ export interface PlayerRecord {
  * @returns PlayerRecord or null if not found
  */
 export async function getPlayerRecord(firstName: string, lastName: string): Promise<PlayerRecord | null> {
-  // Query the player table for the id
-  const { data: player, error: playerError } = await supabase
-    .from('player')
-    .select('id')
-    .eq('f_name', firstName)
-    .eq('l_name', lastName)
-    .single();
+  const { data, error } = await fetchBandonPlayerRecordByName(supabase, firstName, lastName);
 
-  if (playerError || !player) {
-    console.error('Player not found:', playerError);
+  if (error || !data) {
+    console.error('Record not found:', error);
     return null;
   }
 
-  // Query the records_bandon table for the record
-  const { data: record, error: recordError } = await supabase
-    .from('records_bandon')
-    .select('wins, losses, ties')
-    .eq('playerId', player.id)
-    .single();
-
-  if (recordError || !record) {
-    console.error('Record not found:', recordError);
-    return null;
-  }
-
-  return {
-    wins: record.wins ?? 0,
-    losses: record.losses ?? 0,
-    ties: record.ties ?? 0,
-  };
-} 
+  return data;
+}

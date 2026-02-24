@@ -2,8 +2,10 @@
 import { createContext, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
+import { fetchAuthProfileByUserId } from '@/lib/repositories/auth';
+import type { PlayerRole } from '@/types/database';
 
-type UserRole = 'committee' | 'player' | null;
+type UserRole = PlayerRole | null;
 
 interface AuthContextType {
   user: User | null;
@@ -54,11 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const { data, error } = await supabase
-        .from('players')
-        .select('role')
-        .eq('auth_user_id', user.id)
-        .single();
+      const { data, error } = await fetchAuthProfileByUserId(supabase, user.id);
 
       if (!isMounted) return;
       if (error) {
@@ -67,8 +65,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      setRole((data?.role as UserRole) ?? null);
-      setMustChangePassword(false); // Can add must_change_password to players table if needed
+      setRole(data?.role ?? null);
+      setMustChangePassword(data?.mustChangePassword ?? false);
     };
 
     loadRole();

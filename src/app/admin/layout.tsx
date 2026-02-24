@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { getCachedUser, getCachedPlayerProfile } from '@/lib/supabaseServer';
+import { isAdminRole } from '@/lib/authConfig';
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const user = await getCachedUser();
@@ -10,7 +11,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   const { data: profile } = await getCachedPlayerProfile(user.id);
 
-  if (profile?.role !== 'committee' && profile?.role !== 'admin') {
+  if (!isAdminRole(profile?.role ?? null)) {
     redirect('/unauthorized');
   }
 

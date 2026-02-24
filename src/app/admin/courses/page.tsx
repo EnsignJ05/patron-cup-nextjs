@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
@@ -40,7 +40,7 @@ export default function CoursesAdminPage() {
   const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
   const [selectedEventId, setSelectedEventId] = useState<string>('');
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     
     const [coursesRes, eventsRes] = await Promise.all([
@@ -57,11 +57,11 @@ export default function CoursesAdminPage() {
     if (eventsRes.data) setEvents(eventsRes.data);
     
     setLoading(false);
-  };
+  }, [supabase]);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const handleAdd = () => {
     setEditingCourse({ 

@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
@@ -61,7 +61,7 @@ export default function PlayersAdminPage() {
   const [playerToDelete, setPlayerToDelete] = useState<Player | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const fetchPlayers = async () => {
+  const fetchPlayers = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('players')
@@ -74,11 +74,11 @@ export default function PlayersAdminPage() {
       setPlayers(data || []);
     }
     setLoading(false);
-  };
+  }, [supabase]);
 
   useEffect(() => {
     fetchPlayers();
-  }, []);
+  }, [fetchPlayers]);
 
   const handleAdd = () => {
     setEditingPlayer({ ...emptyPlayer });

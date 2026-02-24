@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { cache } from 'react';
+import { fetchPlayerProfileByAuthUserId } from '@/lib/repositories/players';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -36,11 +37,7 @@ export const getCachedUser = cache(async () => {
 // Cache player profile fetching across the request
 export const getCachedPlayerProfile = cache(async (userId: string) => {
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from('players')
-    .select('id, first_name, last_name, current_handicap, email, phone, role, profile_image_url')
-    .eq('auth_user_id', userId)
-    .single();
+  const { data, error } = await fetchPlayerProfileByAuthUserId(supabase, userId);
   
   return { data, error };
 });

@@ -1,5 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
+import { getAuthRedirectDecision } from '@/lib/authConfig';
+import { fetchAuthProfileByUserId } from '@/lib/repositories/auth';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -39,54 +41,32 @@ export async function middleware(request: NextRequest) {
     return redirectResponse;
   }
 
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('must_change_password')
-    .eq('id', user.id)
-    .single();
+  const { data: authProfile, error: authProfileError } = await fetchAuthProfileByUserId(
+    supabase,
+    user.id,
+  );
 
-  if (profileError) {
-    console.error('Profile query error:', profileError);
+  if (authProfileError) {
+    console.error('Auth profile query error:', authProfileError);
   }
 
-  const { data: player, error: playerError } = await supabase
-    .from('players')
-    .select('role')
-    .eq('auth_user_id', user.id)
-    .single();
-
-  if (playerError) {
-    console.error('Player query error:', playerError);
-  }
-  
-  console.log('Middleware check:', { 
-    userId: user.id, 
-    email: user.email,
-    profile, 
-    player,
-    pathname 
+  const decision = getAuthRedirectDecision({
+    pathname,
+    isAuthenticated: Boolean(user),
+    role: authProfile?.role ?? null,
+    mustChangePassword: authProfile?.mustChangePassword ?? false,
   });
 
-  if (profile?.must_change_password && pathname !== '/change-password') {
-    const redirectResponse = NextResponse.redirect(new URL('/change-password', request.url));
+  if (decision?.type === 'login') {
+    const redirectUrl = new URL(decision.path, request.url);
+    redirectUrl.searchParams.set('next', decision.nextPath);
+    const redirectResponse = NextResponse.redirect(redirectUrl);
     copyCookies(response, redirectResponse);
     return redirectResponse;
   }
 
-  if (pathname === '/change-password' && !profile?.must_change_password) {
-    const redirectResponse = NextResponse.redirect(new URL('/dashboard', request.url));
-    copyCookies(response, redirectResponse);
-    return redirectResponse;
-  }
-
-  if (pathname.startsWith('/admin') && !['committee', 'admin'].includes(player?.role)) {
-    const redirectResponse = NextResponse.redirect(new URL('/unauthorized', request.url));
-    copyCookies(response, redirectResponse);
-    return redirectResponse;
-  }
-
-  if (pathname.startsWith('/dashboard') && !['committee', 'player', 'admin'].includes(player?.role)) {
-    const redirectResponse = NextResponse.redirect(new URL('/unauthorized', request.url));
+  if (decision) {
+    const redirectResponse = NextResponse.redirect(new URL(decision.path, request.url));
     copyCookies(response, redirectResponse);
     return redirectResponse;
   }

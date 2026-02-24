@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Table from '@mui/material/Table';
@@ -19,13 +19,9 @@ export default function RosterPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const supabase = createSupabaseBrowserClient();
+  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
-  useEffect(() => {
-    fetchPlayers();
-  }, []);
-
-  async function fetchPlayers() {
+  const fetchPlayers = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('players')
@@ -37,7 +33,11 @@ export default function RosterPage() {
       setPlayers(data);
     }
     setLoading(false);
-  }
+  }, [supabase]);
+
+  useEffect(() => {
+    fetchPlayers();
+  }, [fetchPlayers]);
 
   const filteredPlayers = players.filter((player) => {
     const search = searchTerm.toLowerCase();

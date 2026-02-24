@@ -1,217 +1,257 @@
 'use client';
-import { useState, useEffect, useMemo } from 'react';
+
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
+import Alert from '@mui/material/Alert';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import Divider from '@mui/material/Divider';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Chip from '@mui/material/Chip';
 import Button from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
-import IconButton from '@mui/material/IconButton';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import AddIcon from '@mui/icons-material/Add';
-import Alert from '@mui/material/Alert';
-import Select from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
-import FormControl from '@mui/material/FormControl';
-import InputLabel from '@mui/material/InputLabel';
-import Chip from '@mui/material/Chip';
 import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
-import type { RoundScore, Event, Course, Player } from '@/types/database';
+import type { Match, Event, Course, Team, Player, MatchPlayer } from '@/types/database';
+
+type MatchWithJoins = Match & { course?: Course; winner_team?: Team };
+type MatchPlayerWithJoins = MatchPlayer & {
+  player?: Player;
+  match?: Pick<Match, 'id' | 'event_id' | 'match_date'>;
+};
+
+const formatTime = (timeStr: string | null) => {
+  if (!timeStr) return '-';
+  const date = new Date(`1970-01-01T${timeStr}:00`);
+  return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+};
 
 export default function ScoresAdminPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
-  const [scores, setScores] = useState<(RoundScore & { event?: Event; course?: Course; player?: Player })[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [players, setPlayers] = useState<Player[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [matches, setMatches] = useState<MatchWithJoins[]>([]);
+  const [matchPlayers, setMatchPlayers] = useState<MatchPlayerWithJoins[]>([]);
+  const [selectedEventId, setSelectedEventId] = useState('');
+  const [selectedCourseId, setSelectedCourseId] = useState('');
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingScore, setEditingScore] = useState<Partial<RoundScore> | null>(null);
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [scoreToDelete, setScoreToDelete] = useState<RoundScore | null>(null);
-  const [selectedEventId, setSelectedEventId] = useState<string>('');
-  const [searchTerm, setSearchTerm] = useState('');
-
-  const fetchData = async () => {
-    setLoading(true);
-    
-    const [scoresRes, eventsRes, coursesRes, playersRes] = await Promise.all([
-      supabase
-        .from('round_scores')
-        .select('*, event:events(*), course:courses(*), player:players(*)')
-        .order('round_date', { ascending: false }),
-      supabase.from('events').select('*').order('year', { ascending: false }),
-      supabase.from('courses').select('*').order('name'),
-      supabase.from('players').select('*').eq('is_active', true).order('last_name'),
-    ]);
-
-    if (scoresRes.error) setError(scoresRes.error.message);
-    else setScores(scoresRes.data || []);
-
-    if (eventsRes.data) setEvents(eventsRes.data);
-    if (coursesRes.data) setCourses(coursesRes.data);
-    if (playersRes.data) setPlayers(playersRes.data);
-    
-    setLoading(false);
-  };
+  const [confirming, setConfirming] = useState(false);
+  const [pendingResult, setPendingResult] = useState<{ match: MatchWithJoins; value: string } | null>(
+    null,
+  );
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    const loadEvents = async () => {
+      const { data, error: eventsError } = await supabase
+        .from('events')
+        .select('*')
+        .order('year', { ascending: false });
 
-  const handleAdd = () => {
-    const activeEvent = events.find(e => e.is_active) || events[0];
-    setEditingScore({ 
-      event_id: selectedEventId || activeEvent?.id,
-      round_date: new Date().toISOString().split('T')[0],
-    });
-    setDialogOpen(true);
-  };
+      if (eventsError) {
+        setError(eventsError.message);
+        return;
+      }
 
-  const handleEdit = (score: RoundScore) => {
-    setEditingScore({ ...score });
-    setDialogOpen(true);
-  };
-
-  const handleDelete = (score: RoundScore) => {
-    setScoreToDelete(score);
-    setDeleteConfirmOpen(true);
-  };
-
-  const confirmDelete = async () => {
-    if (!scoreToDelete) return;
-    
-    const { error } = await supabase
-      .from('round_scores')
-      .delete()
-      .eq('id', scoreToDelete.id);
-
-    if (error) {
-      setError(error.message);
-    } else {
-      setSuccess('Score deleted successfully');
-      fetchData();
-    }
-    setDeleteConfirmOpen(false);
-    setScoreToDelete(null);
-  };
-
-  const handleSave = async () => {
-    if (!editingScore) return;
-    setError('');
-
-    const scoreData = {
-      player_id: editingScore.player_id,
-      event_id: editingScore.event_id,
-      course_id: editingScore.course_id,
-      round_date: editingScore.round_date,
-      total_score: editingScore.total_score || null,
-      front_nine: editingScore.front_nine || null,
-      back_nine: editingScore.back_nine || null,
-      handicap_used: editingScore.handicap_used || null,
-      net_score: editingScore.net_score || null,
-      fairways_hit: editingScore.fairways_hit || null,
-      greens_in_regulation: editingScore.greens_in_regulation || null,
-      putts: editingScore.putts || null,
-      notes: editingScore.notes || null,
+      const eventList = data || [];
+      setEvents(eventList);
+      const activeEvent = eventList.find((event) => event.is_active);
+      setSelectedEventId(activeEvent?.id || eventList[0]?.id || '');
     };
 
-    if (editingScore.id) {
-      const { error } = await supabase
-        .from('round_scores')
-        .update(scoreData)
-        .eq('id', editingScore.id);
+    loadEvents();
+  }, [supabase]);
 
-      if (error) {
-        setError(error.message);
-        return;
-      }
-      setSuccess('Score updated successfully');
-    } else {
-      const { error } = await supabase
-        .from('round_scores')
-        .insert([scoreData]);
+  const fetchEventData = useCallback(
+    async (eventId: string) => {
+      setLoading(true);
+      setError('');
 
-      if (error) {
-        setError(error.message);
-        return;
+      const [matchesRes, teamsRes, matchPlayersRes] = await Promise.all([
+        supabase
+          .from('matches')
+          .select('*, course:courses(*), winner_team:teams!matches_winner_team_id_fkey(*)')
+          .eq('event_id', eventId)
+          .order('match_date', { ascending: true })
+          .order('match_time', { ascending: true })
+          .order('group_number', { ascending: true })
+          .order('match_number', { ascending: true }),
+        supabase.from('teams').select('*').eq('event_id', eventId).order('name'),
+        supabase
+          .from('match_players')
+          .select('*, player:players(*), match:matches!inner(id,event_id,match_date)')
+          .eq('match.event_id', eventId),
+      ]);
+
+      if (matchesRes.error) setError(matchesRes.error.message);
+      if (teamsRes.error) setError(teamsRes.error.message);
+      if (matchPlayersRes.error) setError(matchPlayersRes.error.message);
+
+      setMatches(matchesRes.data || []);
+      setTeams(teamsRes.data || []);
+      setMatchPlayers(matchPlayersRes.data || []);
+      setLoading(false);
+    },
+    [supabase],
+  );
+
+  useEffect(() => {
+    if (!selectedEventId) return;
+    fetchEventData(selectedEventId);
+  }, [selectedEventId, fetchEventData]);
+
+  const matchCourses = useMemo(() => {
+    const map = new Map<string, { name: string; firstDate: string }>();
+    matches.forEach((match) => {
+      const courseId = match.course?.id || 'tbd';
+      const courseName = match.course?.name || 'Course TBD';
+      const existing = map.get(courseId);
+      if (!existing || match.match_date < existing.firstDate) {
+        map.set(courseId, { name: courseName, firstDate: match.match_date });
       }
-      setSuccess('Score added successfully');
+    });
+    return Array.from(map.entries())
+      .map(([id, value]) => ({ id, name: value.name, firstDate: value.firstDate }))
+      .sort((a, b) => a.firstDate.localeCompare(b.firstDate));
+  }, [matches]);
+
+  useEffect(() => {
+    if (!matchCourses.length) {
+      setSelectedCourseId('');
+      return;
+    }
+    const courseIds = matchCourses.map((course) => course.id);
+    if (!selectedCourseId || !courseIds.includes(selectedCourseId)) {
+      setSelectedCourseId(matchCourses[0].id);
+    }
+  }, [matchCourses, selectedCourseId]);
+
+  const matchPlayersByMatchId = useMemo(() => {
+    const map = new Map<string, MatchPlayerWithJoins[]>();
+    matchPlayers.forEach((mp) => {
+      const list = map.get(mp.match_id) || [];
+      list.push(mp);
+      map.set(mp.match_id, list);
+    });
+    return map;
+  }, [matchPlayers]);
+
+  const groupedMatches = useMemo(() => {
+    const filtered = selectedCourseId
+      ? matches.filter((match) => (match.course?.id || 'tbd') === selectedCourseId)
+      : [];
+    const groups = new Map<string, MatchWithJoins[]>();
+    filtered.forEach((match) => {
+      const key = [
+        match.event_id,
+        match.match_date,
+        match.match_time || 'unscheduled',
+        match.group_number ?? 'unscheduled',
+      ].join('|');
+      const list = groups.get(key) || [];
+      list.push(match);
+      groups.set(key, list);
+    });
+
+    return Array.from(groups.entries())
+      .map(([key, groupMatches]) => ({ key, matches: groupMatches }))
+      .sort((a, b) => {
+        const aMatch = a.matches[0];
+        const bMatch = b.matches[0];
+        const aTime = aMatch.match_time || '99:99';
+        const bTime = bMatch.match_time || '99:99';
+        if (aTime !== bTime) return aTime.localeCompare(bTime);
+        const aGroup = aMatch.group_number ?? 999;
+        const bGroup = bMatch.group_number ?? 999;
+        return aGroup - bGroup;
+      });
+  }, [matches, selectedCourseId]);
+
+  const eventTeams = teams;
+
+  const getTeamName = useCallback(
+    (teamId: string | null) => {
+      if (!teamId) return '';
+      return eventTeams.find((team) => team.id === teamId)?.name || 'Team';
+    },
+    [eventTeams],
+  );
+
+  const openConfirm = (match: MatchWithJoins, value: string) => {
+    setPendingResult({ match, value });
+  };
+
+  const updateMatchResult = async (matchId: string, value: string) => {
+    let update: Partial<Match> = { winner_team_id: null, is_halved: false };
+    if (value === 'halved') {
+      update = { winner_team_id: null, is_halved: true };
+    } else if (value) {
+      update = { winner_team_id: value, is_halved: false };
     }
 
-    setDialogOpen(false);
-    setEditingScore(null);
-    fetchData();
+    const { error: updateError } = await supabase.from('matches').update(update).eq('id', matchId);
+    if (updateError) {
+      setError(updateError.message);
+      return false;
+    }
+    setSuccess('Match result updated.');
+    fetchEventData(selectedEventId);
+    return true;
   };
 
-  let filteredScores = scores;
-  if (selectedEventId) {
-    filteredScores = filteredScores.filter(s => s.event_id === selectedEventId);
-  }
-  if (searchTerm) {
-    filteredScores = filteredScores.filter(s => 
-      `${s.player?.first_name} ${s.player?.last_name}`.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }
+  const confirmLabel = useMemo(() => {
+    if (!pendingResult) return '';
+    if (pendingResult.value === 'halved') return 'Halved';
+    return getTeamName(pendingResult.value);
+  }, [pendingResult, getTeamName]);
 
-  const eventCourses = editingScore?.event_id
-    ? courses.filter(c => c.event_id === editingScore.event_id || !c.event_id)
-    : courses;
-
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleDateString();
-  };
-
-  const getScoreColor = (score: number | null, par: number) => {
-    if (!score) return 'default';
-    const diff = score - par;
-    if (diff <= -3) return 'success';
-    if (diff <= 0) return 'info';
-    if (diff <= 5) return 'warning';
-    return 'error';
+  const handleConfirm = async () => {
+    if (!pendingResult) return;
+    setConfirming(true);
+    const didUpdate = await updateMatchResult(pendingResult.match.id, pendingResult.value);
+    setConfirming(false);
+    if (didUpdate) {
+      setPendingResult(null);
+    }
   };
 
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4" sx={{ fontWeight: 700, color: '#2c3e50' }}>
-          Scores Management
+          Match Scores
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleAdd}
-          sx={{ bgcolor: '#2c3e50' }}
-        >
-          Add Score
-        </Button>
       </Box>
 
-      {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
-      {success && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>{success}</Alert>}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
+          {error}
+        </Alert>
+      )}
+      {success && (
+        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>
+          {success}
+        </Alert>
+      )}
 
-      <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
-        <FormControl sx={{ minWidth: 200 }}>
-          <InputLabel>Filter by Event</InputLabel>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
+        <FormControl sx={{ minWidth: 240 }}>
+          <InputLabel>Event</InputLabel>
           <Select
             value={selectedEventId}
-            label="Filter by Event"
-            onChange={(e) => setSelectedEventId(e.target.value)}
+            label="Event"
+            onChange={(event) => setSelectedEventId(event.target.value)}
           >
-            <MenuItem value="">All Events</MenuItem>
             {events.map((event) => (
               <MenuItem key={event.id} value={event.id}>
                 {event.name} ({event.year})
@@ -219,220 +259,219 @@ export default function ScoresAdminPage() {
             ))}
           </Select>
         </FormControl>
-        <TextField
-          placeholder="Search by player name..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          sx={{ flex: 1, minWidth: 200 }}
-        />
       </Box>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow sx={{ bgcolor: '#2c3e50' }}>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Player</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Date</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Course</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Score</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Front/Back</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Net</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>GIR</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Putts</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }} align="right">Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
+      {eventTeams.length !== 2 && (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          Match scoring expects exactly two teams for the selected event. Current team count: {eventTeams.length}.
+        </Alert>
+      )}
+
+      {matchCourses.length === 0 ? (
+        <Paper sx={{ p: 3 }}>
+          <Typography>No matches found for this event.</Typography>
+        </Paper>
+      ) : (
+        <Paper>
+          <Tabs
+            value={selectedCourseId}
+            onChange={(_, value) => setSelectedCourseId(value)}
+            variant="scrollable"
+            scrollButtons="auto"
+            sx={{
+              backgroundColor: '#f5f7fa',
+              px: 2,
+              '& .MuiTabs-indicator': {
+                height: 4,
+                borderRadius: 2,
+                backgroundColor: '#2c3e50',
+              },
+            }}
+          >
+            {matchCourses.map((course) => (
+              <Tab
+                key={course.id}
+                value={course.id}
+                label={course.name}
+                sx={{
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  borderRadius: 2,
+                  minHeight: 56,
+                  px: 2.5,
+                  mr: 1,
+                  '&.Mui-selected': {
+                    color: '#1f2d3d',
+                    backgroundColor: '#e1e8f0',
+                  },
+                }}
+              />
+            ))}
+          </Tabs>
+          <Divider />
+          <Box sx={{ p: 3 }}>
             {loading ? (
-              <TableRow>
-                <TableCell colSpan={9} align="center">Loading...</TableCell>
-              </TableRow>
-            ) : filteredScores.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={9} align="center">No scores found</TableCell>
-              </TableRow>
+              <Typography>Loading match scores...</Typography>
             ) : (
-              filteredScores.map((score) => (
-                <TableRow key={score.id} hover>
-                  <TableCell sx={{ fontWeight: 600 }}>
-                    {score.player?.first_name} {score.player?.last_name}
-                  </TableCell>
-                  <TableCell>{formatDate(score.round_date)}</TableCell>
-                  <TableCell>{score.course?.name || '-'}</TableCell>
-                  <TableCell>
-                    {score.total_score ? (
-                      <Chip 
-                        label={score.total_score} 
-                        size="small" 
-                        color={getScoreColor(score.total_score, score.course?.par || 72)}
-                      />
-                    ) : '-'}
-                  </TableCell>
-                  <TableCell>
-                    {score.front_nine || '-'} / {score.back_nine || '-'}
-                  </TableCell>
-                  <TableCell>{score.net_score ?? '-'}</TableCell>
-                  <TableCell>{score.greens_in_regulation ?? '-'}</TableCell>
-                  <TableCell>{score.putts ?? '-'}</TableCell>
-                  <TableCell align="right">
-                    <IconButton onClick={() => handleEdit(score)} size="small">
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton onClick={() => handleDelete(score)} size="small" color="error">
-                      <DeleteIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))
+              groupedMatches.map((group) => {
+                const groupMatch = group.matches[0];
+                const groupLabel =
+                  groupMatch.match_time && groupMatch.group_number !== null
+                    ? `${formatTime(groupMatch.match_time)} · Group ${groupMatch.group_number}`
+                    : 'Unscheduled';
+
+                return (
+                  <Paper key={group.key} sx={{ p: 3, mb: 3 }} variant="outlined">
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                      <Box>
+                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                          {groupLabel}
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: '#666' }}>
+                          {groupMatch.course?.name || 'Course TBD'}
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 2 }}>
+                      {group.matches.map((match) => {
+                        const matchPlayersForMatch = matchPlayersByMatchId.get(match.id) || [];
+                        const teamA = eventTeams[0];
+                        const teamB = eventTeams[1];
+                        const teamAPlayers = teamA
+                          ? matchPlayersForMatch.filter((mp) => mp.team_id === teamA.id)
+                          : [];
+                        const teamBPlayers = teamB
+                          ? matchPlayersForMatch.filter((mp) => mp.team_id === teamB.id)
+                          : [];
+                        const winnerValue = match.is_halved ? 'halved' : match.winner_team_id || '';
+                        const winnerLabel = match.is_halved
+                          ? 'Halved'
+                          : match.winner_team_id
+                            ? `Winner: ${getTeamName(match.winner_team_id)}`
+                            : 'Pending';
+
+                        return (
+                          <Card key={match.id} variant="outlined">
+                            <CardContent>
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                <Box>
+                                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                                    Match #{match.match_number}
+                                  </Typography>
+                                  <Typography variant="body2" sx={{ color: '#666' }}>
+                                    {match.match_type}
+                                  </Typography>
+                                </Box>
+                                <Chip
+                                  label={winnerLabel}
+                                  size="small"
+                                  color={match.is_halved ? 'info' : match.winner_team_id ? 'success' : 'default'}
+                                />
+                              </Box>
+
+                              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                                {[teamA, teamB].map((team, teamIndex) => {
+                                  if (!team) return null;
+                                  const assignedPlayers = teamIndex === 0 ? teamAPlayers : teamBPlayers;
+
+                                  return (
+                                    <Box key={team.id}>
+                                      <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                                        {team.name}
+                                      </Typography>
+                                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                        {assignedPlayers.length ? (
+                                          assignedPlayers.map((mp) => (
+                                            <Chip
+                                              key={mp.id}
+                                              label={`${mp.player?.first_name || ''} ${mp.player?.last_name || ''}`.trim()}
+                                              variant="outlined"
+                                              size="small"
+                                            />
+                                          ))
+                                        ) : (
+                                          <Typography variant="caption" sx={{ color: '#777' }}>
+                                            No players assigned
+                                          </Typography>
+                                        )}
+                                      </Box>
+                                    </Box>
+                                  );
+                                })}
+                              </Box>
+
+                              <Divider sx={{ my: 2 }} />
+
+                              <Box
+                                sx={{
+                                  display: 'grid',
+                                  gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, minmax(0, 1fr))' },
+                                  gap: 1.5,
+                                }}
+                              >
+                                <Button
+                                  fullWidth
+                                  size="large"
+                                  variant={winnerValue === teamA?.id ? 'contained' : 'outlined'}
+                                  onClick={() => teamA && openConfirm(match, teamA.id)}
+                                  sx={{ py: 1.5 }}
+                                  disabled={!teamA}
+                                >
+                                  {teamA?.name || 'Team A'}
+                                </Button>
+                                <Button
+                                  fullWidth
+                                  size="large"
+                                  color="info"
+                                  variant={winnerValue === 'halved' ? 'contained' : 'outlined'}
+                                  onClick={() => openConfirm(match, 'halved')}
+                                  sx={{ py: 1.5 }}
+                                >
+                                  Halved
+                                </Button>
+                                <Button
+                                  fullWidth
+                                  size="large"
+                                  color="secondary"
+                                  variant={winnerValue === teamB?.id ? 'contained' : 'outlined'}
+                                  onClick={() => teamB && openConfirm(match, teamB.id)}
+                                  sx={{ py: 1.5 }}
+                                  disabled={!teamB}
+                                >
+                                  {teamB?.name || 'Team B'}
+                                </Button>
+                              </Box>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </Box>
+                  </Paper>
+                );
+              })
             )}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
-      {/* Edit/Add Dialog */}
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>
-          {editingScore?.id ? 'Edit Score' : 'Add Score'}
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, mt: 1 }}>
-            <FormControl fullWidth required>
-              <InputLabel>Player</InputLabel>
-              <Select
-                value={editingScore?.player_id || ''}
-                label="Player"
-                onChange={(e) => setEditingScore({ ...editingScore, player_id: e.target.value })}
-              >
-                {players.map((player) => (
-                  <MenuItem key={player.id} value={player.id}>
-                    {player.first_name} {player.last_name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <FormControl fullWidth required>
-              <InputLabel>Event</InputLabel>
-              <Select
-                value={editingScore?.event_id || ''}
-                label="Event"
-                onChange={(e) => setEditingScore({ ...editingScore, event_id: e.target.value })}
-              >
-                {events.map((event) => (
-                  <MenuItem key={event.id} value={event.id}>
-                    {event.name} ({event.year})
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <FormControl fullWidth required>
-              <InputLabel>Course</InputLabel>
-              <Select
-                value={editingScore?.course_id || ''}
-                label="Course"
-                onChange={(e) => setEditingScore({ ...editingScore, course_id: e.target.value })}
-              >
-                {eventCourses.map((course) => (
-                  <MenuItem key={course.id} value={course.id}>
-                    {course.name} (Par {course.par})
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <TextField
-              label="Round Date"
-              type="date"
-              value={editingScore?.round_date || ''}
-              onChange={(e) => setEditingScore({ ...editingScore, round_date: e.target.value })}
-              required
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-            />
-            <TextField
-              label="Total Score"
-              type="number"
-              value={editingScore?.total_score ?? ''}
-              onChange={(e) => setEditingScore({ ...editingScore, total_score: e.target.value ? parseInt(e.target.value) : null })}
-              fullWidth
-            />
-            <TextField
-              label="Handicap Used"
-              type="number"
-              inputProps={{ step: 0.1 }}
-              value={editingScore?.handicap_used ?? ''}
-              onChange={(e) => setEditingScore({ ...editingScore, handicap_used: e.target.value ? parseFloat(e.target.value) : null })}
-              fullWidth
-            />
-            <TextField
-              label="Front Nine"
-              type="number"
-              value={editingScore?.front_nine ?? ''}
-              onChange={(e) => setEditingScore({ ...editingScore, front_nine: e.target.value ? parseInt(e.target.value) : null })}
-              fullWidth
-            />
-            <TextField
-              label="Back Nine"
-              type="number"
-              value={editingScore?.back_nine ?? ''}
-              onChange={(e) => setEditingScore({ ...editingScore, back_nine: e.target.value ? parseInt(e.target.value) : null })}
-              fullWidth
-            />
-            <TextField
-              label="Net Score"
-              type="number"
-              inputProps={{ step: 0.1 }}
-              value={editingScore?.net_score ?? ''}
-              onChange={(e) => setEditingScore({ ...editingScore, net_score: e.target.value ? parseFloat(e.target.value) : null })}
-              fullWidth
-            />
-            <TextField
-              label="Fairways Hit"
-              type="number"
-              value={editingScore?.fairways_hit ?? ''}
-              onChange={(e) => setEditingScore({ ...editingScore, fairways_hit: e.target.value ? parseInt(e.target.value) : null })}
-              fullWidth
-            />
-            <TextField
-              label="Greens in Regulation"
-              type="number"
-              value={editingScore?.greens_in_regulation ?? ''}
-              onChange={(e) => setEditingScore({ ...editingScore, greens_in_regulation: e.target.value ? parseInt(e.target.value) : null })}
-              fullWidth
-            />
-            <TextField
-              label="Total Putts"
-              type="number"
-              value={editingScore?.putts ?? ''}
-              onChange={(e) => setEditingScore({ ...editingScore, putts: e.target.value ? parseInt(e.target.value) : null })}
-              fullWidth
-            />
-            <TextField
-              label="Notes"
-              value={editingScore?.notes || ''}
-              onChange={(e) => setEditingScore({ ...editingScore, notes: e.target.value })}
-              fullWidth
-              multiline
-              rows={2}
-              sx={{ gridColumn: { md: '1 / -1' } }}
-            />
           </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleSave} variant="contained" sx={{ bgcolor: '#2c3e50' }}>
-            Save
-          </Button>
-        </DialogActions>
-      </Dialog>
+        </Paper>
+      )}
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)}>
-        <DialogTitle>Confirm Delete</DialogTitle>
+      <Dialog open={Boolean(pendingResult)} onClose={() => setPendingResult(null)}>
+        <DialogTitle>Confirm Result</DialogTitle>
         <DialogContent>
-          Are you sure you want to delete this score?
+          <Typography sx={{ mb: 1 }}>
+            Set result for match #{pendingResult?.match.match_number} to <strong>{confirmLabel}</strong>?
+          </Typography>
+          <Typography variant="body2" sx={{ color: '#666' }}>
+            This will clear any previously selected winner or halved status.
+          </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteConfirmOpen(false)}>Cancel</Button>
-          <Button onClick={confirmDelete} color="error" variant="contained">Delete</Button>
+          <Button onClick={() => setPendingResult(null)} disabled={confirming}>
+            Cancel
+          </Button>
+          <Button onClick={handleConfirm} variant="contained" disabled={confirming}>
+            Confirm
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>

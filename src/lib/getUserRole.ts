@@ -1,18 +1,16 @@
+import type { PlayerRole } from '@/types/database';
 import { createSupabaseServerClient } from '@/lib/supabaseServer';
+import { fetchPlayerRoleByAuthUserId } from '@/lib/repositories/players';
 
-export type UserRole = 'committee' | 'player';
+export type UserRole = PlayerRole;
 
 export async function getUserRole(userId: string) {
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', userId)
-    .single();
+  const { data, error } = await fetchPlayerRoleByAuthUserId(supabase, userId);
 
   if (error) {
     return null;
   }
 
-  return (data?.role as UserRole | null) ?? null;
+  return data?.role ?? null;
 }

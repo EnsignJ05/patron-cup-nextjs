@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Table from '@mui/material/Table';
@@ -20,20 +20,19 @@ import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
-import Chip from '@mui/material/Chip';
 import Alert from '@mui/material/Alert';
-import Checkbox from '@mui/material/Checkbox';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import PeopleIcon from '@mui/icons-material/People';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { format } from 'date-fns';
 import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
-import type { Event, Player, Course, Reround, ReroundSignup } from '@/types/database';
+import type { Event, Player, Course, Reround } from '@/types/database';
 
 type ReroundWithRelations = Reround & {
   courses: Course;
-  reround_signups?: (ReroundSignup & { players: Player })[];
 };
 
 export default function ReroundsPage() {
@@ -45,26 +44,13 @@ export default function ReroundsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [signupsDialogOpen, setSignupsDialogOpen] = useState(false);
   const [editingReround, setEditingReround] = useState<ReroundWithRelations | null>(null);
-  const [selectedReround, setSelectedReround] = useState<ReroundWithRelations | null>(null);
-  const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
+  const [reroundDate, setReroundDate] = useState<Date | null>(null);
+  const [reroundDateValue, setReroundDateValue] = useState('');
 
-  const supabase = createSupabaseBrowserClient();
+  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
-  useEffect(() => {
-    fetchEvents();
-    fetchPlayers();
-    fetchCourses();
-  }, []);
-
-  useEffect(() => {
-    if (selectedEvent) {
-      fetchRerounds();
-    }
-  }, [selectedEvent]);
-
-  async function fetchEvents() {
+  const fetchEvents = useCallback(async () => {
     const { data, error } = await supabase
       .from('events')
       .select('*')
@@ -78,9 +64,9 @@ export default function ReroundsPage() {
         setSelectedEvent(data[0].id);
       }
     }
-  }
+  }, [supabase]);
 
-  async function fetchPlayers() {
+  const fetchPlayers = useCallback(async () => {
     const { data, error } = await supabase
       .from('players')
       .select('*')
@@ -92,9 +78,9 @@ export default function ReroundsPage() {
     } else {
       setPlayers(data || []);
     }
-  }
+  }, [supabase]);
 
-  async function fetchCourses() {
+  const fetchCourses = useCallback(async () => {
     const { data, error } = await supabase.from('courses').select('*').order('name');
 
     if (error) {
@@ -102,13 +88,13 @@ export default function ReroundsPage() {
     } else {
       setCourses(data || []);
     }
-  }
+  }, [supabase]);
 
-  async function fetchRerounds() {
+  const fetchRerounds = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('rerounds')
-      .select('*, courses(*), reround_signups(*, players(*))')
+      .select('*, courses(*)')
       .eq('event_id', selectedEvent)
       .order('reround_date')
       .order('reround_time');
@@ -119,7 +105,30 @@ export default function ReroundsPage() {
       setRerounds(data || []);
     }
     setLoading(false);
-  }
+  }, [selectedEvent, supabase]);
+
+  useEffect(() => {
+    fetchEvents();
+    fetchPlayers();
+    fetchCourses();
+  }, [fetchEvents, fetchPlayers, fetchCourses]);
+
+  useEffect(() => {
+    if (selectedEvent) {
+      fetchRerounds();
+    }
+  }, [selectedEvent, fetchRerounds]);
+
+  useEffect(() => {
+    if (!dialogOpen) return;
+    if (editingReround?.reround_date) {
+      setReroundDate(new Date(`${editingReround.reround_date}T00:00:00`));
+      setReroundDateValue(editingReround.reround_date);
+    } else {
+      setReroundDate(null);
+      setReroundDateValue('');
+    }
+  }, [dialogOpen, editingReround]);
 
   async function handleSave(formData: FormData) {
     const reroundData = {
@@ -127,8 +136,10 @@ export default function ReroundsPage() {
       course_id: formData.get('course_id') as string,
       reround_date: formData.get('reround_date') as string,
       reround_time: formData.get('reround_time') as string || null,
-      max_players: formData.get('max_players') ? Number(formData.get('max_players')) : null,
-      notes: formData.get('notes') as string || null,
+      player1_id: (formData.get('player1_id') as string) || null,
+      player2_id: (formData.get('player2_id') as string) || null,
+      player3_id: (formData.get('player3_id') as string) || null,
+      player4_id: (formData.get('player4_id') as string) || null,
     };
 
     if (editingReround) {
@@ -156,7 +167,7 @@ export default function ReroundsPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Are you sure you want to delete this re-round? This will also remove all signups.')) return;
+    if (!confirm('Are you sure you want to delete this re-round?')) return;
 
     const { error } = await supabase.from('rerounds').delete().eq('id', id);
 
@@ -165,59 +176,6 @@ export default function ReroundsPage() {
       return;
     }
 
-    fetchRerounds();
-  }
-
-  async function handleManageSignups(reround: ReroundWithRelations) {
-    setSelectedReround(reround);
-    const currentSignups = reround.reround_signups?.map((s) => s.player_id) || [];
-    setSelectedPlayers(currentSignups);
-    setSignupsDialogOpen(true);
-  }
-
-  async function handleSaveSignups() {
-    if (!selectedReround) return;
-
-    // Get current signups
-    const currentSignups = selectedReround.reround_signups?.map((s) => s.player_id) || [];
-
-    // Find players to add and remove
-    const toAdd = selectedPlayers.filter((id) => !currentSignups.includes(id));
-    const toRemove = currentSignups.filter((id) => !selectedPlayers.includes(id));
-
-    // Remove unselected players
-    if (toRemove.length > 0) {
-      const { error } = await supabase
-        .from('reround_signups')
-        .delete()
-        .eq('reround_id', selectedReround.id)
-        .in('player_id', toRemove);
-
-      if (error) {
-        setError(error.message);
-        return;
-      }
-    }
-
-    // Add new players
-    if (toAdd.length > 0) {
-      const newSignups = toAdd.map((playerId) => ({
-        reround_id: selectedReround.id,
-        player_id: playerId,
-        status: 'confirmed',
-      }));
-
-      const { error } = await supabase.from('reround_signups').insert(newSignups);
-
-      if (error) {
-        setError(error.message);
-        return;
-      }
-    }
-
-    setSignupsDialogOpen(false);
-    setSelectedReround(null);
-    setSelectedPlayers([]);
     fetchRerounds();
   }
 
@@ -232,6 +190,20 @@ export default function ReroundsPage() {
   }, {} as Record<string, ReroundWithRelations[]>);
 
   const eventCourses = courses.filter((c) => c.event_id === selectedEvent);
+  const activePlayers = players;
+  const playersById = useMemo(() => {
+    const map = new Map<string, Player>();
+    activePlayers.forEach((player) => {
+      map.set(player.id, player);
+    });
+    return map;
+  }, [activePlayers]);
+
+  const getPlayerName = (playerId: string | null) => {
+    if (!playerId) return 'TBD';
+    const player = playersById.get(playerId);
+    return player ? `${player.first_name} ${player.last_name}` : 'TBD';
+  };
 
   return (
     <Box sx={{ p: 3 }}>
@@ -286,9 +258,7 @@ export default function ReroundsPage() {
                 <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
                   <TableCell sx={{ fontWeight: 600 }}>Time</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>Course</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Max Players</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Signups</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Notes</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Players</TableCell>
                   <TableCell sx={{ fontWeight: 600 }} align="right">
                     Actions
                   </TableCell>
@@ -306,18 +276,11 @@ export default function ReroundsPage() {
                         : 'TBD'}
                     </TableCell>
                     <TableCell>{reround.courses.name}</TableCell>
-                    <TableCell>{reround.max_players ?? 'Unlimited'}</TableCell>
                     <TableCell>
-                      <Chip
-                        label={`${reround.reround_signups?.length || 0} players`}
-                        size="small"
-                        color={reround.reround_signups && reround.reround_signups.length > 0 ? 'primary' : 'default'}
-                        onClick={() => handleManageSignups(reround)}
-                        icon={<PeopleIcon />}
-                        sx={{ cursor: 'pointer' }}
-                      />
+                      {[reround.player1_id, reround.player2_id, reround.player3_id, reround.player4_id]
+                        .map((playerId) => getPlayerName(playerId))
+                        .join(', ')}
                     </TableCell>
-                    <TableCell>{reround.notes || '-'}</TableCell>
                     <TableCell align="right">
                       <IconButton
                         size="small"
@@ -377,14 +340,23 @@ export default function ReroundsPage() {
                   )}
                 </Select>
               </FormControl>
-              <TextField
-                name="reround_date"
-                label="Date"
-                type="date"
-                required
-                defaultValue={editingReround?.reround_date || ''}
-                InputLabelProps={{ shrink: true }}
-              />
+              <input type="hidden" name="reround_date" value={reroundDateValue} />
+              <LocalizationProvider dateAdapter={AdapterDateFns}>
+                <DatePicker
+                  label="Date"
+                  value={reroundDate}
+                  onChange={(value) => {
+                    setReroundDate(value);
+                    setReroundDateValue(value ? format(value, 'yyyy-MM-dd') : '');
+                  }}
+                  slotProps={{
+                    textField: {
+                      required: true,
+                      fullWidth: true,
+                    },
+                  }}
+                />
+              </LocalizationProvider>
               <TextField
                 name="reround_time"
                 label="Tee Time"
@@ -392,20 +364,28 @@ export default function ReroundsPage() {
                 defaultValue={editingReround?.reround_time || ''}
                 InputLabelProps={{ shrink: true }}
               />
-              <TextField
-                name="max_players"
-                label="Max Players"
-                type="number"
-                defaultValue={editingReround?.max_players || ''}
-                helperText="Leave empty for unlimited"
-              />
-              <TextField
-                name="notes"
-                label="Notes"
-                multiline
-                rows={2}
-                defaultValue={editingReround?.notes || ''}
-              />
+              {[
+                { name: 'player1_id', label: 'Player 1' },
+                { name: 'player2_id', label: 'Player 2' },
+                { name: 'player3_id', label: 'Player 3' },
+                { name: 'player4_id', label: 'Player 4' },
+              ].map((field) => (
+                <FormControl fullWidth key={field.name}>
+                  <InputLabel>{field.label}</InputLabel>
+                  <Select
+                    name={field.name}
+                    label={field.label}
+                    defaultValue={editingReround?.[field.name as keyof Reround] || ''}
+                  >
+                    <MenuItem value="">TBD</MenuItem>
+                    {activePlayers.map((player) => (
+                      <MenuItem key={player.id} value={player.id}>
+                        {player.first_name} {player.last_name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              ))}
             </Box>
           </DialogContent>
           <DialogActions>
@@ -415,70 +395,6 @@ export default function ReroundsPage() {
         </form>
       </Dialog>
 
-      {/* Signups Dialog */}
-      <Dialog
-        open={signupsDialogOpen}
-        onClose={() => {setSignupsDialogOpen(false); setSelectedReround(null); setSelectedPlayers([]);}}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>
-          Manage Signups - {selectedReround?.courses.name}
-          {selectedReround?.reround_date && (
-            <Typography variant="body2" sx={{ color: '#666' }}>
-              {new Date(selectedReround.reround_date + 'T00:00:00').toLocaleDateString('en-US', {
-                weekday: 'long',
-                month: 'long',
-                day: 'numeric',
-              })}
-              {selectedReround.reround_time && ` at ${new Date(`2000-01-01T${selectedReround.reround_time}`).toLocaleTimeString('en-US', {
-                hour: 'numeric',
-                minute: '2-digit',
-              })}`}
-            </Typography>
-          )}
-        </DialogTitle>
-        <DialogContent>
-          {selectedReround?.max_players && (
-            <Alert severity={selectedPlayers.length >= selectedReround.max_players ? 'warning' : 'info'} sx={{ mb: 2 }}>
-              {selectedPlayers.length} / {selectedReround.max_players} spots filled
-            </Alert>
-          )}
-          <Box sx={{ maxHeight: 400, overflow: 'auto' }}>
-            {players.map((player) => (
-              <FormControlLabel
-                key={player.id}
-                control={
-                  <Checkbox
-                    checked={selectedPlayers.includes(player.id)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        if (selectedReround?.max_players && selectedPlayers.length >= selectedReround.max_players) {
-                          setError('Maximum players reached for this re-round');
-                          return;
-                        }
-                        setSelectedPlayers([...selectedPlayers, player.id]);
-                      } else {
-                        setSelectedPlayers(selectedPlayers.filter((id) => id !== player.id));
-                      }
-                    }}
-                  />
-                }
-                label={`${player.first_name} ${player.last_name}`}
-                sx={{ display: 'block' }}
-              />
-            ))}
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => {setSignupsDialogOpen(false); setSelectedReround(null); setSelectedPlayers([]);}}>
-            Cancel
-          </Button>
-          <Button variant="contained" onClick={handleSaveSignups}>
-            Save Signups
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   );
 }

@@ -10,8 +10,7 @@ import GolfCourseIcon from '@mui/icons-material/GolfCourse';
 import SportsIcon from '@mui/icons-material/Sports';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import ScoreboardIcon from '@mui/icons-material/Scoreboard';
-import FlightIcon from '@mui/icons-material/Flight';
-import HotelIcon from '@mui/icons-material/Hotel';
+import LockResetIcon from '@mui/icons-material/LockReset';
 
 const adminSections = [
   {
@@ -20,6 +19,13 @@ const adminSections = [
     href: '/admin/players',
     icon: PeopleIcon,
     color: '#3498db',
+  },
+  {
+    title: 'Reset Passwords',
+    description: 'Set temporary passwords and require password changes',
+    href: '/admin/reset-password',
+    icon: LockResetIcon,
+    color: '#1f8a70',
   },
   {
     title: 'Events',
@@ -57,9 +63,9 @@ const adminSections = [
     color: '#9b59b6',
   },
   {
-    title: 'Tee Times',
-    description: 'Schedule tee times and assign players',
-    href: '/admin/tee-times',
+    title: 'Match Setup',
+    description: 'Assign players to matches and finalize pairings',
+    href: '/admin/matches/setup',
     icon: AccessTimeIcon,
     color: '#f39c12',
   },
@@ -76,20 +82,6 @@ const adminSections = [
     href: '/admin/scores',
     icon: ScoreboardIcon,
     color: '#1abc9c',
-  },
-  {
-    title: 'Travel',
-    description: 'Track player flight and transportation info',
-    href: '/admin/travel',
-    icon: FlightIcon,
-    color: '#34495e',
-  },
-  {
-    title: 'Lodging',
-    description: 'Manage room assignments and accommodations',
-    href: '/admin/lodging',
-    icon: HotelIcon,
-    color: '#e67e22',
   },
 ];
 
