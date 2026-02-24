@@ -250,8 +250,10 @@ export interface Reround {
   course_id: string;
   reround_date: string;
   reround_time: string | null;
-  max_players: number | null;
-  notes: string | null;
+  player1_id: string | null;
+  player2_id: string | null;
+  player3_id: string | null;
+  player4_id: string | null;
   created_at: string;
   updated_at: string;
   // Joined data

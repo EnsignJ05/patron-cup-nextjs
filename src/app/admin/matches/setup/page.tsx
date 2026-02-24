@@ -34,15 +34,10 @@ const getFormatConfig = (matchType: string) => {
   if (normalized.includes('two man better ball') || normalized.includes('betterball')) {
     return { playersPerTeam: 2, matchesPerGroup: 1, isUnknown: false };
   }
-  if (normalized.includes('h2h') || normalized.includes('singles')) {
+  if (normalized.includes('head to head') || normalized.includes('h2h') || normalized.includes('singles')) {
     return { playersPerTeam: 1, matchesPerGroup: 2, isUnknown: false };
   }
   return { playersPerTeam: 2, matchesPerGroup: 1, isUnknown: true };
-};
-
-const formatDate = (dateStr: string) => {
-  if (!dateStr) return '-';
-  return new Date(dateStr).toLocaleDateString();
 };
 
 const formatTime = (timeStr: string | null) => {
@@ -61,7 +56,7 @@ export default function MatchSetupAdminPage() {
   const [matchPlayers, setMatchPlayers] = useState<MatchPlayerWithJoins[]>([]);
   const [teamRosters, setTeamRosters] = useState<TeamRosterWithJoins[]>([]);
   const [selectedEventId, setSelectedEventId] = useState('');
-  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedCourseId, setSelectedCourseId] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -133,20 +128,31 @@ export default function MatchSetupAdminPage() {
     fetchEventData(selectedEventId);
   }, [selectedEventId, fetchEventData]);
 
-  const matchDates = useMemo(() => {
-    const dates = Array.from(new Set(matches.map((match) => match.match_date))).sort();
-    return dates;
+  const matchCourses = useMemo(() => {
+    const map = new Map<string, { name: string; firstDate: string }>();
+    matches.forEach((match) => {
+      const courseId = match.course?.id || 'tbd';
+      const courseName = match.course?.name || 'Course TBD';
+      const existing = map.get(courseId);
+      if (!existing || match.match_date < existing.firstDate) {
+        map.set(courseId, { name: courseName, firstDate: match.match_date });
+      }
+    });
+    return Array.from(map.entries())
+      .map(([id, value]) => ({ id, name: value.name, firstDate: value.firstDate }))
+      .sort((a, b) => a.firstDate.localeCompare(b.firstDate));
   }, [matches]);
 
   useEffect(() => {
-    if (!matchDates.length) {
-      setSelectedDate('');
+    if (!matchCourses.length) {
+      setSelectedCourseId('');
       return;
     }
-    if (!selectedDate || !matchDates.includes(selectedDate)) {
-      setSelectedDate(matchDates[0]);
+    const courseIds = matchCourses.map((course) => course.id);
+    if (!selectedCourseId || !courseIds.includes(selectedCourseId)) {
+      setSelectedCourseId(matchCourses[0].id);
     }
-  }, [matchDates, selectedDate]);
+  }, [matchCourses, selectedCourseId]);
 
   const matchById = useMemo(() => {
     const map = new Map<string, MatchWithJoins>();
@@ -188,7 +194,9 @@ export default function MatchSetupAdminPage() {
   }, [teamRosters]);
 
   const groupedMatches = useMemo(() => {
-    const filtered = selectedDate ? matches.filter((match) => match.match_date === selectedDate) : [];
+    const filtered = selectedCourseId
+      ? matches.filter((match) => (match.course?.id || 'tbd') === selectedCourseId)
+      : [];
     const groups = new Map<string, MatchWithJoins[]>();
     filtered.forEach((match) => {
       const key = [
@@ -214,7 +222,7 @@ export default function MatchSetupAdminPage() {
         const bGroup = bMatch.group_number ?? 999;
         return aGroup - bGroup;
       });
-  }, [matches, selectedDate]);
+  }, [matches, selectedCourseId]);
 
   const eventTeams = teams;
 
@@ -257,23 +265,6 @@ export default function MatchSetupAdminPage() {
       return;
     }
     setSuccess('Player removed from match.');
-    fetchEventData(selectedEventId);
-  };
-
-  const updateMatchResult = async (matchId: string, value: string) => {
-    let update: Partial<Match> = { winner_team_id: null, is_halved: false };
-    if (value === 'halved') {
-      update = { winner_team_id: null, is_halved: true };
-    } else if (value) {
-      update = { winner_team_id: value, is_halved: false };
-    }
-
-    const { error: updateError } = await supabase.from('matches').update(update).eq('id', matchId);
-    if (updateError) {
-      setError(updateError.message);
-      return;
-    }
-    setSuccess('Match result updated.');
     fetchEventData(selectedEventId);
   };
 
@@ -324,20 +315,45 @@ export default function MatchSetupAdminPage() {
         </Alert>
       )}
 
-      {matchDates.length === 0 ? (
+      {matchCourses.length === 0 ? (
         <Paper sx={{ p: 3 }}>
           <Typography>No matches found for this event.</Typography>
         </Paper>
       ) : (
         <Paper>
           <Tabs
-            value={selectedDate}
-            onChange={(_, value) => setSelectedDate(value)}
+            value={selectedCourseId}
+            onChange={(_, value) => setSelectedCourseId(value)}
             variant="scrollable"
             scrollButtons="auto"
+            sx={{
+              backgroundColor: '#f5f7fa',
+              px: 2,
+              '& .MuiTabs-indicator': {
+                height: 4,
+                borderRadius: 2,
+                backgroundColor: '#2c3e50',
+              },
+            }}
           >
-            {matchDates.map((date) => (
-              <Tab key={date} value={date} label={formatDate(date)} />
+            {matchCourses.map((course) => (
+              <Tab
+                key={course.id}
+                value={course.id}
+                label={course.name}
+                sx={{
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  borderRadius: 2,
+                  minHeight: 56,
+                  px: 2.5,
+                  mr: 1,
+                  '&.Mui-selected': {
+                    color: '#1f2d3d',
+                    backgroundColor: '#e1e8f0',
+                  },
+                }}
+              />
             ))}
           </Tabs>
           <Divider />
@@ -350,7 +366,8 @@ export default function MatchSetupAdminPage() {
                 const groupLabel =
                   groupMatch.match_time && groupMatch.group_number !== null
                     ? `${formatTime(groupMatch.match_time)} · Group ${groupMatch.group_number}`
-                    : 'Unscheduled';
+                    : '';
+                const courseName = groupMatch.course?.name || 'Course TBD';
                 const formatConfig = getFormatConfig(groupMatch.match_type);
                 const expectedMatches = formatConfig.matchesPerGroup;
                 const groupMismatch = group.matches.length !== expectedMatches;
@@ -359,12 +376,14 @@ export default function MatchSetupAdminPage() {
                   <Paper key={group.key} sx={{ p: 3, mb: 3 }} variant="outlined">
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                       <Box>
-                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                          {groupLabel}
+                        <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                          {courseName}
                         </Typography>
-                        <Typography variant="body2" sx={{ color: '#666' }}>
-                          {groupMatch.course?.name || 'Course TBD'}
-                        </Typography>
+                        {groupLabel && (
+                          <Typography variant="body2" sx={{ color: '#666' }}>
+                            {groupLabel}
+                          </Typography>
+                        )}
                       </Box>
                       <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                         {formatConfig.isUnknown && (
@@ -380,7 +399,7 @@ export default function MatchSetupAdminPage() {
                       </Box>
                     </Box>
 
-                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 2 }}>
                       {group.matches.map((match) => {
                         const { playersPerTeam } = getFormatConfig(match.match_type);
                         const matchPlayersForMatch = matchPlayersByMatchId.get(match.id) || [];
@@ -392,9 +411,6 @@ export default function MatchSetupAdminPage() {
                         const teamBPlayers = teamB
                           ? matchPlayersForMatch.filter((mp) => mp.team_id === teamB.id)
                           : [];
-                        const winnerValue = match.is_halved ? 'halved' : match.winner_team_id || '';
-                        const winnerDisabled = !teamAPlayers.length || !teamBPlayers.length;
-
                         return (
                           <Card key={match.id} variant="outlined">
                             <CardContent>
@@ -406,33 +422,11 @@ export default function MatchSetupAdminPage() {
                                   <Typography variant="body2" sx={{ color: '#666' }}>
                                     {match.match_type}
                                   </Typography>
-                                </Box>
-                                <Box sx={{ display: 'flex', gap: 1 }}>
-                                  {match.is_halved ? (
-                                    <Chip label="Halved (0.5 each)" size="small" color="info" />
-                                  ) : match.winner_team_id ? (
-                                    <Chip label="Winner +1" size="small" color="success" />
-                                  ) : (
-                                    <Chip label="Pending" size="small" />
-                                  )}
+                                  <Typography variant="body2" sx={{ color: '#666' }}>
+                                    Tee time: {formatTime(match.match_time)}
+                                  </Typography>
                                 </Box>
                               </Box>
-
-                              <FormControl fullWidth size="small" sx={{ mb: 2 }}>
-                                <InputLabel>Winner</InputLabel>
-                                <Select
-                                  value={winnerValue}
-                                  label="Winner"
-                                  disabled={winnerDisabled}
-                                  onChange={(event) => updateMatchResult(match.id, event.target.value)}
-                                >
-                                  <MenuItem value="">Pending</MenuItem>
-                                  <MenuItem value="halved">Halved (Tie)</MenuItem>
-                                  {teamA && <MenuItem value={teamA.id}>{teamA.name}</MenuItem>}
-                                  {teamB && <MenuItem value={teamB.id}>{teamB.name}</MenuItem>}
-                                </Select>
-                              </FormControl>
-
                               <Divider sx={{ mb: 2 }} />
 
                               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>

@@ -10,8 +10,6 @@ import GolfCourseIcon from '@mui/icons-material/GolfCourse';
 import SportsIcon from '@mui/icons-material/Sports';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import ScoreboardIcon from '@mui/icons-material/Scoreboard';
-import FlightIcon from '@mui/icons-material/Flight';
-import HotelIcon from '@mui/icons-material/Hotel';
 import LockResetIcon from '@mui/icons-material/LockReset';
 
 const adminSections = [
@@ -84,20 +82,6 @@ const adminSections = [
     href: '/admin/scores',
     icon: ScoreboardIcon,
     color: '#1abc9c',
-  },
-  {
-    title: 'Travel',
-    description: 'Track player flight and transportation info',
-    href: '/admin/travel',
-    icon: FlightIcon,
-    color: '#34495e',
-  },
-  {
-    title: 'Lodging',
-    description: 'Manage room assignments and accommodations',
-    href: '/admin/lodging',
-    icon: HotelIcon,
-    color: '#e67e22',
   },
 ];
 

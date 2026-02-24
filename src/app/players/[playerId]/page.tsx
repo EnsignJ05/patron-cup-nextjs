@@ -5,9 +5,21 @@ import Avatar from '@mui/material/Avatar';
 import { createSupabaseServerClient } from '@/lib/supabaseServer';
 import { notFound } from 'next/navigation';
 import DashboardProfileForm from '@/components/player/DashboardProfileForm';
-import PlayerMatches from '@/components/player/PlayerMatches';
 // import PlayerRerounds from '@/components/player/PlayerRerounds';
-import PlayerStats from '@/components/player/PlayerStats';
+// import PlayerStats from '@/components/player/PlayerStats';
+
+const formatDate = (dateStr: string) =>
+  new Date(`${dateStr}T00:00:00`).toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  });
+
+const formatTime = (timeStr: string | null) => {
+  if (!timeStr) return 'TBD';
+  const date = new Date(`2000-01-01T${timeStr}`);
+  return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+};
 
 export default async function PlayerProfilePage({ params }: { params: Promise<{ playerId: string }> }) {
   const supabase = await createSupabaseServerClient();
@@ -43,29 +55,86 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
       currentPlayerRecord?.role === 'admin';
   }
 
-  // Calculate player's record from match_players
-  const { data: matchPlayers } = await supabase
-    .from('match_players')
-    .select('is_winner, match:matches(is_halved)')
-    .eq('player_id', playerId);
+  // Calculate player's record from match_players (disabled for now)
+  // const { data: matchPlayers } = await supabase
+  //   .from('match_players')
+  //   .select('is_winner, match:matches(is_halved)')
+  //   .eq('player_id', playerId);
+  //
+  // let wins = 0;
+  // let losses = 0;
+  // let ties = 0;
+  //
+  // if (matchPlayers) {
+  //   matchPlayers.forEach((mp: any) => {
+  //     if (mp.match?.is_halved) {
+  //       ties++;
+  //     } else if (mp.is_winner) {
+  //       wins++;
+  //     } else {
+  //       losses++;
+  //     }
+  //   });
+  // }
+  //
+  // const record = { wins, losses, ties };
 
-  let wins = 0;
-  let losses = 0;
-  let ties = 0;
+  const { data: activeEvent } = await supabase
+    .from('events')
+    .select('id, name, year')
+    .eq('is_active', true)
+    .single();
 
-  if (matchPlayers) {
-    matchPlayers.forEach((mp: any) => {
-      if (mp.match?.is_halved) {
-        ties++;
-      } else if (mp.is_winner) {
-        wins++;
-      } else {
-        losses++;
-      }
-    });
+  let reroundsList: Array<{
+    id: string;
+    reround_date: string;
+    reround_time: string | null;
+    course?: { name?: string | null } | null;
+    player1_id: string | null;
+    player2_id: string | null;
+    player3_id: string | null;
+    player4_id: string | null;
+  }> = [];
+  let reroundPlayersById = new Map<string, { first_name: string; last_name: string }>();
+
+  if (activeEvent?.id) {
+    const { data: rerounds } = await supabase
+      .from('rerounds')
+      .select('id, reround_date, reround_time, course:courses(name), player1_id, player2_id, player3_id, player4_id')
+      .eq('event_id', activeEvent.id)
+      .or(
+        `player1_id.eq.${playerId},player2_id.eq.${playerId},player3_id.eq.${playerId},player4_id.eq.${playerId}`
+      );
+
+    reroundsList = (rerounds || []).map((reround) => ({
+      ...reround,
+      course: Array.isArray(reround.course) ? reround.course[0] : reround.course,
+    }));
+
+    const playerIds = Array.from(
+      new Set(
+        reroundsList
+          .flatMap((reround) => [
+            reround.player1_id,
+            reround.player2_id,
+            reround.player3_id,
+            reround.player4_id,
+          ])
+          .filter((id): id is string => Boolean(id))
+      )
+    );
+
+    if (playerIds.length > 0) {
+      const { data: reroundPlayers } = await supabase
+        .from('players')
+        .select('id, first_name, last_name')
+        .in('id', playerIds);
+
+      reroundPlayersById = new Map(
+        (reroundPlayers || []).map((player) => [player.id, { first_name: player.first_name, last_name: player.last_name }])
+      );
+    }
   }
-
-  const record = { wins, losses, ties };
 
   return (
     <Box
@@ -122,58 +191,75 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
         />
       </Paper>
 
-      {/* Player Stats */}
-      <Paper
-        elevation={2}
-        sx={{
-          width: '100%',
-          maxWidth: 640,
-          p: { xs: 3, sm: 4 },
-          borderRadius: 3,
-          mb: 3,
-        }}
-      >
-        <Typography variant="h6" sx={{ mb: 2, color: '#2c3e50' }}>
-          Statistics
-        </Typography>
-        <PlayerStats 
-          handicap={player.current_handicap ?? 'N/A'} 
-          record={record}
-        />
-      </Paper>
-
-      {/* Player Matches */}
-      <Paper
-        elevation={2}
-        sx={{
-          width: '100%',
-          maxWidth: 640,
-          p: { xs: 3, sm: 4 },
-          borderRadius: 3,
-          mb: 3,
-        }}
-      >
-        <Typography variant="h6" sx={{ mb: 2, color: '#2c3e50' }}>
-          Matches
-        </Typography>
-        <PlayerMatches playerId={player.id} />
-      </Paper>
+  {/* Player Stats */}
+  {/* <Paper
+    elevation={2}
+    sx={{
+      width: '100%',
+      maxWidth: 640,
+      p: { xs: 3, sm: 4 },
+      borderRadius: 3,
+      mb: 3,
+    }}
+  >
+    <Typography variant="h6" sx={{ mb: 2, color: '#2c3e50' }}>
+      Statistics
+    </Typography>
+    <PlayerStats 
+      handicap={player.current_handicap ?? 'N/A'} 
+      record={record}
+    />
+  </Paper> */}
 
       {/* Player Rerounds */}
-      {/* <Paper
+      <Paper
         elevation={2}
         sx={{
           width: '100%',
           maxWidth: 640,
           p: { xs: 3, sm: 4 },
           borderRadius: 3,
+          mb: 3,
         }}
       >
         <Typography variant="h6" sx={{ mb: 2, color: '#2c3e50' }}>
-          Re-Rounds
+          Re-Rounds {activeEvent ? `· ${activeEvent.name} ${activeEvent.year}` : ''}
         </Typography>
-        <PlayerRerounds playerName={`${player.first_name} ${player.last_name}`} />
-      </Paper> */}
+        {reroundsList.length === 0 ? (
+          <Typography variant="body2" sx={{ color: '#666' }}>
+            No re-rounds scheduled for this player yet.
+          </Typography>
+        ) : (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {reroundsList.map((reround) => {
+              const playerNames = [
+                reround.player1_id,
+                reround.player2_id,
+                reround.player3_id,
+                reround.player4_id,
+              ]
+                .map((id) => {
+                  if (!id) return 'TBD';
+                  const reroundPlayer = reroundPlayersById.get(id);
+                  return reroundPlayer ? `${reroundPlayer.first_name} ${reroundPlayer.last_name}` : 'TBD';
+                })
+                .join(', ');
+
+              return (
+                <Box key={reround.id} sx={{ p: 2, borderRadius: 2, border: '1px solid #e0e0e0' }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                    {formatDate(reround.reround_date)} · {formatTime(reround.reround_time)} ·{' '}
+                    {reround.course?.name || 'Course TBD'}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#2c3e50' }}>
+                    {playerNames}
+                  </Typography>
+                </Box>
+              );
+            })}
+          </Box>
+        )}
+      </Paper>
     </Box>
   );
 }

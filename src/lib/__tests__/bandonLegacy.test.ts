@@ -89,6 +89,8 @@ describe('bandon legacy helpers', () => {
   });
 
   it('returns null when record lookup fails', async () => {
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
     supabaseMock.from.mockImplementation((table: string) => {
       if (table === 'player') {
         return {
@@ -118,5 +120,6 @@ describe('bandon legacy helpers', () => {
     const record = await getPlayerRecord('James', 'Thompson');
 
     expect(record).toBeNull();
+    consoleError.mockRestore();
   });
 });

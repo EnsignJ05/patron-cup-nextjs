@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
@@ -16,9 +16,11 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import IconButton from '@mui/material/IconButton';
+import InputAdornment from '@mui/material/InputAdornment';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import Alert from '@mui/material/Alert';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
@@ -30,6 +32,7 @@ import type { Match, Event, Course } from '@/types/database';
 
 export default function MatchesAdminPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
+  const matchDateInputRef = useRef<HTMLInputElement>(null);
   const [matches, setMatches] = useState<(Match & { event?: Event; course?: Course })[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -113,6 +116,11 @@ export default function MatchesAdminPage() {
   const handleSave = async () => {
     if (!editingMatch) return;
     setError('');
+
+    if (!editingMatch.id && !editingMatch.course_id) {
+      setError('Please select a course for the new matches.');
+      return;
+    }
 
     const matchData = {
       event_id: editingMatch.event_id,
@@ -334,6 +342,28 @@ export default function MatchesAdminPage() {
               required
               fullWidth
               InputLabelProps={{ shrink: true }}
+              inputRef={matchDateInputRef}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="Open date picker"
+                      edge="end"
+                      onClick={() => {
+                        const input = matchDateInputRef.current;
+                        if (!input) return;
+                        if (typeof (input as HTMLInputElement).showPicker === 'function') {
+                          (input as HTMLInputElement).showPicker();
+                        } else {
+                          input.focus();
+                        }
+                      }}
+                    >
+                      <CalendarTodayIcon fontSize="small" />
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
             <FormControl fullWidth required>
               <InputLabel>Match Type</InputLabel>
@@ -352,6 +382,21 @@ export default function MatchesAdminPage() {
                 ) : null}
               </Select>
             </FormControl>
+            <FormControl fullWidth required={!editingMatch?.id}>
+              <InputLabel>Course</InputLabel>
+              <Select
+                value={editingMatch?.course_id || ''}
+                label="Course"
+                onChange={(e) => setEditingMatch({ ...editingMatch, course_id: e.target.value || null })}
+              >
+                <MenuItem value="">Select Course</MenuItem>
+                {eventCourses.map((course) => (
+                  <MenuItem key={course.id} value={course.id}>
+                    {course.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
             {!editingMatch?.id ? (
               <TextField
                 label="Number of Players"
@@ -361,23 +406,7 @@ export default function MatchesAdminPage() {
                 required
                 fullWidth
               />
-            ) : (
-              <FormControl fullWidth>
-                <InputLabel>Course</InputLabel>
-                <Select
-                  value={editingMatch?.course_id || ''}
-                  label="Course"
-                  onChange={(e) => setEditingMatch({ ...editingMatch, course_id: e.target.value || null })}
-                >
-                  <MenuItem value="">Select Course</MenuItem>
-                  {eventCourses.map((course) => (
-                    <MenuItem key={course.id} value={course.id}>
-                      {course.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            )}
+            ) : null}
             {editingMatch?.id ? (
               <TextField
                 label="Match Time"
