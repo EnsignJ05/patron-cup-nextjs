@@ -11,6 +11,7 @@ import SportsIcon from '@mui/icons-material/Sports';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import ScoreboardIcon from '@mui/icons-material/Scoreboard';
 import LockResetIcon from '@mui/icons-material/LockReset';
+import AlternateEmailIcon from '@mui/icons-material/AlternateEmail';
 
 const adminSections = [
   {
@@ -26,6 +27,13 @@ const adminSections = [
     href: '/admin/reset-password',
     icon: LockResetIcon,
     color: '#1f8a70',
+  },
+  {
+    title: 'Change Username',
+    description: 'Update login emails without changing the account',
+    href: '/admin/change-username',
+    icon: AlternateEmailIcon,
+    color: '#5d6d7e',
   },
   {
     title: 'Events',
