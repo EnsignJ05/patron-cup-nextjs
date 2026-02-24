@@ -301,7 +301,7 @@ function NavigationContent() {
                     <ListItem disablePadding>
                       <ListItemButton
                         component={Link}
-                        href="/admin/scoreboard"
+                        href="/admin/dashboard"
                         onClick={() => setDrawerOpen(false)}
                         sx={{
                           fontWeight: 600,
