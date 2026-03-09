@@ -1,0 +1,84 @@
+.pageRoot {
+  min-height: 100vh;
+  width: 100%;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 16px;
+}
+
+.pageTitle {
+  margin-bottom: 32px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.contentWrap {
+  width: 100%;
+  max-width: 900px;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+.tabsBorder {
+  border-bottom: 1px solid var(--divider);
+}
+
+.tabs :global(.MuiTab-root) {
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: none;
+}
+
+.tabs :global(.MuiTab-root.Mui-selected) {
+  color: var(--text);
+}
+
+.tabs :global(.MuiTabs-indicator) {
+  background-color: var(--text);
+}
+
+.tabPanelBody {
+  padding-top: 24px;
+  padding-bottom: 24px;
+}
+
+.dayTitle {
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+
+.dayBody {
+  margin-bottom: 16px;
+  color: var(--text);
+}
+
+.videoWrap {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto 16px;
+}
+
+.video {
+  width: 100%;
+  border-radius: 8px;
+  background: var(--brand-ink);
+}
+
+@media (min-width: 600px) {
+  .pageRoot {
+    padding: 64px 32px;
+  }
+
+  .contentWrap {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  .tabs :global(.MuiTab-root) {
+    font-size: 1rem;
+  }
+}

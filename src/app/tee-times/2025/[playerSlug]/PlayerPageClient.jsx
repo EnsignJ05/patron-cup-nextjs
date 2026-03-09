@@ -1,12 +1,12 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { Box, Typography, Card, CardContent } from '@mui/material';
-import { styles } from '@/styles/pages/tee-times/player/styles';
 import PlayerMatches from '@/components/player/PlayerMatches';
 import PlayerRerounds from '@/components/player/PlayerRerounds';
 import { supabase } from '@/lib/supabaseClient';
 import { unformatPlayerSlug } from '@/utils/playerUtils';
 import { getPlayerRecord } from '@/lib/getPlayerRecord';
+import styles from './page.module.css';
 
 export default function PlayerPageClient({ playerSlug }) {
   const [player, setPlayer] = useState(null);
@@ -43,8 +43,8 @@ export default function PlayerPageClient({ playerSlug }) {
 
   if (loading) {
     return (
-      <Box sx={styles.container}>
-        <Typography variant="h3" sx={styles.title}>
+      <Box className={styles.container}>
+        <Typography variant="h3" className={styles.title}>
           Loading...
         </Typography>
       </Box>
@@ -53,8 +53,8 @@ export default function PlayerPageClient({ playerSlug }) {
 
   if (!player) {
     return (
-      <Box sx={styles.container}>
-        <Typography variant="h3" sx={styles.title}>
+      <Box className={styles.container}>
+        <Typography variant="h3" className={styles.title}>
           Player Not Found
         </Typography>
       </Box>
@@ -62,17 +62,17 @@ export default function PlayerPageClient({ playerSlug }) {
   }
 
   return (
-    <Box sx={styles.container}>
-      <Typography variant="h3" sx={styles.title}>
+    <Box className={styles.container}>
+      <Typography variant="h3" className={styles.title}>
         {player.f_name} {player.l_name}
       </Typography>
 
-      <Card sx={styles.playerCard}>
-        <CardContent sx={styles.playerInfo}>
-          <Typography variant="h4" sx={styles.playerName}>
+      <Card className={styles.playerCard}>
+        <CardContent className={styles.playerInfo}>
+          <Typography variant="h4" className={styles.playerName}>
             {player.f_name} {player.l_name}
           </Typography>
-          <Box sx={styles.playerDetails}>
+          <Box className={styles.playerDetails}>
             <Typography>Handicap: {player.handicap}</Typography>
             <Typography>
               2025 Record: {record.wins}-{record.losses}-{record.ties}
@@ -81,13 +81,13 @@ export default function PlayerPageClient({ playerSlug }) {
         </CardContent>
       </Card>
 
-      <Box sx={styles.matchesContainer}>
+      <Box className={styles.matchesContainer}>
         <PlayerMatches
           playerId={player.id}
         />
       </Box>
 
-      <Box sx={styles.reroundsContainer}>
+      <Box className={styles.reroundsContainer}>
         <PlayerRerounds playerName={`${player.f_name} ${player.l_name}`} />
       </Box>
     </Box>

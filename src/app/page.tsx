@@ -8,6 +8,7 @@ import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 import Image from 'next/image';
 import CountdownTimer from '@/components/CountdownTimer';
+import styles from './page.module.css';
 
 const playfair = Playfair_Display({ subsets: ['latin'], weight: ['700'] });
 const inter = Inter({ subsets: ['latin'], weight: ['400', '700'] });
@@ -22,47 +23,22 @@ const bigCedarImages = [
 export default function Home() {
   return (
     <Box
-      sx={{
-        minHeight: '100vh',
-        width: '100vw',
-        background: '#f5f5f5',
-        color: '#2c3e50',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'flex-start',
-        alignItems: 'center',
-        textAlign: 'center',
-        m: 0,
-        p: 0,
-        pt: { xs: 4, sm: 6, md: 7 },
-        px: { xs: 1, sm: 2, md: 0 },
-      }}
+      className={styles.root}
     >
-      <Box sx={{ maxWidth: 700, width: '100%', px: { xs: 1, sm: 2 }, mb: { xs: 1.5, sm: 3 } }}>
+      <Box className={styles.titleWrap}>
         <Typography
           variant="h1"
-          className={playfair.className}
-          sx={{
-            fontWeight: 800,
-            fontSize: { xs: '2.1rem', sm: '3rem', md: '4.5rem', lg: '5.5rem' },
-            lineHeight: 1.08,
-            letterSpacing: '-1.5px',
-            mb: { xs: 1, sm: 2 },
-            wordBreak: 'break-word',
-            color: '#2c3e50',
-            textShadow: '0 2px 12px rgba(0,0,0,0.1)',
-            whiteSpace: 'nowrap',
-          }}
+          className={`${playfair.className} ${styles.title}`}
         >
           Patron Cup 2026
         </Typography>
       </Box>
       
-      <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center', mb: { xs: 2, sm: 3 } }}>
+      <Box className={styles.timerWrap}>
         <CountdownTimer />
       </Box>
 
-      <Box sx={{ width: '100%', maxWidth: 900, mb: 6 }}>
+      <Box className={styles.sliderWrap}>
         <Slider
           dots
           infinite
@@ -74,12 +50,12 @@ export default function Home() {
           arrows={false}
         >
           {bigCedarImages.map((src, idx) => (
-            <Box key={src} sx={{ position: 'relative', width: '100%', height: { xs: 220, sm: 340, md: 420 }, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: 5, boxShadow: '0 8px 32px rgba(0,0,0,0.25)' }}>
+            <Box key={src} className={styles.slide}>
               <Image
                 src={src}
                 alt={`Bandon Dunes photo ${idx + 1}`}
                 fill
-                style={{ objectFit: 'cover', borderRadius: 20 }}
+                className={styles.slideImage}
                 loading="lazy"
                 sizes="(max-width: 600px) 100vw, (max-width: 900px) 900px, 1200px"
               />
@@ -87,30 +63,16 @@ export default function Home() {
           ))}
         </Slider>
       </Box>
-      <Box sx={{ maxWidth: 700, width: '100%', px: { xs: 1, sm: 2 }, mb: { xs: 3, sm: 6 } }}>
+      <Box className={styles.locationWrap}>
         <Typography
           variant="h3"
-          className={inter.className}
-          sx={{
-            fontWeight: 600,
-            fontSize: { xs: '1.1rem', sm: '1.7rem', md: '2.5rem', lg: '3rem' },
-            color: '#2c3e50',
-            mb: { xs: 1, sm: 2 },
-            wordBreak: 'break-word',
-          }}
+          className={`${inter.className} ${styles.locationTitle}`}
         >
           Big Cedar Lodge
         </Typography>
         <Typography
           variant="h5"
-          className={inter.className}
-          sx={{
-            fontWeight: 400,
-            fontSize: { xs: '0.95rem', sm: '1.2rem', md: '1.5rem' },
-            color: '#666666',
-            mb: { xs: 2, sm: 4 },
-            wordBreak: 'break-word',
-          }}
+          className={`${inter.className} ${styles.locationDate}`}
         >
           April 22nd – 26th
         </Typography>

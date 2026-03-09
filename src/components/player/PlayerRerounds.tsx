@@ -2,6 +2,7 @@
 import { Box, Typography, Card, CardContent } from '@mui/material';
 import { getPlayerRerounds } from '@/utils/playerUtils';
 import type { Reround } from '@/utils/playerUtils';
+import styles from './PlayerRerounds.module.css';
 
 export interface PlayerReroundsProps {
   playerName: string;
@@ -12,33 +13,19 @@ export default function PlayerRerounds({ playerName }: PlayerReroundsProps) {
 
   if (rerounds.length === 0) {
     return (
-      <Box sx={{ width: '100%', maxWidth: 900, px: { xs: 2, sm: 3 } }}>
+      <Box className={styles.container}>
         <Typography 
           variant="h4" 
-          sx={{ 
-            color: '#2c3e50',
-            mb: 3,
-            fontSize: { xs: '1.5rem', sm: '2rem' },
-            textAlign: 'center',
-          }}
+          className={styles.title}
         >
           Additional Rounds
         </Typography>
         <Box 
-          sx={{ 
-            bgcolor: '#ffffff',
-            borderRadius: 2,
-            p: 3,
-            textAlign: 'center',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
-          }}
+          className={styles.emptyCard}
         >
           <Typography 
             variant="body1" 
-            sx={{ 
-              color: '#95a5a6',
-              fontSize: { xs: '1rem', sm: '1.125rem' },
-            }}
+            className={styles.emptyText}
           >
             No additional rounds found
           </Typography>
@@ -48,25 +35,15 @@ export default function PlayerRerounds({ playerName }: PlayerReroundsProps) {
   }
 
   return (
-    <Box sx={{ width: '100%', maxWidth: 900, px: { xs: 2, sm: 3 } }}>
+    <Box className={styles.container}>
       <Typography 
         variant="h4" 
-        sx={{ 
-          color: '#2c3e50',
-          mb: 3,
-          fontSize: { xs: '1.5rem', sm: '2rem' },
-          textAlign: 'center',
-        }}
+        className={styles.title}
       >
         Additional Rounds
       </Typography>
       <Box 
-        sx={{ 
-          bgcolor: '#ffffff',
-          borderRadius: 2,
-          overflow: 'hidden',
-          boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
-        }}
+        className={styles.list}
       >
         {rerounds.map((reround: Reround) => {
           // Parse date and time for calendar
@@ -88,22 +65,22 @@ export default function PlayerRerounds({ playerName }: PlayerReroundsProps) {
           });
 
           return (
-            <Card key={`${reround.date}-${reround.time}`} sx={{ mb: 2 }}>
-              <CardContent sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Card key={`${reround.date}-${reround.time}`} className={styles.reroundCard}>
+              <CardContent className={styles.reroundContent}>
                 <Box>
-                  <Typography variant="subtitle1" sx={{ color: '#2c3e50', fontWeight: 500 }}>
+                  <Typography variant="subtitle1" className={styles.reroundTitle}>
                     {formattedDate}
                   </Typography>
-                  <Typography variant="body2" sx={{ color: '#666666' }}>
+                  <Typography variant="body2" className={styles.reroundMeta}>
                     {reround.time}
                   </Typography>
                 </Box>
                 <Box>
-                  <Typography variant="subtitle1" sx={{ color: '#2c3e50', fontWeight: 500 }}>
+                  <Typography variant="subtitle1" className={styles.reroundTitle}>
                     {reround.course}
                   </Typography>
                   {reround.group && (
-                    <Typography variant="body2" sx={{ color: '#666666', fontStyle: 'italic' }}>
+                    <Typography variant="body2" className={styles.reroundGroup}>
                       Group {reround.group}
                     </Typography>
                   )}

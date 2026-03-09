@@ -4,7 +4,7 @@ export const styles = {
   container: {
     minHeight: '100vh',
     width: '100vw',
-    background: '#f5f5f5',
+    background: 'var(--bg)',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
@@ -14,7 +14,7 @@ export const styles = {
 
   title: {
     mb: { xs: 4, sm: 6 },
-    color: '#2c3e50',
+    color: 'var(--text)',
     fontWeight: 700,
     textAlign: 'center',
   } as SxProps<Theme>,
@@ -26,22 +26,22 @@ export const styles = {
     justifyContent: 'center',
     py: 8,
     px: 4,
-    bgcolor: '#ffffff',
+    bgcolor: 'var(--surface)',
     borderRadius: 4,
-    boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+    boxShadow: 'var(--shadow-md)',
     maxWidth: '600px',
     width: '100%',
   } as SxProps<Theme>,
 
   comingSoonTitle: {
-    color: '#2c3e50',
+    color: 'var(--text)',
     fontWeight: 700,
     textAlign: 'center',
     mb: 2,
   } as SxProps<Theme>,
 
   comingSoonText: {
-    color: '#666666',
+    color: 'var(--text-muted)',
     textAlign: 'center',
     fontSize: 18,
   } as SxProps<Theme>,
@@ -62,11 +62,11 @@ export const styles = {
   card: {
     height: '100%',
     borderRadius: 4,
-    boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+    boxShadow: 'var(--shadow-md)',
     transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
     '&:hover': {
       transform: 'translateY(-4px)',
-      boxShadow: '0 12px 48px rgba(0,0,0,0.15)',
+      boxShadow: 'var(--shadow-lg)',
     },
   } as SxProps<Theme>,
 
@@ -76,13 +76,13 @@ export const styles = {
 
   cardTitle: {
     mb: 2,
-    color: '#2c3e50',
+    color: 'var(--text)',
     fontWeight: 700,
   } as SxProps<Theme>,
 
   cardDescription: {
     mb: 3,
-    color: '#666666',
+    color: 'var(--text-muted)',
   } as SxProps<Theme>,
 
   infoRow: {
@@ -92,16 +92,16 @@ export const styles = {
   } as SxProps<Theme>,
 
   icon: {
-    color: '#2c3e50',
+    color: 'var(--text)',
     mr: 1,
   } as SxProps<Theme>,
 
   infoText: {
-    color: '#2c3e50',
+    color: 'var(--text)',
   } as SxProps<Theme>,
 
   link: {
-    color: '#2c3e50',
+    color: 'var(--text)',
     textDecoration: 'none',
     '&:hover': {
       textDecoration: 'underline',

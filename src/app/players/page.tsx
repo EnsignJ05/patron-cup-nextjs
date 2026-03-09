@@ -15,6 +15,7 @@ import Avatar from '@mui/material/Avatar';
 import Link from 'next/link';
 import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
 import type { Player } from '@/types/database';
+import styles from './page.module.css';
 
 export default function PlayersPage() {
   const [players, setPlayers] = useState<Player[]>([]);
@@ -50,32 +51,32 @@ export default function PlayersPage() {
   });
 
   return (
-    <Box sx={{ p: 3, maxWidth: 1200, mx: 'auto' }}>
-      <Typography variant="h4" sx={{ fontWeight: 700, color: '#2c3e50', mb: 1 }}>
+    <Box className={styles.pageRoot}>
+      <Typography variant="h4" className={styles.pageTitle}>
         Players
       </Typography>
-      <Typography variant="body1" sx={{ color: '#666', mb: 3 }}>
+      <Typography variant="body1" className={styles.pageSubtitle}>
         Browse all players in the Patron Cup
       </Typography>
 
-      <Box sx={{ mb: 3 }}>
+      <Box className={styles.searchWrap}>
         <TextField
           placeholder="Search players..."
           variant="outlined"
           size="small"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          sx={{ width: 300 }}
+          className={styles.searchField}
         />
       </Box>
 
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
-            <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-              <TableCell sx={{ fontWeight: 600 }}>Player</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Handicap</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Location</TableCell>
+            <TableRow className={styles.tableHeaderRow}>
+              <TableCell className={styles.tableHeaderCell}>Player</TableCell>
+              <TableCell className={styles.tableHeaderCell}>Handicap</TableCell>
+              <TableCell className={styles.tableHeaderCell}>Location</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -96,45 +97,23 @@ export default function PlayersPage() {
                 <TableRow 
                   key={player.id} 
                   hover
-                  sx={{
-                    cursor: 'pointer',
-                    '&:hover': {
-                      backgroundColor: '#f9f9f9',
-                    },
-                  }}
+                  className={styles.playerRow}
                 >
                   <TableCell>
                     <Link 
                       href={`/players/${player.id}`}
-                      style={{ 
-                        textDecoration: 'none',
-                        color: 'inherit',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                      }}
+                      className={styles.playerLink}
                     >
                       <Avatar
                         src={player.profile_image_url || undefined}
                         alt={`${player.first_name} ${player.last_name}`}
-                        sx={{
-                          width: 40,
-                          height: 40,
-                          fontSize: '1rem',
-                          bgcolor: '#1976d2',
-                        }}
+                        className={styles.playerAvatar}
                       >
                         {!player.profile_image_url && `${player.first_name[0]}${player.last_name[0]}`}
                       </Avatar>
                       <Box>
                         <Typography
-                          sx={{
-                            fontWeight: 600,
-                            color: '#1976d2',
-                            '&:hover': {
-                              textDecoration: 'underline',
-                            },
-                          }}
+                          className={styles.playerName}
                         >
                           {player.first_name} {player.last_name}
                         </Typography>

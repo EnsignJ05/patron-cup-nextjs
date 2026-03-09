@@ -1,6 +1,6 @@
 import { Box, Typography } from '@mui/material';
 import { ReactNode } from 'react';
-import { commonStyles, typography } from '@/styles/theme';
+import styles from './PageContainer.module.css';
 
 interface PageContainerProps {
   title: string;
@@ -10,20 +10,18 @@ interface PageContainerProps {
 
 export default function PageContainer({ title, subtitle, children }: PageContainerProps) {
   return (
-    <Box sx={commonStyles.pageContainer}>
-      <Typography variant="h3" sx={{ ...typography.h3, mb: subtitle ? { xs: 1, sm: 2 } : { xs: 2, sm: 4 } }}>
+    <Box className={styles.pageContainer}>
+      <Typography
+        variant="h3"
+        className={`${styles.title} ${subtitle ? styles.titleWithSubtitle : styles.titleNoSubtitle}`}
+      >
         {title}
       </Typography>
       
       {subtitle && (
         <Typography 
           variant="subtitle1" 
-          sx={{ 
-            mb: { xs: 2, sm: 4 }, 
-            color: 'secondary.main',
-            fontSize: { xs: '1rem', sm: '1.1rem' },
-            fontStyle: 'italic'
-          }}
+          className={styles.subtitle}
         >
           {subtitle}
         </Typography>

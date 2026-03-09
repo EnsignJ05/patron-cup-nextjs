@@ -1,0 +1,94 @@
+.card {
+  width: 100%;
+  max-width: 370px;
+  background-color: var(--surface);
+  border-radius: 32px;
+  box-shadow: var(--shadow-md);
+  padding: 12px;
+  margin-bottom: 32px;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  border: 1px solid var(--border);
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.header {
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.title {
+  font-weight: 800;
+  color: var(--text);
+  font-size: 20px;
+  text-align: center;
+}
+
+.subtitle {
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 15px;
+  text-align: center;
+}
+
+.totals {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  margin-bottom: 8px;
+  padding: 8px 16px;
+  background-color: var(--surface-tint);
+  border-radius: 16px;
+}
+
+.totalThompson {
+  color: var(--accent-blue);
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.totalDivider {
+  color: var(--text-muted);
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.totalBurgess {
+  color: var(--accent-red);
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.placeholder {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+@media (min-width: 600px) {
+  .card {
+    max-width: 900px;
+    padding: 24px;
+  }
+
+  .title {
+    font-size: 26px;
+  }
+
+  .subtitle {
+    font-size: 18px;
+  }
+
+  .totalThompson,
+  .totalDivider,
+  .totalBurgess {
+    font-size: 1rem;
+  }
+}

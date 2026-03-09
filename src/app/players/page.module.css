@@ -1,0 +1,65 @@
+.pageRoot {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.pageTitle {
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.pageSubtitle {
+  color: var(--text-muted);
+  margin-bottom: 24px;
+}
+
+.searchWrap {
+  margin-bottom: 24px;
+}
+
+.searchField {
+  width: 300px;
+}
+
+.tableHeaderRow {
+  background-color: var(--text);
+}
+
+.tableHeaderCell {
+  font-weight: 600;
+  color: var(--bg);
+}
+
+.playerRow {
+  cursor: pointer;
+}
+
+.playerRow:hover {
+  background-color: var(--surface-muted);
+}
+
+.playerLink {
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.playerAvatar {
+  width: 40px;
+  height: 40px;
+  font-size: 1rem;
+  background-color: var(--accent-blue-strong);
+}
+
+.playerName {
+  font-weight: 600;
+  color: var(--accent-blue-strong);
+}
+
+.playerName:hover {
+  text-decoration: underline;
+}

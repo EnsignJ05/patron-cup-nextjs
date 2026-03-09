@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation';
 import { createSupabaseServerClient, getCachedUser, getCachedPlayerProfile } from '@/lib/supabaseServer';
 import { canAccessDashboard } from '@/lib/authConfig';
 import DashboardProfileForm from '@/components/player/DashboardProfileForm';
+import styles from './page.module.css';
 
 // Revalidate every 5 seconds to show updated profile images quickly
 export const revalidate = 5;
@@ -166,70 +167,49 @@ export default async function DashboardPage() {
   }
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        background: '#f5f5f5',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        py: { xs: 4, sm: 8 },
-        px: { xs: 2, sm: 4 },
-      }}
-    >
+    <Box className={styles.pageRoot}>
       {playerRecord && (
         <Avatar
           src={playerRecord.profile_image_url || undefined}
           alt={`${playerRecord.first_name} ${playerRecord.last_name}`}
-          sx={{
-            width: 100,
-            height: 100,
-            mb: 2,
-            fontSize: '2.5rem',
-            bgcolor: '#1976d2',
-          }}
+          className={styles.avatar}
         >
           {!playerRecord.profile_image_url && `${playerRecord.first_name[0]}${playerRecord.last_name[0]}`}
         </Avatar>
       )}
       
-      <Typography variant="h3" sx={{ mb: 3, fontWeight: 700, color: '#2c3e50' }}>
+      <Typography variant="h3" className={styles.pageTitle}>
         Player Dashboard
       </Typography>
       <Paper
         elevation={2}
-        sx={{
-          width: '100%',
-          maxWidth: 640,
-          p: { xs: 3, sm: 4 },
-          borderRadius: 3,
-        }}
+        className={styles.profileCard}
       >
-        <Typography variant="h6" sx={{ mb: 1, color: '#2c3e50' }}>
+        <Typography variant="h6" className={styles.sectionTitle}>
           Account details
         </Typography>
-        <Typography variant="body2" sx={{ mb: 2, color: '#666' }}>
+        <Typography variant="body2" className={styles.sectionSubtitle}>
           Signed in as {user.email}
         </Typography>
         {playerRecord && (
           <>
-            <Typography variant="body2" sx={{ mb: 1, color: '#666' }}>
+            <Typography variant="body2" className={styles.detailText}>
               Name: {playerRecord.first_name} {playerRecord.last_name}
             </Typography>
-            <Typography variant="body2" sx={{ mb: 1, color: '#666' }}>
+            <Typography variant="body2" className={styles.detailText}>
               Role: {playerRecord.role}
             </Typography>
-            <Typography variant="body2" sx={{ mb: 3, color: '#666' }}>
+            <Typography variant="body2" className={styles.detailTextWide}>
               Handicap: {playerRecord.current_handicap ?? 'Not set'}
             </Typography>
           </>
         )}
         {!playerRecord && (
-          <Typography variant="body2" sx={{ mb: 3, color: '#666' }}>
+          <Typography variant="body2" className={styles.detailTextWide}>
             Player record: Not linked yet.
           </Typography>
         )}
-        <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#2c3e50' }}>
+        <Typography variant="subtitle1" className={styles.sectionSubtitleStrong}>
           Update your profile
         </Typography>
         <DashboardProfileForm
@@ -244,37 +224,31 @@ export default async function DashboardPage() {
 
       <Paper
         elevation={2}
-        sx={{
-          width: '100%',
-          maxWidth: 800,
-          p: { xs: 3, sm: 4 },
-          borderRadius: 3,
-          mt: 4,
-        }}
+        className={styles.matchesCard}
       >
-        <Typography variant="h5" sx={{ mb: 2, fontWeight: 700, color: '#2c3e50' }}>
+        <Typography variant="h5" className={styles.sectionHeading}>
           {activeEvent ? `${activeEvent.name} ${activeEvent.year}` : 'Current Event'}
         </Typography>
 
-        <Typography variant="h6" sx={{ mb: 1, color: '#2c3e50' }}>
+        <Typography variant="h6" className={styles.sectionTitle}>
           Matches
         </Typography>
         {matchesList.length === 0 ? (
-          <Typography variant="body2" sx={{ mb: 3, color: '#666' }}>
+          <Typography variant="body2" className={styles.detailTextWide}>
             No matches scheduled for you yet.
           </Typography>
         ) : (
-          <Box sx={{ mb: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box className={styles.matchList}>
             {matchesList.map(({ match, players }) => (
-              <Box key={match.id} sx={{ p: 2, borderRadius: 2, border: '1px solid #e0e0e0' }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+              <Box key={match.id} className={styles.matchItem}>
+                <Typography variant="subtitle1" className={styles.matchTitle}>
                   {formatDate(match.match_date)} · {formatTime(match.match_time)} · {match.course?.name || 'Course TBD'}
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#666', mb: 1 }}>
+                <Typography variant="body2" className={styles.matchMeta}>
                   Match #{match.match_number} · {match.match_type}
                   {match.group_number !== null && ` · Group ${match.group_number}`}
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#2c3e50' }}>
+                <Typography variant="body2" className={styles.matchPlayers}>
                   {players
                     .map((player) => (player.team ? `${player.name} (${player.team})` : player.name))
                     .join(', ')}
@@ -284,15 +258,15 @@ export default async function DashboardPage() {
           </Box>
         )}
 
-        <Typography variant="h6" sx={{ mb: 1, color: '#2c3e50' }}>
+        <Typography variant="h6" className={styles.sectionTitle}>
           Re-rounds
         </Typography>
         {reroundsList.length === 0 ? (
-          <Typography variant="body2" sx={{ color: '#666' }}>
+          <Typography variant="body2" className={styles.detailText}>
             No re-rounds scheduled for you yet.
           </Typography>
         ) : (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box className={styles.reroundList}>
             {reroundsList.map((reround) => {
               const playerNames = [
                 reround.player1_id,
@@ -308,12 +282,12 @@ export default async function DashboardPage() {
                 .join(', ');
 
               return (
-                <Box key={reround.id} sx={{ p: 2, borderRadius: 2, border: '1px solid #e0e0e0' }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                <Box key={reround.id} className={styles.reroundItem}>
+                  <Typography variant="subtitle1" className={styles.matchTitle}>
                     {formatDate(reround.reround_date)} · {formatTime(reround.reround_time)} ·{' '}
                     {reround.course?.name || 'Course TBD'}
                   </Typography>
-                  <Typography variant="body2" sx={{ color: '#2c3e50' }}>
+                  <Typography variant="body2" className={styles.matchPlayers}>
                     {playerNames}
                   </Typography>
                 </Box>

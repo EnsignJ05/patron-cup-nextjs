@@ -5,6 +5,7 @@ import Typography from '@mui/material/Typography';
 import Link from 'next/link';
 import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
 import type { Team, Player, TeamRoster } from '@/types/database';
+import styles from './page.module.css';
 
 interface TeamWithPlayers extends Team {
   players: (TeamRoster & { player: Player })[];
@@ -78,49 +79,26 @@ export default function TeamsPage() {
   }, [fetchTeamsAndPlayers]);
 
   // Determine team colors dynamically or use defaults
-  const getTeamColor = (teamName: string, color?: string | null) => {
-    if (color) return color;
-    // Default colors based on team name
-    if (teamName.toLowerCase().includes('thompson')) return '#3498db';
-    if (teamName.toLowerCase().includes('berastegui')) return '#e74c3c';
-    return '#3498db';
+  const getTeamClass = (teamName: string, color?: string | null) => {
+    if (color === '#e74c3c') return styles.teamBurgess;
+    if (color === '#3498db') return styles.teamThompson;
+    if (teamName.toLowerCase().includes('thompson')) return styles.teamThompson;
+    if (teamName.toLowerCase().includes('berastegui')) return styles.teamBurgess;
+    return styles.teamThompson;
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        width: '100vw',
-        background: '#f5f5f5',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        py: { xs: 4, sm: 8 },
-        px: { xs: 2, sm: 4 },
-      }}
-    >
+    <Box className={styles.pageRoot}>
       <Typography 
         variant="h3" 
-        sx={{ 
-          color: '#2c3e50',
-          mb: 4,
-          fontSize: { xs: '1.75rem', sm: '2.5rem' },
-          textAlign: 'center',
-        }}
+        className={styles.pageTitle}
       >
         Teams
       </Typography>
 
       <Typography 
         variant="body2" 
-        sx={{ 
-          color: '#2c3e50',
-          mb: 4,
-          textAlign: 'center',
-          fontWeight: 700,
-          fontStyle: 'italic',
-          maxWidth: 600,
-        }}
+        className={styles.pageSubtitle}
       >
         Click on a player&apos;s name to view their match schedule and additional rounds
       </Typography>
@@ -128,17 +106,9 @@ export default function TeamsPage() {
       {loading && <Typography>Loading...</Typography>}
       {error && <Typography color="error">{error}</Typography>}
 
-      <Box 
-        sx={{ 
-          display: 'flex', 
-          flexDirection: { xs: 'column', sm: 'row' },
-          gap: 4,
-          width: '100%',
-          maxWidth: 900,
-        }}
-      >
+      <Box className={styles.teamGrid}>
         {teams.map((team) => {
-          const teamColor = getTeamColor(team.name, team.color);
+          const teamClass = getTeamClass(team.name, team.color);
           const sortedPlayers = [...team.players].sort((a, b) => 
             a.player.last_name.localeCompare(b.player.last_name)
           );
@@ -146,26 +116,15 @@ export default function TeamsPage() {
           return (
             <Box 
               key={team.id}
-              sx={{ 
-                flex: 1,
-                bgcolor: '#ffffff',
-                borderRadius: 2,
-                p: 3,
-                boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
-              }}
+              className={styles.teamCard}
             >
               <Typography 
                 variant="h4" 
-                sx={{ 
-                  color: teamColor,
-                  mb: 3,
-                  fontSize: { xs: '1.5rem', sm: '1.75rem' },
-                  fontWeight: 700,
-                }}
+                className={`${styles.teamName} ${teamClass}`}
               >
                 {team.name}
               </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Box className={styles.playerList}>
                 {sortedPlayers.map((roster) => {
                   const player = roster.player;
                   const handicap = roster.handicap_at_event ?? player.current_handicap;
@@ -173,34 +132,20 @@ export default function TeamsPage() {
                   return (
                     <Box
                       key={roster.id}
-                      sx={{
-                        py: 0.5,
-                      }}
+                      className={styles.playerItem}
                     >
                       <Link 
                         href={`/players/${player.id}`}
-                        style={{
-                          textDecoration: 'none',
-                          color: '#1976d2',
-                          fontSize: '1.1rem',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                        }}
+                        className={styles.playerLink}
                       >
                         <Typography
                           component="span"
-                          sx={{
-                            color: '#1976d2',
-                            fontSize: { xs: '1rem', sm: '1.1rem' },
-                            '&:hover': {
-                              textDecoration: 'underline',
-                            },
-                          }}
+                          className={styles.playerName}
                         >
                           {player.first_name} {player.last_name}
                         </Typography>
                         {handicap !== null && (
-                          <span style={{ color: '#666666', fontSize: 14, marginLeft: 8 }}>
+                          <span className={styles.playerHandicap}>
                             ({handicap})
                           </span>
                         )}

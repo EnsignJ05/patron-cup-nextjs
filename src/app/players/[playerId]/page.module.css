@@ -1,0 +1,78 @@
+.pageRoot {
+  min-height: 100vh;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 16px;
+}
+
+.avatar {
+  width: 120px;
+  height: 120px;
+  margin-bottom: 16px;
+  font-size: 3rem;
+  background-color: var(--accent-blue-strong);
+}
+
+.pageTitle {
+  margin-bottom: 24px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.profileCard {
+  width: 100%;
+  max-width: 640px;
+  padding: 24px;
+  border-radius: 24px;
+  margin-bottom: 24px;
+}
+
+.sectionTitle {
+  margin-bottom: 16px;
+  color: var(--text);
+}
+
+.reroundsCard {
+  width: 100%;
+  max-width: 640px;
+  padding: 24px;
+  border-radius: 24px;
+  margin-bottom: 24px;
+}
+
+.emptyText {
+  color: var(--text-muted);
+}
+
+.reroundList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.reroundItem {
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+}
+
+.reroundTitle {
+  font-weight: 600;
+}
+
+.reroundPlayers {
+  color: var(--text);
+}
+
+@media (min-width: 600px) {
+  .pageRoot {
+    padding: 64px 32px;
+  }
+
+  .profileCard,
+  .reroundsCard {
+    padding: 32px;
+  }
+}

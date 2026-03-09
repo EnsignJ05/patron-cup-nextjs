@@ -1,0 +1,219 @@
+.pageRoot {
+  min-height: 100vh;
+  width: 100vw;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 8px;
+}
+
+.pageTitle {
+  color: var(--text);
+  margin-bottom: 32px;
+  font-size: 1.75rem;
+  text-align: center;
+}
+
+.contentWrap {
+  width: 100%;
+  max-width: 900px;
+}
+
+.controlsRow {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.legendDotThompson {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--accent-blue);
+}
+
+.legendDotBurgess {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--accent-red);
+}
+
+.legendText {
+  color: var(--text-muted);
+}
+
+.searchField {
+  width: 100%;
+}
+
+.searchField :global(.MuiOutlinedInput-root) {
+  background-color: var(--surface);
+}
+
+.searchField :global(.MuiOutlinedInput-root fieldset) {
+  border-color: var(--border);
+}
+
+.searchField :global(.MuiOutlinedInput-root:hover fieldset) {
+  border-color: var(--border-subtle);
+}
+
+.searchIcon {
+  color: var(--text-muted);
+}
+
+.hintText {
+  color: var(--text);
+  margin-bottom: 24px;
+  text-align: center;
+  font-weight: 700;
+  font-style: italic;
+}
+
+.gridWrap {
+  width: 100%;
+  overflow-x: auto;
+  height: 500px;
+}
+
+.dataGrid {
+  min-width: 600px;
+  background-color: var(--surface);
+  border-radius: 16px;
+  box-shadow: var(--shadow-md);
+  border: none;
+}
+
+.dataGrid :global(.MuiDataGrid-columnHeader) {
+  background-color: var(--surface-tint);
+  color: var(--text);
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.dataGrid :global(.MuiDataGrid-row:hover) {
+  background-color: var(--surface-tint);
+}
+
+.dataGrid :global(.MuiDataGrid-cell) {
+  padding: 6px 2px;
+  font-size: 0.8rem;
+}
+
+.nameCell {
+  display: flex;
+  align-items: center;
+}
+
+.nameLink {
+  text-decoration: none;
+}
+
+.nameText {
+  color: var(--accent-blue-strong);
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  text-decoration: underline;
+  display: inline-flex;
+  align-items: center;
+}
+
+.nameText:hover {
+  color: var(--accent-blue);
+  text-decoration: underline;
+}
+
+.teamDotThompson,
+.teamDotBurgess {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-left: 8px;
+}
+
+.teamDotThompson {
+  background-color: var(--accent-blue);
+}
+
+.teamDotBurgess {
+  background-color: var(--accent-red);
+}
+
+.handicapCell {
+  width: 100%;
+  text-align: center;
+  color: var(--text);
+  font-size: 0.875rem;
+}
+
+.timeCell {
+  color: var(--text);
+  font-size: 0.875rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.timeCellMuted {
+  color: var(--text-soft);
+}
+
+@media (min-width: 600px) {
+  .pageRoot {
+    padding: 64px 32px;
+  }
+
+  .pageTitle {
+    font-size: 2.5rem;
+  }
+
+  .controlsRow {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .searchField {
+    width: 240px;
+  }
+
+  .gridWrap {
+    height: 600px;
+  }
+
+  .dataGrid :global(.MuiDataGrid-columnHeader) {
+    font-size: 1rem;
+  }
+
+  .dataGrid :global(.MuiDataGrid-cell) {
+    padding: 8px 16px;
+    font-size: 1rem;
+  }
+
+  .nameText {
+    font-size: 1rem;
+  }
+
+  .handicapCell,
+  .timeCell {
+    font-size: 1rem;
+  }
+}

@@ -4,6 +4,7 @@ import { Box, Button, TextField } from '@mui/material';
 import { tempPasswordPolicy } from '@/lib/authConfig';
 import { generateTempPassword } from '@/lib/passwordUtils';
 import FormPage from '@/components/shared/FormPage';
+import styles from './page.module.css';
 
 export default function AdminResetPasswordPage() {
   const [email, setEmail] = useState('');
@@ -60,7 +61,7 @@ export default function AdminResetPasswordPage() {
       success={success}
     >
       <form onSubmit={handleSubmit}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box className={styles.formFields}>
           <TextField
             label="Email"
             type="email"
@@ -87,7 +88,7 @@ export default function AdminResetPasswordPage() {
             variant="contained"
             size="large"
             disabled={submitting || !email || !tempPassword}
-            sx={{ mt: 1 }}
+            className={styles.submitButton}
           >
             {submitting ? 'Resetting password...' : 'Reset Password'}
           </Button>

@@ -1,0 +1,32 @@
+.pageRoot {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.pageTitle {
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.pageSubtitle {
+  color: var(--text-muted);
+  margin-bottom: 24px;
+}
+
+.searchWrap {
+  margin-bottom: 24px;
+}
+
+.searchField {
+  width: 300px;
+}
+
+.tableHeaderRow {
+  background-color: var(--surface-muted);
+}
+
+.tableHeaderCell {
+  font-weight: 600;
+}

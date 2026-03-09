@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { Box, Typography, TextField, Button, Paper, Alert } from '@mui/material';
 import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
 import { useAuth } from '@/context/AuthContext';
+import styles from './page.module.css';
  
  export default function ChangePasswordPage() {
    const { user, mustChangePassword } = useAuth();
@@ -74,49 +75,31 @@ import { useAuth } from '@/context/AuthContext';
    };
  
    return (
-     <Box
-       sx={{
-         minHeight: '100vh',
-         width: '100vw',
-         background: '#f5f5f5',
-         display: 'flex',
-         flexDirection: 'column',
-         alignItems: 'center',
-         justifyContent: 'center',
-         p: 2,
-       }}
-     >
+    <Box className={styles.pageRoot}>
        <Paper
          elevation={3}
-         sx={{
-           p: 4,
-           width: '100%',
-           maxWidth: 420,
-           display: 'flex',
-           flexDirection: 'column',
-           gap: 3,
-         }}
+        className={styles.formCard}
        >
-         <Typography variant="h4" component="h1" sx={{ textAlign: 'center', mb: 2 }}>
+        <Typography variant="h4" component="h1" className={styles.title}>
            Set a new password
          </Typography>
-         <Typography variant="body2" sx={{ textAlign: 'center', color: '#666', mb: 1 }}>
+        <Typography variant="body2" className={styles.subtitle}>
            Please update your temporary password to continue.
          </Typography>
  
          {error && (
-           <Alert severity="error" sx={{ mb: 2 }}>
+          <Alert severity="error" className={styles.alert}>
              {error}
            </Alert>
          )}
          {success && (
-           <Alert severity="success" sx={{ mb: 2 }}>
+          <Alert severity="success" className={styles.alert}>
              {success}
            </Alert>
          )}
  
          <form onSubmit={handleSubmit}>
-           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box className={styles.formFields}>
              <TextField
                label="New password"
                type="password"
@@ -141,7 +124,7 @@ import { useAuth } from '@/context/AuthContext';
                size="large"
                fullWidth
                disabled={submitting}
-               sx={{ mt: 2 }}
+              className={styles.submitButton}
              >
                {submitting ? 'Updating...' : 'Update password'}
              </Button>

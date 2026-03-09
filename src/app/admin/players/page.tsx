@@ -27,6 +27,7 @@ import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
 import type { Player, PlayerRole } from '@/types/database';
+import styles from './page.module.css';
 
 const emptyPlayer: Partial<Player> = {
   first_name: '',
@@ -183,43 +184,43 @@ export default function PlayersAdminPage() {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, color: '#2c3e50' }}>
+    <Box className={styles.pageRoot}>
+      <Box className={styles.headerRow}>
+        <Typography variant="h4" className={styles.pageTitle}>
           Players Management
         </Typography>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={handleAdd}
-          sx={{ bgcolor: '#2c3e50' }}
+          className={styles.addButton}
         >
           Add Player
         </Button>
       </Box>
 
-      {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
-      {success && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>{success}</Alert>}
+      {error && <Alert severity="error" className={styles.alert} onClose={() => setError('')}>{error}</Alert>}
+      {success && <Alert severity="success" className={styles.alert} onClose={() => setSuccess('')}>{success}</Alert>}
 
       <TextField
         fullWidth
         placeholder="Search players..."
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
-        sx={{ mb: 3 }}
+        className={styles.searchField}
       />
 
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
-            <TableRow sx={{ bgcolor: '#2c3e50' }}>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Name</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Email</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Phone</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Handicap</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Role</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Status</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }} align="right">Actions</TableCell>
+            <TableRow className={styles.tableHeaderRow}>
+              <TableCell className={styles.tableHeaderCell}>Name</TableCell>
+              <TableCell className={styles.tableHeaderCell}>Email</TableCell>
+              <TableCell className={styles.tableHeaderCell}>Phone</TableCell>
+              <TableCell className={styles.tableHeaderCell}>Handicap</TableCell>
+              <TableCell className={styles.tableHeaderCell}>Role</TableCell>
+              <TableCell className={styles.tableHeaderCell}>Status</TableCell>
+              <TableCell className={styles.tableHeaderCell} align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -269,7 +270,7 @@ export default function PlayersAdminPage() {
           {editingPlayer?.id ? 'Edit Player' : 'Add Player'}
         </DialogTitle>
         <DialogContent>
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, mt: 1 }}>
+          <Box className={styles.dialogGrid}>
             <TextField
               label="First Name"
               value={editingPlayer?.first_name || ''}
@@ -391,7 +392,7 @@ export default function PlayersAdminPage() {
               fullWidth
               multiline
               rows={2}
-              sx={{ gridColumn: { md: '1 / -1' } }}
+              className={styles.fullRow}
             />
             <TextField
               label="Bio"
@@ -400,13 +401,13 @@ export default function PlayersAdminPage() {
               fullWidth
               multiline
               rows={3}
-              sx={{ gridColumn: { md: '1 / -1' } }}
+              className={styles.fullRow}
             />
           </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleSave} variant="contained" sx={{ bgcolor: '#2c3e50' }}>
+          <Button onClick={handleSave} variant="contained" className={styles.primaryButton}>
             Save
           </Button>
         </DialogActions>

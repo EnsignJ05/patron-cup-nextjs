@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { Box, Button, TextField } from '@mui/material';
 import FormPage from '@/components/shared/FormPage';
+import styles from './page.module.css';
 
 export default function AdminChangeUsernamePage() {
   const [currentEmail, setCurrentEmail] = useState('');
@@ -52,7 +53,7 @@ export default function AdminChangeUsernamePage() {
       success={success}
     >
       <form onSubmit={handleSubmit}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box className={styles.formFields}>
           <TextField
             label="Current email"
             type="email"
@@ -76,7 +77,7 @@ export default function AdminChangeUsernamePage() {
             variant="contained"
             size="large"
             disabled={submitting || !currentEmail || !newEmail}
-            sx={{ mt: 1 }}
+            className={styles.submitButton}
           >
             {submitting ? 'Updating email...' : 'Update Email'}
           </Button>

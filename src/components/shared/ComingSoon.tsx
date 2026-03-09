@@ -1,5 +1,5 @@
 import { Box, Typography } from '@mui/material';
-import { commonStyles, typography } from '@/styles/theme';
+import styles from './ComingSoon.module.css';
 
 interface ComingSoonProps {
   message: string;
@@ -7,23 +7,16 @@ interface ComingSoonProps {
 
 export default function ComingSoon({ message }: ComingSoonProps) {
   return (
-    <Box sx={commonStyles.comingSoonCard}>
+    <Box className={styles.card}>
       <Typography
         variant="h4"
-        sx={{
-          ...typography.h4,
-          textAlign: 'center',
-          mb: 2,
-        }}
+        className={styles.title}
       >
         Coming Soon
       </Typography>
       <Typography
         variant="body1"
-        sx={{
-          ...typography.body1,
-          textAlign: 'center',
-        }}
+        className={styles.message}
       >
         {message}
       </Typography>

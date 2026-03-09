@@ -1,0 +1,22 @@
+.pageRoot {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  padding-left: 16px;
+  padding-right: 16px;
+  text-align: center;
+}
+
+.title {
+  margin-bottom: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.subtitle {
+  margin-bottom: 24px;
+  color: var(--text);
+}

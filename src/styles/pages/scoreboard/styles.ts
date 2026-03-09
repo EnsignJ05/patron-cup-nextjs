@@ -4,19 +4,19 @@ export const styles = {
   container: {
     minHeight: '100vh',
     width: '100vw',
-    background: '#f5f5f5',
+    background: 'var(--bg)',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'flex-start',
-    color: '#2c3e50',
+    color: 'var(--text)',
     pt: { xs: 4, sm: 8 },
   } as SxProps<Theme>,
 
   title: {
     mb: { xs: 2, sm: 4 },
     fontWeight: 700,
-    color: '#2c3e50',
+    color: 'var(--text)',
   } as SxProps<Theme>,
 
   scoreContainer: {
@@ -39,11 +39,11 @@ export const styles = {
   } as SxProps<Theme>,
 
   thompsonTeam: {
-    color: '#3498db',
+    color: 'var(--accent-blue)',
   } as SxProps<Theme>,
 
   burgessTeam: {
-    color: '#e74c3c',
+    color: 'var(--accent-red)',
   } as SxProps<Theme>,
 
   score: {
@@ -51,7 +51,7 @@ export const styles = {
   } as SxProps<Theme>,
 
   vs: {
-    color: '#666666',
+    color: 'var(--text-muted)',
     fontWeight: 300,
   } as SxProps<Theme>,
 
@@ -63,16 +63,16 @@ export const styles = {
 
   tabs: {
     '& .MuiTab-root': {
-      color: '#666666',
+      color: 'var(--text-muted)',
       fontWeight: 600,
       fontSize: { xs: '0.9rem', sm: '1rem' },
       textTransform: 'none',
       '&.Mui-selected': {
-        color: '#2c3e50',
+        color: 'var(--text)',
       },
     },
     '& .MuiTabs-indicator': {
-      backgroundColor: '#2c3e50',
+      backgroundColor: 'var(--text)',
     },
   } as SxProps<Theme>,
 }; 

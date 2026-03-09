@@ -1,13 +1,12 @@
 import { Alert, Box, Paper, Typography } from '@mui/material';
 import type { ReactNode } from 'react';
-import { borderRadius, colors, commonStyles } from '@/styles/theme';
+import styles from './FormPage.module.css';
 
 interface FormPageProps {
   title: string;
   subtitle?: string;
   error?: string;
   success?: string;
-  maxWidth?: number;
   children: ReactNode;
 }
 
@@ -16,36 +15,30 @@ export default function FormPage({
   subtitle,
   error,
   success,
-  maxWidth = 520,
   children,
 }: FormPageProps) {
   return (
-    <Box sx={commonStyles.pageContainer}>
+    <Box className={styles.pageContainer}>
       <Paper
         elevation={2}
-        sx={{
-          width: '100%',
-          maxWidth,
-          p: { xs: 3, sm: 4 },
-          borderRadius: borderRadius.medium,
-        }}
+        className={styles.formCard}
       >
-        <Typography variant="h4" sx={{ mb: 1.5, fontWeight: 700, color: colors.primary }}>
+        <Typography variant="h4" className={styles.title}>
           {title}
         </Typography>
         {subtitle && (
-          <Typography variant="body2" sx={{ mb: 3, color: colors.secondary }}>
+          <Typography variant="body2" className={styles.subtitle}>
             {subtitle}
           </Typography>
         )}
 
         {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
+          <Alert severity="error" className={styles.alert}>
             {error}
           </Alert>
         )}
         {success && (
-          <Alert severity="success" sx={{ mb: 2 }}>
+          <Alert severity="success" className={styles.alert}>
             {success}
           </Alert>
         )}

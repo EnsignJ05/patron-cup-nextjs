@@ -1,0 +1,137 @@
+.appBar {
+  box-shadow: none;
+  background: var(--bg);
+  backdrop-filter: none;
+  border-bottom: 1px solid var(--divider);
+  min-height: 72px;
+}
+
+.toolbar {
+  justify-content: center;
+  gap: 8px;
+  min-height: 72px;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.logoLink {
+  display: flex;
+  align-items: center;
+  margin-right: 8px;
+  height: 70px;
+  width: 70px;
+  position: relative;
+}
+
+.logoLink:hover {
+  opacity: 0.8;
+}
+
+.logoImage {
+  object-fit: contain;
+}
+
+.desktopNav {
+  display: none;
+  align-items: center;
+  gap: 24px;
+}
+
+.navButton {
+  color: var(--text);
+  font-weight: 600;
+  font-size: 18px;
+  text-transform: none;
+  font-family: inherit;
+  background: none;
+  box-shadow: none;
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+.navButton:hover {
+  background: var(--surface-tint);
+}
+
+.navButtonDanger {
+  color: var(--accent-red);
+  font-weight: 600;
+  font-size: 18px;
+  text-transform: none;
+  font-family: inherit;
+  background: none;
+  box-shadow: none;
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+.navButtonDanger:hover {
+  background: rgba(231, 76, 60, 0.12);
+}
+
+.mobileNav {
+  display: flex;
+  margin-left: auto;
+}
+
+.menuButton {
+  color: var(--text);
+}
+
+.menuIcon {
+  font-size: 32px;
+}
+
+.drawerPaper {
+  background-color: var(--bg);
+  color: var(--text);
+  min-width: 220px;
+}
+
+.drawerItem {
+  font-weight: 600;
+  font-size: 18px;
+  font-family: inherit;
+  color: var(--text);
+  padding-top: 16px;
+  padding-bottom: 16px;
+}
+
+.drawerItem:hover {
+  background: var(--surface-tint);
+}
+
+.drawerItemDanger {
+  color: var(--accent-red);
+}
+
+.drawerItemDanger:hover {
+  background: rgba(231, 76, 60, 0.12);
+}
+
+@media (min-width: 600px) {
+  .toolbar {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
+@media (min-width: 900px) {
+  .toolbar {
+    gap: 32px;
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  .logoLink {
+    margin-right: 32px;
+  }
+
+  .desktopNav {
+    display: flex;
+  }
+
+  .mobileNav {
+    display: none;
+  }
+}

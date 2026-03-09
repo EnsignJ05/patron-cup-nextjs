@@ -9,6 +9,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import { getAllPlayersAndMatches } from '@/lib/getAllPlayersAndMatches';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import { formatPlayerSlug } from '@/utils/playerUtils';
+import styles from './page.module.css';
 
 const columns: GridColDef[] = [
   { 
@@ -19,36 +20,21 @@ const columns: GridColDef[] = [
     flex: 1,
     sortable: true,
     renderCell: (params) => (
-      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+      <Box className={styles.nameCell}>
         <Link 
           href={`/tee-times/2025/${formatPlayerSlug(params.value)}`}
-          style={{ textDecoration: 'none' }}
+          className={styles.nameLink}
         >
-          <Typography 
-            variant="body1" 
-            sx={{ 
-              color: '#1976d2',
-              fontWeight: 600,
-              fontSize: { xs: '0.875rem', sm: '1rem' },
-              cursor: 'pointer',
-              textDecoration: 'underline',
-              '&::after': {
-                content: '""',
-                display: 'inline-block',
-                width: 8,
-                height: 8,
-                borderRadius: '50%',
-                marginLeft: 1,
-                bgcolor: params.row.team === 'Thompson' ? '#3498db' : '#e74c3e',
-              },
-              '&:hover': {
-                color: '#1565c0',
-                textDecoration: 'underline',
-              },
-            }}
-          >
+          <span className={styles.nameText}>
             {params.value}
-          </Typography>
+            <span
+              className={
+                params.row.team === 'Thompson'
+                  ? styles.teamDotThompson
+                  : styles.teamDotBurgess
+              }
+            />
+          </span>
         </Link>
       </Box>
     ),
@@ -62,15 +48,7 @@ const columns: GridColDef[] = [
     headerAlign: 'center',
     sortable: true,
     renderCell: (params) => (
-      <Typography 
-        variant="body1" 
-        sx={{ 
-          width: '100%',
-          textAlign: 'center',
-          color: '#2c3e50',
-          fontSize: { xs: '0.875rem', sm: '1rem' },
-        }}
-      >
+      <Typography variant="body1" className={styles.handicapCell}>
         {params.value}
       </Typography>
     ),
@@ -83,15 +61,9 @@ const columns: GridColDef[] = [
     flex: 1,
     sortable: true,
     renderCell: (params) => (
-      <Typography 
-        variant="body1" 
-        sx={{ 
-          color: params.value ? '#2c3e50' : '#95a5a6', 
-          fontSize: { xs: '0.875rem', sm: '1rem' },
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-        }}
+      <Typography
+        variant="body1"
+        className={`${styles.timeCell} ${params.value ? '' : styles.timeCellMuted}`}
       >
         {params.value ? params.value : 'No Time'}
       </Typography>
@@ -105,15 +77,9 @@ const columns: GridColDef[] = [
     flex: 1,
     sortable: true,
     renderCell: (params) => (
-      <Typography 
-        variant="body1" 
-        sx={{ 
-          color: params.value ? '#2c3e50' : '#95a5a6', 
-          fontSize: { xs: '0.875rem', sm: '1rem' },
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-        }}
+      <Typography
+        variant="body1"
+        className={`${styles.timeCell} ${params.value ? '' : styles.timeCellMuted}`}
       >
         {params.value ? params.value : 'No Time'}
       </Typography>
@@ -127,15 +93,9 @@ const columns: GridColDef[] = [
     flex: 1,
     sortable: true,
     renderCell: (params) => (
-      <Typography 
-        variant="body1" 
-        sx={{ 
-          color: params.value ? '#2c3e50' : '#95a5a6', 
-          fontSize: { xs: '0.875rem', sm: '1rem' },
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-        }}
+      <Typography
+        variant="body1"
+        className={`${styles.timeCell} ${params.value ? '' : styles.timeCellMuted}`}
       >
         {params.value ? params.value : 'No Time'}
       </Typography>
@@ -216,50 +176,25 @@ export default function TeeTimesPage() {
   const allColumns = columns;
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        width: '100vw',
-        background: '#f5f5f5',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        py: { xs: 4, sm: 8 },
-        px: { xs: 1, sm: 4 },
-      }}
-    >
+    <Box className={styles.pageRoot}>
       <Typography 
         variant="h3" 
         gutterBottom 
-        sx={{ 
-          color: '#2c3e50', 
-          mb: 4,
-          fontSize: { xs: '1.75rem', sm: '2.5rem' },
-          textAlign: 'center',
-        }}
+        className={styles.pageTitle}
       >
         Tee Times
       </Typography>
 
-      <Box sx={{ width: '100%', maxWidth: 900 }}>
-        <Box 
-          sx={{ 
-            display: 'flex', 
-            flexDirection: { xs: 'column', sm: 'row' },
-            alignItems: { xs: 'stretch', sm: 'center' },
-            justifyContent: 'space-between',
-            gap: 2,
-            mb: 3,
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#3498db' }} />
-              <Typography variant="body2" sx={{ color: '#666666' }}>Team Thompson</Typography>
+      <Box className={styles.contentWrap}>
+        <Box className={styles.controlsRow}>
+          <Box className={styles.legend}>
+            <Box className={styles.legendItem}>
+              <Box className={styles.legendDotThompson} />
+              <Typography variant="body2" className={styles.legendText}>Team Thompson</Typography>
             </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#e74c3c' }} />
-              <Typography variant="body2" sx={{ color: '#666666' }}>Team Burgess</Typography>
+            <Box className={styles.legendItem}>
+              <Box className={styles.legendDotBurgess} />
+              <Typography variant="body2" className={styles.legendText}>Team Burgess</Typography>
             </Box>
           </Box>
 
@@ -268,22 +203,11 @@ export default function TeeTimesPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             size="small"
-            sx={{
-              width: { xs: '100%', sm: 240 },
-              '& .MuiOutlinedInput-root': {
-                bgcolor: '#ffffff',
-                '& fieldset': {
-                  borderColor: 'rgba(0,0,0,0.12)',
-                },
-                '&:hover fieldset': {
-                  borderColor: 'rgba(0,0,0,0.24)',
-                },
-              },
-            }}
+            className={styles.searchField}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <SearchIcon sx={{ color: '#666666' }} />
+                  <SearchIcon className={styles.searchIcon} />
                 </InputAdornment>
               ),
             }}
@@ -292,18 +216,12 @@ export default function TeeTimesPage() {
 
         <Typography 
           variant="body2" 
-          sx={{ 
-            color: '#2c3e50',
-            mb: 3,
-            textAlign: 'center',
-            fontWeight: 700,
-            fontStyle: 'italic',
-          }}
+          className={styles.hintText}
         >
           Click on a player&apos;s name to view their match schedule and additional rounds
         </Typography>
 
-        <Box sx={{ width: '100%', overflowX: 'auto', height: { xs: 500, sm: 600 } }}>
+        <Box className={styles.gridWrap}>
           <DataGrid
             rows={filteredRows}
             columns={allColumns}
@@ -317,26 +235,7 @@ export default function TeeTimesPage() {
             }}
             pageSizeOptions={[10, 25, 50]}
             disableRowSelectionOnClick
-            sx={{
-              minWidth: 600,
-              bgcolor: '#ffffff',
-              borderRadius: 2,
-              boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-              border: 'none',
-              '& .MuiDataGrid-columnHeader': {
-                bgcolor: 'rgba(0,0,0,0.02)',
-                color: '#2c3e50',
-                fontWeight: 700,
-                fontSize: { xs: '0.8rem', sm: '1rem' },
-              },
-              '& .MuiDataGrid-row:hover': {
-                bgcolor: 'rgba(0,0,0,0.02)',
-              },
-              '& .MuiDataGrid-cell': {
-                padding: { xs: '6px 2px', sm: '8px 16px' },
-                fontSize: { xs: '0.8rem', sm: '1rem' },
-              },
-            }}
+            className={styles.dataGrid}
           />
         </Box>
       </Box>

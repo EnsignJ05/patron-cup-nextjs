@@ -1,18 +1,15 @@
 import { Card as MuiCard, CardContent, CardProps as MuiCardProps } from '@mui/material';
 import { ReactNode } from 'react';
-import { commonStyles } from '@/styles/theme';
+import styles from './Card.module.css';
 
-interface CardProps extends MuiCardProps {
+interface CardProps extends Omit<MuiCardProps, 'sx'> {
   children: ReactNode;
 }
 
-export default function Card({ children, sx, ...props }: CardProps) {
+export default function Card({ children, className, ...props }: CardProps) {
   return (
     <MuiCard
-      sx={{
-        ...commonStyles.card,
-        ...sx
-      }}
+      className={`${styles.card} ${className ?? ''}`}
       {...props}
     >
       <CardContent>

@@ -7,6 +7,7 @@ import CourseScoreCard from '@/components/scoreboard/CourseScoreCard';
 import MatchRow from '@/components/scoreboard/MatchRow';
 import { useState, useEffect } from 'react';
 import { getAllPlayersAndMatches } from '@/lib/getAllPlayersAndMatches';
+import styles from './page.module.css';
 
 function TabPanel(props: { children?: React.ReactNode; index: number; value: number }) {
   const { children, value, index, ...other } = props;
@@ -18,7 +19,7 @@ function TabPanel(props: { children?: React.ReactNode; index: number; value: num
       aria-labelledby={`course-tab-${index}`}
       {...other}
     >
-      {value === index && <Box sx={{ py: 3 }}>{children}</Box>}
+      {value === index && <Box className={styles.tabPanelBody}>{children}</Box>}
     </div>
   );
 }
@@ -98,76 +99,41 @@ export default function ScoreboardPage() {
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        width: '100vw',
-        background: '#f5f5f5',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'flex-start',
-        color: '#2c3e50',
-        pt: { xs: 4, sm: 8 },
-      }}
-    >
+    <Box className={styles.pageRoot}>
       {/* Scoreboard Heading */}
-      <Typography variant="h3" sx={{ mb: { xs: 2, sm: 4 }, fontWeight: 700, color: '#2c3e50' }}>
+      <Typography variant="h3" className={styles.pageTitle}>
         Scoreboard
       </Typography>
 
       {/* Overall Score Display */}
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          gap: { xs: 4, sm: 8 },
-          mb: { xs: 4, sm: 6 },
-          width: '100%',
-          maxWidth: 900,
-        }}
-      >
-        <Box sx={{ textAlign: 'center' }}>
-          <Typography variant="h4" sx={{ color: '#3498db', fontWeight: 700, mb: 1, fontSize: { xs: '0.75rem', sm: '1.25rem' } }}>
+      <Box className={styles.scoreboardRow}>
+        <Box className={styles.scoreColumn}>
+          <Typography variant="h4" className={styles.scoreLabelThompson}>
             Team Thompson
           </Typography>
-          <Typography variant="h2" sx={{ color: '#3498db', fontWeight: 800 }}>
+          <Typography variant="h2" className={styles.scoreValueThompson}>
             {teamThompsonScore}
           </Typography>
         </Box>
-        <Typography variant="h3" sx={{ color: '#666666', fontWeight: 300 }}>vs</Typography>
-        <Box sx={{ textAlign: 'center' }}>
-          <Typography variant="h4" sx={{ color: '#e74c3c', fontWeight: 700, mb: 1, fontSize: { xs: '0.75rem', sm: '1.25rem' } }}>
+        <Typography variant="h3" className={styles.scoreDivider}>vs</Typography>
+        <Box className={styles.scoreColumn}>
+          <Typography variant="h4" className={styles.scoreLabelBurgess}>
             Team Burgess
           </Typography>
-          <Typography variant="h2" sx={{ color: '#e74c3c', fontWeight: 800 }}>
+          <Typography variant="h2" className={styles.scoreValueBurgess}>
             {teamBurgessScore}
           </Typography>
         </Box>
       </Box>
 
       {/* Course Tabs */}
-      <Box sx={{ width: '100%', maxWidth: 900, px: { xs: 2, sm: 3 } }}>
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+      <Box className={styles.tabsWrap}>
+        <Box className={styles.tabsBorder}>
           <Tabs 
             value={selectedTab} 
             onChange={handleTabChange} 
             variant="fullWidth"
-            sx={{
-              '& .MuiTab-root': {
-                color: '#666666',
-                fontWeight: 600,
-                fontSize: { xs: '0.9rem', sm: '1rem' },
-                textTransform: 'none',
-                '&.Mui-selected': {
-                  color: '#2c3e50',
-                },
-              },
-              '& .MuiTabs-indicator': {
-                backgroundColor: '#2c3e50',
-              },
-            }}
+            className={styles.tabs}
           >
             <Tab label="Pacific Dunes" />
             <Tab label="Sheep Ranch" />

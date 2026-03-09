@@ -271,11 +271,11 @@ export default function MatchSetupAdminPage() {
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, color: '#2c3e50' }}>
+        <Typography variant="h4" sx={{ fontWeight: 700, color: 'var(--text)' }}>
           Match Setup
         </Typography>
         <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button variant="outlined" href="/admin/matches" sx={{ borderColor: '#2c3e50', color: '#2c3e50' }}>
+          <Button variant="outlined" href="/admin/matches" sx={{ borderColor: 'var(--text)', color: 'var(--text)' }}>
             Back to Matches
           </Button>
         </Box>
@@ -327,12 +327,13 @@ export default function MatchSetupAdminPage() {
             variant="scrollable"
             scrollButtons="auto"
             sx={{
-              backgroundColor: '#f5f7fa',
+              backgroundColor: 'var(--surface-muted)',
               px: 2,
               '& .MuiTabs-indicator': {
                 height: 4,
                 borderRadius: 2,
-                backgroundColor: '#2c3e50',
+                backgroundColor: 'var(--text)',
+                color: 'var(--bg)',
               },
             }}
           >
@@ -348,9 +349,10 @@ export default function MatchSetupAdminPage() {
                   minHeight: 56,
                   px: 2.5,
                   mr: 1,
+                    color: 'var(--tab-unselected-text)',
                   '&.Mui-selected': {
-                    color: '#1f2d3d',
-                    backgroundColor: '#e1e8f0',
+                    color: 'var(--text)',
+                    backgroundColor: 'var(--surface-muted)',
                   },
                 }}
               />
@@ -380,7 +382,7 @@ export default function MatchSetupAdminPage() {
                           {courseName}
                         </Typography>
                         {groupLabel && (
-                          <Typography variant="body2" sx={{ color: '#666' }}>
+                          <Typography variant="body2" sx={{ color: 'var(--text-muted)' }}>
                             {groupLabel}
                           </Typography>
                         )}
@@ -419,10 +421,10 @@ export default function MatchSetupAdminPage() {
                                   <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                                     Match #{match.match_number}
                                   </Typography>
-                                  <Typography variant="body2" sx={{ color: '#666' }}>
+                                  <Typography variant="body2" sx={{ color: 'var(--text-muted)' }}>
                                     {match.match_type}
                                   </Typography>
-                                  <Typography variant="body2" sx={{ color: '#666' }}>
+                                  <Typography variant="body2" sx={{ color: 'var(--text-muted)' }}>
                                     Tee time: {formatTime(match.match_time)}
                                   </Typography>
                                 </Box>
@@ -449,6 +451,7 @@ export default function MatchSetupAdminPage() {
                                             onDelete={() => removeMatchPlayer(mp.id)}
                                             deleteIcon={<DeleteIcon />}
                                             variant="outlined"
+                                            sx={{ color: 'var(--player-name-text)' }}
                                           />
                                         ))}
                                         {Array.from({ length: remainingSlots }).map((_, slotIndex) => (
@@ -471,7 +474,7 @@ export default function MatchSetupAdminPage() {
                                           </FormControl>
                                         ))}
                                         {!availablePlayers.length && remainingSlots > 0 && (
-                                          <Typography variant="caption" sx={{ color: '#777' }}>
+                                          <Typography variant="caption" sx={{ color: 'var(--text-muted)' }}>
                                             No eligible players available
                                           </Typography>
                                         )}

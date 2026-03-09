@@ -210,14 +210,14 @@ export default function TeamsAdminPage() {
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, color: '#2c3e50' }}>
+        <Typography variant="h4" sx={{ fontWeight: 700, color: 'var(--text)' }}>
           Teams Management
         </Typography>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={handleAdd}
-          sx={{ bgcolor: '#2c3e50' }}
+          sx={{ bgcolor: 'var(--text)', color: 'var(--bg)' }}
         >
           Add Team
         </Button>
@@ -245,11 +245,11 @@ export default function TeamsAdminPage() {
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
-            <TableRow sx={{ bgcolor: '#2c3e50' }}>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Team Name</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Event</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Color</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }} align="right">Actions</TableCell>
+            <TableRow sx={{ bgcolor: 'var(--text)' }}>
+              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Team Name</TableCell>
+              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Event</TableCell>
+              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Color</TableCell>
+              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }} align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -339,7 +339,7 @@ export default function TeamsAdminPage() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleSave} variant="contained" sx={{ bgcolor: '#2c3e50' }}>
+          <Button onClick={handleSave} variant="contained" sx={{ bgcolor: 'var(--text)', color: 'var(--bg)' }}>
             Save
           </Button>
         </DialogActions>
@@ -351,7 +351,7 @@ export default function TeamsAdminPage() {
           Roster - {selectedTeam?.name}
         </DialogTitle>
         <DialogContent>
-          <Typography variant="subtitle2" sx={{ mb: 2, color: '#666' }}>
+          <Typography variant="subtitle2" sx={{ mb: 2, color: 'var(--text-muted)' }}>
             Add players to this team&apos;s roster
           </Typography>
           
@@ -378,11 +378,11 @@ export default function TeamsAdminPage() {
               onChange={(e) => setHandicapAtEvent(e.target.value)}
               sx={{ flex: 1 }}
             />
-            <Button 
-              variant="contained" 
+            <Button
+              variant="contained"
               onClick={addToRoster}
               disabled={!selectedPlayerId}
-              sx={{ bgcolor: '#2c3e50' }}
+              sx={{ bgcolor: 'var(--text)', color: 'var(--bg)' }}
             >
               Add
             </Button>

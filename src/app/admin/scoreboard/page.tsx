@@ -9,6 +9,7 @@ import { getAllPlayersAndMatches } from '@/lib/getAllPlayersAndMatches';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import ToggleButton from '@mui/material/ToggleButton';
 import { supabase } from '@/lib/supabaseClient';
+import styles from './page.module.css';
 
 function TabPanel(props: { children?: React.ReactNode; index: number; value: number }) {
   const { children, value, index, ...other } = props;
@@ -20,7 +21,7 @@ function TabPanel(props: { children?: React.ReactNode; index: number; value: num
       aria-labelledby={`course-tab-${index}`}
       {...other}
     >
-      {value === index && <Box sx={{ py: 3 }}>{children}</Box>}
+      {value === index && <Box className={styles.tabPanelBody}>{children}</Box>}
     </div>
   );
 }
@@ -181,75 +182,40 @@ export default function AdminScoreboardPage() {
   const teamBurgessScore = bandonTotals.burgess + pacificTotals.burgess + sheepRanchTotals.burgess;
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        width: '100vw',
-        background: '#f5f5f5',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'flex-start',
-        color: '#2c3e50',
-        pt: { xs: 4, sm: 8 },
-      }}
-    >
-      <Typography variant="h3" sx={{ mb: { xs: 2, sm: 4 }, fontWeight: 700, color: '#2c3e50' }}>
+    <Box className={styles.pageRoot}>
+      <Typography variant="h3" className={styles.pageTitle}>
         Admin Scoreboard
       </Typography>
 
       {/* Overall Score Display */}
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          gap: { xs: 4, sm: 8 },
-          mb: { xs: 4, sm: 6 },
-          width: '100%',
-          maxWidth: 900,
-        }}
-      >
-        <Box sx={{ textAlign: 'center' }}>
-          <Typography variant="h4" sx={{ color: '#3498db', fontWeight: 700, mb: 1, fontSize: { xs: '0.75rem', sm: '1.25rem' } }}>
+      <Box className={styles.scoreboardRow}>
+        <Box className={styles.scoreColumn}>
+          <Typography variant="h4" className={styles.scoreLabelThompson}>
             Team Thompson
           </Typography>
-          <Typography variant="h2" sx={{ color: '#3498db', fontWeight: 800 }}>
+          <Typography variant="h2" className={styles.scoreValueThompson}>
             {teamThompsonScore}
           </Typography>
         </Box>
-        <Typography variant="h3" sx={{ color: '#666666', fontWeight: 300 }}>vs</Typography>
-        <Box sx={{ textAlign: 'center' }}>
-          <Typography variant="h4" sx={{ color: '#e74c3c', fontWeight: 700, mb: 1, fontSize: { xs: '0.75rem', sm: '1.25rem' } }}>
+        <Typography variant="h3" className={styles.scoreDivider}>vs</Typography>
+        <Box className={styles.scoreColumn}>
+          <Typography variant="h4" className={styles.scoreLabelBurgess}>
             Team Burgess
           </Typography>
-          <Typography variant="h2" sx={{ color: '#e74c3c', fontWeight: 800 }}>
+          <Typography variant="h2" className={styles.scoreValueBurgess}>
             {teamBurgessScore}
           </Typography>
         </Box>
       </Box>
 
       {/* Course Tabs */}
-      <Box sx={{ width: '100%', maxWidth: 900, px: { xs: 2, sm: 3 } }}>
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+      <Box className={styles.tabsWrap}>
+        <Box className={styles.tabsBorder}>
           <Tabs 
             value={selectedTab} 
             onChange={handleTabChange} 
             variant="fullWidth"
-            sx={{
-              '& .MuiTab-root': {
-                color: '#666666',
-                fontWeight: 600,
-                fontSize: { xs: '0.9rem', sm: '1rem' },
-                textTransform: 'none',
-                '&.Mui-selected': {
-                  color: '#2c3e50',
-                },
-              },
-              '& .MuiTabs-indicator': {
-                backgroundColor: '#2c3e50',
-              },
-            }}
+            className={styles.tabs}
           >
             <Tab label="Pacific Dunes" />
             <Tab label="Sheep Ranch" />
@@ -268,31 +234,20 @@ export default function AdminScoreboardPage() {
             {pacificMatches.map((match) => (
               <Box
                 key={match.id}
-                sx={{
-                  display: 'flex',
-                  flexDirection: { xs: 'column', sm: 'row' },
-                  justifyContent: 'space-between',
-                  alignItems: { xs: 'flex-start', sm: 'center' },
-                  p: 2,
-                  borderBottom: '1px solid #eee',
-                  '&:last-child': {
-                    borderBottom: 'none',
-                  },
-                  gap: { xs: 2, sm: 0 },
-                }}
+                className={styles.matchRow}
               >
-                <Box sx={{ flex: 1, width: '100%' }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                <Box className={styles.matchInfo}>
+                  <Typography variant="subtitle1" className={styles.matchTitle}>
                     Match {match.match} - Group {match.group}
                   </Typography>
-                  <Typography variant="body2" sx={{ color: '#666' }}>
+                  <Typography variant="body2" className={styles.matchTime}>
                     {match.time}
                   </Typography>
-                  <Box sx={{ mt: 1 }}>
-                    <Typography variant="body2" sx={{ color: '#3498db' }}>
+                  <Box className={styles.matchTeams}>
+                    <Typography variant="body2" className={styles.teamThompson}>
                       {buildTeamPlayers(match, 'thompson').map(p => p.name).join(' & ')}
                     </Typography>
-                    <Typography variant="body2" sx={{ color: '#e74c3c' }}>
+                    <Typography variant="body2" className={styles.teamBurgess}>
                       {buildTeamPlayers(match, 'burgess').map(p => p.name).join(' & ')}
                     </Typography>
                   </Box>
@@ -302,24 +257,7 @@ export default function AdminScoreboardPage() {
                   exclusive
                   onChange={(e, value) => handleMatchResultChange(match.id, value)}
                   size="small"
-                  sx={{
-                    width: { xs: '100%', sm: 'auto' },
-                    justifyContent: { xs: 'center', sm: 'flex-end' },
-                    '& .MuiToggleButton-root': {
-                      color: '#2c3e50',
-                      borderColor: 'rgba(0, 0, 0, 0.12)',
-                      '&.Mui-selected': {
-                        backgroundColor: '#2c3e50',
-                        color: '#ffffff',
-                        '&:hover': {
-                          backgroundColor: '#1a252f',
-                        },
-                      },
-                      '&:hover': {
-                        backgroundColor: 'rgba(44, 62, 80, 0.04)',
-                      },
-                    },
-                  }}
+                  className={styles.toggleGroup}
                 >
                   <ToggleButton value="none">None</ToggleButton>
                   <ToggleButton value="tie">Tie</ToggleButton>
@@ -342,31 +280,20 @@ export default function AdminScoreboardPage() {
             {sheepRanchMatches.map((match) => (
               <Box
                 key={match.id}
-                sx={{
-                  display: 'flex',
-                  flexDirection: { xs: 'column', sm: 'row' },
-                  justifyContent: 'space-between',
-                  alignItems: { xs: 'flex-start', sm: 'center' },
-                  p: 2,
-                  borderBottom: '1px solid #eee',
-                  '&:last-child': {
-                    borderBottom: 'none',
-                  },
-                  gap: { xs: 2, sm: 0 },
-                }}
+                className={styles.matchRow}
               >
-                <Box sx={{ flex: 1, width: '100%' }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                <Box className={styles.matchInfo}>
+                  <Typography variant="subtitle1" className={styles.matchTitle}>
                     Match {match.match} - Group {match.group}
                   </Typography>
-                  <Typography variant="body2" sx={{ color: '#666' }}>
+                  <Typography variant="body2" className={styles.matchTime}>
                     {match.time}
                   </Typography>
-                  <Box sx={{ mt: 1 }}>
-                    <Typography variant="body2" sx={{ color: '#3498db' }}>
+                  <Box className={styles.matchTeams}>
+                    <Typography variant="body2" className={styles.teamThompson}>
                       {buildTeamPlayers(match, 'thompson').map(p => p.name).join(' & ')}
                     </Typography>
-                    <Typography variant="body2" sx={{ color: '#e74c3c' }}>
+                    <Typography variant="body2" className={styles.teamBurgess}>
                       {buildTeamPlayers(match, 'burgess').map(p => p.name).join(' & ')}
                     </Typography>
                   </Box>
@@ -376,24 +303,7 @@ export default function AdminScoreboardPage() {
                   exclusive
                   onChange={(e, value) => handleMatchResultChange(match.id, value)}
                   size="small"
-                  sx={{
-                    width: { xs: '100%', sm: 'auto' },
-                    justifyContent: { xs: 'center', sm: 'flex-end' },
-                    '& .MuiToggleButton-root': {
-                      color: '#2c3e50',
-                      borderColor: 'rgba(0, 0, 0, 0.12)',
-                      '&.Mui-selected': {
-                        backgroundColor: '#2c3e50',
-                        color: '#ffffff',
-                        '&:hover': {
-                          backgroundColor: '#1a252f',
-                        },
-                      },
-                      '&:hover': {
-                        backgroundColor: 'rgba(44, 62, 80, 0.04)',
-                      },
-                    },
-                  }}
+                  className={styles.toggleGroup}
                 >
                   <ToggleButton value="none">None</ToggleButton>
                   <ToggleButton value="tie">Tie</ToggleButton>
@@ -416,31 +326,20 @@ export default function AdminScoreboardPage() {
             {bandonMatches.map((match) => (
               <Box
                 key={match.id}
-                sx={{
-                  display: 'flex',
-                  flexDirection: { xs: 'column', sm: 'row' },
-                  justifyContent: 'space-between',
-                  alignItems: { xs: 'flex-start', sm: 'center' },
-                  p: 2,
-                  borderBottom: '1px solid #eee',
-                  '&:last-child': {
-                    borderBottom: 'none',
-                  },
-                  gap: { xs: 2, sm: 0 },
-                }}
+                className={styles.matchRow}
               >
-                <Box sx={{ flex: 1, width: '100%' }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                <Box className={styles.matchInfo}>
+                  <Typography variant="subtitle1" className={styles.matchTitle}>
                     Match {match.match} - Group {match.group}
                   </Typography>
-                  <Typography variant="body2" sx={{ color: '#666' }}>
+                  <Typography variant="body2" className={styles.matchTime}>
                     {match.time}
                   </Typography>
-                  <Box sx={{ mt: 1 }}>
-                    <Typography variant="body2" sx={{ color: '#3498db' }}>
+                  <Box className={styles.matchTeams}>
+                    <Typography variant="body2" className={styles.teamThompson}>
                       {buildTeamPlayers(match, 'thompson').map(p => p.name).join(' & ')}
                     </Typography>
-                    <Typography variant="body2" sx={{ color: '#e74c3c' }}>
+                    <Typography variant="body2" className={styles.teamBurgess}>
                       {buildTeamPlayers(match, 'burgess').map(p => p.name).join(' & ')}
                     </Typography>
                   </Box>
@@ -450,24 +349,7 @@ export default function AdminScoreboardPage() {
                   exclusive
                   onChange={(e, value) => handleMatchResultChange(match.id, value)}
                   size="small"
-                  sx={{
-                    width: { xs: '100%', sm: 'auto' },
-                    justifyContent: { xs: 'center', sm: 'flex-end' },
-                    '& .MuiToggleButton-root': {
-                      color: '#2c3e50',
-                      borderColor: 'rgba(0, 0, 0, 0.12)',
-                      '&.Mui-selected': {
-                        backgroundColor: '#2c3e50',
-                        color: '#ffffff',
-                        '&:hover': {
-                          backgroundColor: '#1a252f',
-                        },
-                      },
-                      '&:hover': {
-                        backgroundColor: 'rgba(44, 62, 80, 0.04)',
-                      },
-                    },
-                  }}
+                  className={styles.toggleGroup}
                 >
                   <ToggleButton value="none">None</ToggleButton>
                   <ToggleButton value="tie">Tie</ToggleButton>

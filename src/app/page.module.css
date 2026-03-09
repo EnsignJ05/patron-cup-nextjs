@@ -1,3 +1,168 @@
+.root {
+  min-height: 100vh;
+  width: 100vw;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  text-align: center;
+  padding-top: 32px;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.titleWrap {
+  max-width: 700px;
+  width: 100%;
+  padding-left: 8px;
+  padding-right: 8px;
+  margin-bottom: 12px;
+}
+
+.title {
+  font-weight: 800;
+  font-size: 2.1rem;
+  line-height: 1.08;
+  letter-spacing: -1.5px;
+  margin-bottom: 8px;
+  word-break: break-word;
+  color: var(--text);
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  white-space: nowrap;
+}
+
+.timerWrap {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.sliderWrap {
+  width: 100%;
+  max-width: 900px;
+  margin-bottom: 48px;
+}
+
+.slide {
+  position: relative;
+  width: 100%;
+  height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 40px;
+  box-shadow: var(--shadow-md);
+}
+
+.slideImage {
+  object-fit: cover;
+  border-radius: 20px;
+}
+
+.locationWrap {
+  max-width: 700px;
+  width: 100%;
+  padding-left: 8px;
+  padding-right: 8px;
+  margin-bottom: 24px;
+}
+
+.locationTitle {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--text);
+  margin-bottom: 8px;
+  word-break: break-word;
+}
+
+.locationDate {
+  font-weight: 400;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+  word-break: break-word;
+}
+
+@media (min-width: 600px) {
+  .root {
+    padding-top: 48px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .titleWrap {
+    padding-left: 16px;
+    padding-right: 16px;
+    margin-bottom: 24px;
+  }
+
+  .title {
+    font-size: 3rem;
+    margin-bottom: 16px;
+  }
+
+  .timerWrap {
+    margin-bottom: 24px;
+  }
+
+  .slide {
+    height: 340px;
+  }
+
+  .locationWrap {
+    padding-left: 16px;
+    padding-right: 16px;
+    margin-bottom: 48px;
+  }
+
+  .locationTitle {
+    font-size: 1.7rem;
+    margin-bottom: 16px;
+  }
+
+  .locationDate {
+    font-size: 1.2rem;
+    margin-bottom: 32px;
+  }
+}
+
+@media (min-width: 900px) {
+  .root {
+    padding-top: 56px;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .title {
+    font-size: 4.5rem;
+  }
+
+  .slide {
+    height: 420px;
+  }
+
+  .locationTitle {
+    font-size: 2.5rem;
+  }
+
+  .locationDate {
+    font-size: 1.5rem;
+  }
+}
+
+@media (min-width: 1200px) {
+  .title {
+    font-size: 5.5rem;
+  }
+
+  .locationTitle {
+    font-size: 3rem;
+  }
+}
 .page {
   --gray-rgb: 0, 0, 0;
   --gray-alpha-200: rgba(var(--gray-rgb), 0.08);

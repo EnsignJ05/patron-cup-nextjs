@@ -208,7 +208,7 @@ export default function ReroundsPage() {
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, color: '#2c3e50' }}>
+        <Typography variant="h4" sx={{ fontWeight: 700, color: 'var(--text)' }}>
           Re-rounds
         </Typography>
         <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)}>
@@ -237,14 +237,14 @@ export default function ReroundsPage() {
             ))}
           </Select>
         </FormControl>
-        <Typography variant="body2" sx={{ color: '#666' }}>
+        <Typography variant="body2" sx={{ color: 'var(--text-muted)' }}>
           {rerounds.length} re-round{rerounds.length !== 1 ? 's' : ''} scheduled
         </Typography>
       </Box>
 
       {Object.entries(reroundsByDate).map(([date, dateRerounds]) => (
         <Box key={date} sx={{ mb: 4 }}>
-          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: '#2c3e50' }}>
+          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: 'var(--text)' }}>
             {new Date(date + 'T00:00:00').toLocaleDateString('en-US', {
               weekday: 'long',
               month: 'long',
@@ -255,7 +255,7 @@ export default function ReroundsPage() {
           <TableContainer component={Paper}>
             <Table size="small">
               <TableHead>
-                <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                <TableRow sx={{ backgroundColor: 'var(--surface-muted)' }}>
                   <TableCell sx={{ fontWeight: 600 }}>Time</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>Course</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>Players</TableCell>

@@ -7,7 +7,7 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
-import { alpha } from '@mui/material/styles';
+import styles from './CourseBox.module.css';
 
 interface Player {
   name: string;
@@ -27,69 +27,19 @@ interface CourseBoxProps {
   teeTimes?: TeeTime[];
 }
 
-const theme = {
-  background: '#ffffff',
-  text: '#2c3e50',
-  border: 'rgba(0,0,0,0.12)',
-  hover: 'rgba(0,0,0,0.04)',
-  shadow: '0 8px 32px rgba(0,0,0,0.12)',
-  hoverShadow: '0 12px 48px rgba(0,0,0,0.15)',
-};
-
 export default function CourseBox({ name, description, hasTeeTimes, teeTimes }: CourseBoxProps) {
   return (
-    <Box 
-      sx={{ 
-        width: '100%', 
-        maxWidth: 800, 
-        bgcolor: theme.background,
-        borderRadius: 3,
-        boxShadow: theme.shadow,
-        p: 4,
-        mb: 3,
-        border: `1px solid ${theme.border}`,
-        transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
-        '&:hover': {
-          transform: 'translateY(-4px)',
-          boxShadow: theme.hoverShadow,
-        },
-      }}
-    >
+    <Box className={styles.courseCard}>
       <Typography 
         variant="h5" 
-        sx={{ 
-          mb: 3,
-          color: theme.text,
-          fontWeight: 600,
-          letterSpacing: '0.5px',
-          borderBottom: '2px solid',
-          borderColor: theme.border,
-          pb: 1,
-          display: 'inline-block'
-        }}
+        className={styles.courseTitle}
       >
         {name}
       </Typography>
       {hasTeeTimes && teeTimes ? (
         <TableContainer 
           component={Paper} 
-          sx={{ 
-            bgcolor: 'transparent',
-            boxShadow: 'none',
-            '& .MuiTableCell-root': {
-              borderColor: theme.border,
-              py: 1.5,
-              color: theme.text,
-            },
-            '& .MuiTableHead-root .MuiTableCell-root': {
-              bgcolor: theme.hover,
-              fontWeight: 600,
-              color: theme.text,
-            },
-            '& .MuiTableBody-root .MuiTableRow-root:hover': {
-              bgcolor: theme.hover,
-            }
-          }}
+          className={styles.tableContainer}
         >
           <Table>
             <TableHead>
@@ -104,16 +54,12 @@ export default function CourseBox({ name, description, hasTeeTimes, teeTimes }: 
             <TableBody>
               {teeTimes.map((teeTime) => (
                 <TableRow key={teeTime.group}>
-                  <TableCell sx={{ fontWeight: 500, color: theme.text }}>{teeTime.group}</TableCell>
+                  <TableCell className={styles.timeCell}>{teeTime.group}</TableCell>
                   <TableCell>
                     {teeTime.team_bolton.map((player) => (
                       <Box 
                         key={player.name}
-                        sx={{ 
-                          py: 0.5,
-                          '&:not(:last-child)': { mb: 1 },
-                          color: theme.text,
-                        }}
+                        className={styles.playerEntry}
                       >
                         {player.name}
                       </Box>
@@ -123,11 +69,7 @@ export default function CourseBox({ name, description, hasTeeTimes, teeTimes }: 
                     {teeTime.team_bolton.map((player) => (
                       <Box 
                         key={player.name}
-                        sx={{ 
-                          py: 0.5,
-                          '&:not(:last-child)': { mb: 1 },
-                          color: theme.text,
-                        }}
+                        className={styles.playerEntry}
                       >
                         {player.handicap}
                       </Box>
@@ -137,11 +79,7 @@ export default function CourseBox({ name, description, hasTeeTimes, teeTimes }: 
                     {teeTime.team_ensign.map((player) => (
                       <Box 
                         key={player.name}
-                        sx={{ 
-                          py: 0.5,
-                          '&:not(:last-child)': { mb: 1 },
-                          color: theme.text,
-                        }}
+                        className={styles.playerEntry}
                       >
                         {player.name}
                       </Box>
@@ -151,11 +89,7 @@ export default function CourseBox({ name, description, hasTeeTimes, teeTimes }: 
                     {teeTime.team_ensign.map((player) => (
                       <Box 
                         key={player.name}
-                        sx={{ 
-                          py: 0.5,
-                          '&:not(:last-child)': { mb: 1 },
-                          color: theme.text,
-                        }}
+                        className={styles.playerEntry}
                       >
                         {player.handicap}
                       </Box>
@@ -169,10 +103,7 @@ export default function CourseBox({ name, description, hasTeeTimes, teeTimes }: 
       ) : (
         <Typography 
           variant="body1" 
-          sx={{ 
-            fontStyle: 'italic',
-            color: alpha(theme.text, 0.7)
-          }}
+          className={styles.courseDescription}
         >
           {description}
         </Typography>
