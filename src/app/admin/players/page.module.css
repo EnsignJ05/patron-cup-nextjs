@@ -1,0 +1,59 @@
+.pageRoot {
+  padding: 24px;
+}
+
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.pageTitle {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.addButton {
+  background-color: var(--text);
+  color: var(--bg);
+}
+
+.alert {
+  margin-bottom: 16px;
+}
+
+.searchField {
+  margin-bottom: 24px;
+}
+
+.tableHeaderRow {
+  background-color: var(--text);
+}
+
+.tableHeaderCell {
+  color: var(--bg);
+  font-weight: 600;
+}
+
+.dialogGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.fullRow {
+  grid-column: 1 / -1;
+}
+
+.primaryButton {
+  background-color: var(--text);
+  color: var(--bg);
+}
+
+@media (min-width: 900px) {
+  .dialogGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}

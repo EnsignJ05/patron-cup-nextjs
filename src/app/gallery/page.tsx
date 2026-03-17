@@ -1,6 +1,6 @@
 import { Box, Typography } from '@mui/material';
-import { styles } from '@/styles/pages/gallery/styles';
 import GalleryImage from '@/components/gallery/GalleryImage';
+import styles from './page.module.css';
 
 // List of image filenames in public/gallery/ExamplePhotos
 const imageFilenames = [
@@ -13,14 +13,14 @@ const imageFilenames = [
 
 export default function GalleryPage() {
   return (
-    <Box sx={styles.container}>
-      <Typography variant="h3" sx={styles.title}>
+    <Box className={styles.container}>
+      <Typography variant="h3" className={styles.title}>
         Photo Gallery
       </Typography>
-      <Typography variant="h6" sx={styles.subtitle}>
+      <Typography variant="h6" className={styles.subtitle}>
         Coming soon - Check back for photos from the 2025 Patron Cup!
       </Typography>
-      <Box sx={styles.gridContainer}>
+      <Box className={styles.gridContainer}>
         {imageFilenames.map((filename) => (
           <GalleryImage key={filename} src={`/gallery/ExamplePhotos/${filename}`} alt={filename.replace(/([A-Z])/g, ' $1').replace(/\.[^.]+$/, '')} />
         ))}

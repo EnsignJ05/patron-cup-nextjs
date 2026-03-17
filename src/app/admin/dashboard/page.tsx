@@ -12,6 +12,7 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import ScoreboardIcon from '@mui/icons-material/Scoreboard';
 import LockResetIcon from '@mui/icons-material/LockReset';
 import AlternateEmailIcon from '@mui/icons-material/AlternateEmail';
+import styles from './page.module.css';
 
 const adminSections = [
   {
@@ -19,123 +20,112 @@ const adminSections = [
     description: 'Manage player profiles, contact info, handicaps, and roles',
     href: '/admin/players',
     icon: PeopleIcon,
-    color: '#3498db',
+    colorKey: 'blue',
   },
   {
     title: 'Reset Passwords',
     description: 'Set temporary passwords and require password changes',
     href: '/admin/reset-password',
     icon: LockResetIcon,
-    color: '#1f8a70',
+    colorKey: 'teal',
   },
   {
     title: 'Change Username',
     description: 'Update login emails without changing the account',
     href: '/admin/change-username',
     icon: AlternateEmailIcon,
-    color: '#5d6d7e',
+    colorKey: 'slate',
   },
   {
     title: 'Events',
     description: 'Create and manage yearly golf outings',
     href: '/admin/events',
     icon: EventIcon,
-    color: '#e74c3c',
+    colorKey: 'red',
   },
   {
     title: 'Participants',
     description: 'Manage event registrations and confirmations',
     href: '/admin/participants',
     icon: PeopleIcon,
-    color: '#8e44ad',
+    colorKey: 'purple',
   },
   {
     title: 'Teams',
     description: 'Manage teams, captains, and rosters for each event',
     href: '/admin/teams',
     icon: GroupsIcon,
-    color: '#2ecc71',
+    colorKey: 'green',
   },
   {
     title: 'Courses',
     description: 'Add and edit golf courses and hole information',
     href: '/admin/courses',
     icon: GolfCourseIcon,
-    color: '#27ae60',
+    colorKey: 'emerald',
   },
   {
     title: 'Matches',
     description: 'Manage match schedules, players, and results',
     href: '/admin/matches',
     icon: SportsIcon,
-    color: '#9b59b6',
+    colorKey: 'violet',
   },
   {
     title: 'Match Setup',
     description: 'Assign players to matches and finalize pairings',
     href: '/admin/matches/setup',
     icon: AccessTimeIcon,
-    color: '#f39c12',
+    colorKey: 'orange',
   },
   {
     title: 'Re-rounds',
     description: 'Manage optional re-round signups and schedules',
     href: '/admin/rerounds',
     icon: GolfCourseIcon,
-    color: '#16a085',
+    colorKey: 'sea',
   },
   {
     title: 'Scores',
     description: 'Enter and manage round scores and statistics',
     href: '/admin/scores',
     icon: ScoreboardIcon,
-    color: '#1abc9c',
+    colorKey: 'mint',
   },
 ];
 
 export default function AdminDashboard() {
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" sx={{ fontWeight: 700, color: '#2c3e50', mb: 1 }}>
+    <Box className={styles.pageRoot}>
+      <Typography variant="h4" className={styles.pageTitle}>
         Admin Dashboard
       </Typography>
-      <Typography variant="body1" sx={{ color: '#666', mb: 4 }}>
+      <Typography variant="body1" className={styles.pageSubtitle}>
         Manage all aspects of the Patron Cup golf events
       </Typography>
 
       <Box 
-        sx={{ 
-          display: 'grid', 
-          gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
-          gap: 3 
-        }}
+        className={styles.sectionGrid}
       >
         {adminSections.map((section) => {
           const IconComponent = section.icon;
+          const colorClass = styles[`sectionColor${section.colorKey}`];
           return (
             <Box key={section.href}>
-              <Link href={section.href} style={{ textDecoration: 'none' }}>
+              <Link href={section.href} className={styles.sectionLink}>
                 <Paper
                   elevation={2}
-                  sx={{
-                    p: 3,
-                    height: '100%',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease-in-out',
-                    borderLeft: `4px solid ${section.color}`,
-                    '&:hover': {
-                      transform: 'translateY(-4px)',
-                      boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
-                    },
-                  }}
+                  className={`${styles.sectionCard} ${colorClass}`}
                 >
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <IconComponent sx={{ fontSize: 40, color: section.color, mr: 2 }} />
-                    <Typography variant="h6" sx={{ fontWeight: 600, color: '#2c3e50' }}>
+                  <Box className={styles.sectionHeader}>
+                    <IconComponent
+                      className={`${styles.sectionIcon} ${colorClass}`}
+                    />
+                    <Typography variant="h6" className={styles.sectionTitle}>
                       {section.title}
                     </Typography>
                   </Box>
-                  <Typography variant="body2" sx={{ color: '#666' }}>
+                  <Typography variant="body2" className={styles.sectionDescription}>
                     {section.description}
                   </Typography>
                 </Paper>

@@ -1,0 +1,69 @@
+.pageRoot {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.controlsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.emptyState {
+  padding: 24px;
+}
+
+.matchesCard {
+  overflow: hidden;
+}
+
+.tabs {
+  background-color: var(--surface-muted);
+  padding: 0 12px;
+}
+
+.matchesBody {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.groupCard {
+  padding: 20px;
+}
+
+.groupHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  gap: 12px;
+}
+
+.groupTitle {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.groupMatches {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (max-width: 720px) {
+  .pageRoot {
+    padding: 16px;
+  }
+
+  .matchesBody {
+    padding: 16px;
+  }
+
+  .groupCard {
+    padding: 16px;
+  }
+}

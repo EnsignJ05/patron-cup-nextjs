@@ -1,6 +1,6 @@
 import { Box, Link, Typography } from '@mui/material';
-import { colors } from '@/styles/theme';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import styles from './AddToCalendar.module.css';
 
 interface AddToCalendarProps {
   title: string;
@@ -49,34 +49,24 @@ export default function AddToCalendar({ title, description, startDate, endDate, 
   };
 
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
-      <CalendarMonthIcon sx={{ color: colors.secondary, fontSize: 20 }} />
-      <Typography variant="body2" sx={{ color: colors.secondary }}>
+    <Box className={styles.row}>
+      <CalendarMonthIcon className={styles.icon} />
+      <Typography variant="body2" className={styles.label}>
         Add to:
       </Typography>
       <Link 
         href={googleCalendarUrl()} 
         target="_blank"
         rel="noopener noreferrer"
-        sx={{ 
-          color: colors.primary,
-          textDecoration: 'none',
-          '&:hover': { textDecoration: 'underline' },
-          fontSize: '0.875rem',
-        }}
+        className={styles.link}
       >
         Google
       </Link>
-      <Typography variant="body2" sx={{ color: colors.secondary }}>•</Typography>
+      <Typography variant="body2" className={styles.separator}>•</Typography>
       <Link 
         href={iCalUrl()} 
         download="event.ics"
-        sx={{ 
-          color: colors.primary,
-          textDecoration: 'none',
-          '&:hover': { textDecoration: 'underline' },
-          fontSize: '0.875rem',
-        }}
+        className={styles.link}
       >
         iOS
       </Link>

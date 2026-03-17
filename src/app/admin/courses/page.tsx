@@ -152,14 +152,14 @@ export default function CoursesAdminPage() {
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, color: '#2c3e50' }}>
+        <Typography variant="h4" sx={{ fontWeight: 700, color: 'var(--text)' }}>
           Courses Management
         </Typography>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={handleAdd}
-          sx={{ bgcolor: '#2c3e50' }}
+          sx={{ bgcolor: 'var(--text)', color: 'var(--bg)' }}
         >
           Add Course
         </Button>
@@ -187,14 +187,14 @@ export default function CoursesAdminPage() {
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
-            <TableRow sx={{ bgcolor: '#2c3e50' }}>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Course Name</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Resort</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Event</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Par</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Rating/Slope</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Yardage</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }} align="right">Actions</TableCell>
+            <TableRow sx={{ bgcolor: 'var(--text)' }}>
+              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Course Name</TableCell>
+              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Resort</TableCell>
+              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Event</TableCell>
+              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Par</TableCell>
+              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Rating/Slope</TableCell>
+              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Yardage</TableCell>
+              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }} align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -319,7 +319,7 @@ export default function CoursesAdminPage() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleSave} variant="contained" sx={{ bgcolor: '#2c3e50' }}>
+          <Button onClick={handleSave} variant="contained" sx={{ bgcolor: 'var(--text)', color: 'var(--bg)' }}>
             Save
           </Button>
         </DialogActions>

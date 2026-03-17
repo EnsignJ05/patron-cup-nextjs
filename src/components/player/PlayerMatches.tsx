@@ -11,6 +11,7 @@ import { useTheme } from '@mui/material/styles';
 import CourseScoreCard from '@/components/scoreboard/CourseScoreCard';
 import MatchRow from '@/components/scoreboard/MatchRow';
 import { supabase } from '@/lib/supabaseClient';
+import styles from './PlayerMatches.module.css';
 
 export interface PlayerMatchesProps {
   playerId?: string;
@@ -97,8 +98,8 @@ export default function PlayerMatches({ playerId: propPlayerId, selectedCourse: 
 
   if (loading) {
     return (
-      <Box sx={{ textAlign: 'center', py: 4 }}>
-        <Typography variant="body1" sx={{ color: '#666666' }}>
+      <Box className={styles.loading}>
+        <Typography variant="body1" className={styles.loadingText}>
           Loading matches...
         </Typography>
       </Box>
@@ -112,7 +113,7 @@ export default function PlayerMatches({ playerId: propPlayerId, selectedCourse: 
           value={selectedCourse}
           onChange={handleCourseChange}
           fullWidth
-          sx={{ mb: 3 }}
+          className={styles.courseSelect}
         >
           <MenuItem value="all">All Courses</MenuItem>
           <MenuItem value="Pacific Dunes">Pacific Dunes</MenuItem>
@@ -124,18 +125,7 @@ export default function PlayerMatches({ playerId: propPlayerId, selectedCourse: 
           value={selectedCourse}
           onChange={handleTabChange}
           centered
-          sx={{
-            mb: 3,
-            '& .MuiTab-root': {
-              color: '#666666',
-              '&.Mui-selected': {
-                color: '#1976d2',
-              },
-            },
-            '& .MuiTabs-indicator': {
-              backgroundColor: '#1976d2',
-            },
-          }}
+          className={styles.tabs}
         >
           <Tab label="All Courses" value="all" />
           <Tab label="Pacific Dunes" value="Pacific Dunes" />
@@ -145,11 +135,11 @@ export default function PlayerMatches({ playerId: propPlayerId, selectedCourse: 
       )}
 
       {filteredMatches.length === 0 ? (
-        <Typography variant="body1" sx={{ color: '#666666', fontStyle: 'italic', mt: 2, textAlign: 'center' }}>
+        <Typography variant="body1" className={styles.emptyState}>
           No matches found.
         </Typography>
       ) : (
-        <Box sx={{ mt: 2 }}>
+        <Box className={styles.matchList}>
           <CourseScoreCard courseName={selectedCourse !== 'all' ? selectedCourse : ''} date={
             selectedCourse === 'Pacific Dunes' ? 'June 5, 2025' :
             selectedCourse === 'Sheep Ranch' ? 'June 6, 2025' :

@@ -1,9 +1,11 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import Link from 'next/link';
-import { getAllPlayersAndMatches } from '@/lib/getAllPlayersAndMatches';
+import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
+import { getTeamTotals } from '@/lib/matchScoring';
+import styles from './CountdownTimer.module.css';
 
 interface TimeLeft {
   days: number;
@@ -18,7 +20,9 @@ const TEST_EXPIRED = false;
 export default function CountdownTimer() {
   const [timeLeft, setTimeLeft] = useState<TimeLeft>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [isExpired, setIsExpired] = useState(TEST_EXPIRED);
-  const [teamScores, setTeamScores] = useState({ thompson: 0, burgess: 0 });
+  const [teamScores, setTeamScores] = useState<Record<string, number>>({});
+  const [teams, setTeams] = useState<Array<{ id: string; name: string }>>([]);
+  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
   useEffect(() => {
     const calculateTimeLeft = () => {
@@ -58,20 +62,38 @@ export default function CountdownTimer() {
   }, []);
 
   useEffect(() => {
-    if (isExpired) {
-      getAllPlayersAndMatches()
-        .then(({ matches }) => {
-          let thompson = 0, burgess = 0;
-          matches.forEach((m: any) => {
-            if (m.winner === 'team_thompson') thompson += 1;
-            else if (m.winner === 'team_burgess') burgess += 1;
-            else if (m.winner === 'tie') { thompson += 0.5; burgess += 0.5; }
-          });
-          setTeamScores({ thompson, burgess });
-        })
-        .catch(console.error);
-    }
-  }, [isExpired]);
+    if (!isExpired) return;
+
+    const loadScores = async () => {
+      const { data: activeEvent } = await supabase
+        .from('events')
+        .select('id')
+        .eq('is_active', true)
+        .single();
+
+      if (!activeEvent) return;
+
+      const [teamsRes, matchesRes] = await Promise.all([
+        supabase.from('teams').select('id, name').eq('event_id', activeEvent.id).order('name'),
+        supabase
+          .from('matches')
+          .select('winner_team_id, is_halved')
+          .eq('event_id', activeEvent.id),
+      ]);
+
+      if (teamsRes.error || matchesRes.error) {
+        console.error(teamsRes.error || matchesRes.error);
+        return;
+      }
+
+      const teamsData = teamsRes.data || [];
+      const matchesData = matchesRes.data || [];
+      setTeams(teamsData);
+      setTeamScores(getTeamTotals(matchesData, teamsData.map((team) => team.id)));
+    };
+
+    loadScores().catch(console.error);
+  }, [isExpired, supabase]);
 
   const timeUnits = [
     { value: timeLeft.days, label: 'Days' },
@@ -81,76 +103,33 @@ export default function CountdownTimer() {
   ];
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        py: { xs: 1, sm: 1.5 },
-        px: { xs: 2, sm: 3 },
-        bgcolor: '#ffffff',
-        borderRadius: 4,
-        boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-        maxWidth: '800px',
-        width: '100%',
-        mb: { xs: 4, sm: 6 },
-      }}
-    >
+    <Box className={styles.timerCard}>
       {!isExpired ? (
         <>
           <Typography
             variant="h6"
-            sx={{
-              color: '#2c3e50',
-              fontWeight: 700,
-              textAlign: 'center',
-              mb: { xs: 0.75, sm: 1 },
-              fontSize: { xs: '1rem', sm: '1.1rem' },
-            }}
+            className={styles.countdownTitle}
           >
             Countdown to First Tee Time
           </Typography>
 
           <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'row',
-              gap: { xs: 1, sm: 3 },
-              width: '100%',
-              justifyContent: 'center',
-            }}
+            className={styles.timeUnits}
           >
             {timeUnits.map(({ value, label }) => (
               <Box
                 key={label}
-                sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  minWidth: { xs: '60px', sm: '80px' },
-                }}
+                className={styles.timeUnit}
               >
                 <Typography
                   variant="h5"
-                  sx={{
-                    color: '#2c3e50',
-                    fontWeight: 700,
-                    fontSize: { xs: '1.3rem', sm: '1.5rem' },
-                    lineHeight: 1.2,
-                  }}
+                  className={styles.timeValue}
                 >
                   {value.toString().padStart(2, '0')}
                 </Typography>
                 <Typography
                   variant="subtitle2"
-                  sx={{
-                    color: '#666666',
-                    fontWeight: 600,
-                    textTransform: 'uppercase',
-                    letterSpacing: 1,
-                    fontSize: { xs: '0.7rem', sm: '0.8rem' },
-                    lineHeight: 1.2,
-                  }}
+                  className={styles.timeLabel}
                 >
                   {label}
                 </Typography>
@@ -160,106 +139,37 @@ export default function CountdownTimer() {
         </>
       ) : (
         <>
-          <Typography
-            variant="h6"
-            sx={{
-              color: '#2c3e50',
-              fontWeight: 700,
-              textAlign: 'center',
-              mb: { xs: 1, sm: 2 },
-              fontSize: { xs: '1.1rem', sm: '1.3rem' },
-            }}
-          >
-            Scoreboard
+          <Typography variant="h6" className={styles.scoreboardTitle}>
+            Overall Score
           </Typography>
 
           <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'row',
-              gap: { xs: 4, sm: 8 },
-              width: '100%',
-              justifyContent: 'center',
-              alignItems: 'center',
-              mb: 3,
-            }}
+            className={styles.scoreboardRow}
           >
-            <Box sx={{ textAlign: 'center' }}>
-              <Typography
-                variant="h2"
-                sx={{
-                  color: '#3498db',
-                  fontWeight: 700,
-                  fontSize: { xs: '4rem', sm: '5rem' },
-                  lineHeight: 1,
-                  mb: 1,
-                }}
-              >
-                {teamScores.thompson}
+            <Box className={styles.scoreColumn}>
+              <Typography variant="h2" className={styles.scoreValueThompson}>
+                {teamScores[teams[0]?.id || ''] ?? 0}
               </Typography>
-              <Typography
-                sx={{
-                  color: '#3498db',
-                  fontWeight: 500,
-                  fontSize: { xs: '0.75rem', sm: '1rem' },
-                  textTransform: 'uppercase',
-                  borderBottom: '2px solid #3498db',
-                  letterSpacing: '0.05em',
-                }}
-              >
-                Team Thompson
+              <Typography className={styles.scoreLabelThompson}>
+                {teams[0]?.name || 'Team A'}
               </Typography>
             </Box>
 
             {/* Vertical divider */}
-            <Box
-              sx={{
-                width: '1px',
-                height: { xs: '48px', sm: '64px' },
-                bgcolor: '#e0e0e0',
-                mx: { xs: 2, sm: 4 },
-                borderRadius: 1,
-              }}
-            />
+            <Box className={styles.scoreDivider} />
 
-            <Box sx={{ textAlign: 'center' }}>
-              <Typography
-                variant="h2"
-                sx={{
-                  color: '#e74c3c',
-                  fontWeight: 700,
-                  fontSize: { xs: '4rem', sm: '5rem' },
-                  lineHeight: 1,
-                  mb: 1,
-                }}
-              >
-                {teamScores.burgess}
+            <Box className={styles.scoreColumn}>
+              <Typography variant="h2" className={styles.scoreValueBurgess}>
+                {teamScores[teams[1]?.id || ''] ?? 0}
               </Typography>
-              <Typography
-                sx={{
-                  color: '#e74c3c',
-                  fontWeight: 500,
-                  fontSize: { xs: '0.75rem', sm: '1rem' },
-                  textTransform: 'uppercase',
-                  borderBottom: '2px solid #e74c3c',
-                  letterSpacing: '0.05em',
-                }}
-              >
-                Team Burgess
+              <Typography className={styles.scoreLabelBurgess}>
+                {teams[1]?.name || 'Team B'}
               </Typography>
             </Box>
           </Box>
 
-          <Link
-            href="/scoreboard"
-            style={{
-              textDecoration: 'underline',
-              color: '#2c3e50',
-              fontWeight: 500,
-              fontSize: '1rem',
-            }}
-          >
-            View scoreboard
+          <Link href="/matches" className={styles.scoreLink}>
+            View matches
           </Link>
         </>
       )}

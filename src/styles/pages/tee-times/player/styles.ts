@@ -4,7 +4,7 @@ export const styles = {
   container: {
     minHeight: '100vh',
     width: '100vw',
-    background: '#f5f5f5',
+    background: 'var(--bg)',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
@@ -14,7 +14,7 @@ export const styles = {
 
   title: {
     mb: { xs: 4, sm: 6 },
-    color: '#2c3e50',
+    color: 'var(--text)',
     fontWeight: 700,
     textAlign: 'center',
   } as SxProps<Theme>,
@@ -24,8 +24,8 @@ export const styles = {
     maxWidth: 600,
     mb: 4,
     borderRadius: 2,
-    boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-    bgcolor: '#ffffff',
+    boxShadow: 'var(--shadow-sm)',
+    bgcolor: 'var(--surface)',
   } as SxProps<Theme>,
 
   playerInfo: {
@@ -38,14 +38,14 @@ export const styles = {
   playerName: {
     fontSize: '1.5rem',
     fontWeight: 600,
-    color: '#2c3e50',
+    color: 'var(--text)',
     mb: 1,
   } as SxProps<Theme>,
 
   playerDetails: {
     display: 'flex',
     gap: 2,
-    color: '#666666',
+    color: 'var(--text-muted)',
   } as SxProps<Theme>,
 
   matchesContainer: {
@@ -59,14 +59,14 @@ export const styles = {
   } as SxProps<Theme>,
 
   tab: {
-    color: '#2c3e50',
+    color: 'var(--text)',
     '&.Mui-selected': {
-      color: '#e74c3c',
+      color: 'var(--accent-red)',
     },
   } as SxProps<Theme>,
 
   tabIndicator: {
-    backgroundColor: '#e74c3c',
+    backgroundColor: 'var(--accent-red)',
   } as SxProps<Theme>,
 
   mobileSelect: {
@@ -76,7 +76,7 @@ export const styles = {
 
   noMatches: {
     textAlign: 'center',
-    color: '#666666',
+    color: 'var(--text-muted)',
     py: 4,
   } as SxProps<Theme>,
 
@@ -87,7 +87,7 @@ export const styles = {
   } as SxProps<Theme>,
 
   reroundsTitle: {
-    color: '#2c3e50',
+    color: 'var(--text)',
     fontWeight: 600,
     mb: 2,
   } as SxProps<Theme>,
@@ -95,7 +95,7 @@ export const styles = {
   reroundCard: {
     mb: 2,
     borderRadius: 2,
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+    boxShadow: 'var(--shadow-sm)',
   } as SxProps<Theme>,
 
   reroundContent: {
@@ -110,16 +110,16 @@ export const styles = {
   } as SxProps<Theme>,
 
   reroundDate: {
-    color: '#2c3e50',
+    color: 'var(--text)',
     fontWeight: 500,
   } as SxProps<Theme>,
 
   reroundTime: {
-    color: '#666666',
+    color: 'var(--text-muted)',
   } as SxProps<Theme>,
 
   reroundGroup: {
-    color: '#666666',
+    color: 'var(--text-muted)',
     fontStyle: 'italic',
   } as SxProps<Theme>,
 }; 

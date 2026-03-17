@@ -1,13 +1,94 @@
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #f5f5f5;
+  --surface: #ffffff;
+  --surface-muted: #f0f2f4;
+  --surface-tint: rgba(0, 0, 0, 0.04);
+  --surface-tint-strong: rgba(0, 0, 0, 0.06);
+  --text: #2c3e50;
+  --text-muted: #666666;
+  --text-soft: #95a5a6;
+  --tab-unselected-text: #2c3e50;
+  --player-name-text: #2c3e50;
+  --player-name-delete: #2c3e50;
+  --pending-chip-text: #2c3e50;
+  --pending-chip-bg: rgba(0, 0, 0, 0.04);
+  --pending-chip-border: rgba(0, 0, 0, 0.12);
+  --border: rgba(0, 0, 0, 0.12);
+  --border-subtle: rgba(0, 0, 0, 0.08);
+  --divider: rgba(0, 0, 0, 0.12);
+  --shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 12px 48px rgba(0, 0, 0, 0.15);
+  --accent-blue: #3498db;
+  --accent-red: #e74c3c;
+  --accent-blue-strong: #1976d2;
+  --accent-green: #1f8a70;
+  --accent-purple: #8e44ad;
+  --accent-teal: #16a085;
+  --accent-emerald: #2ecc71;
+  --accent-lime: #27ae60;
+  --accent-violet: #9b59b6;
+  --accent-amber: #f39c12;
+  --accent-cyan: #1abc9c;
+  --accent-slate: #5d6d7e;
+  --brand-ink: #1a252f;
+  --chip-blue: rgba(52, 152, 219, 0.1);
+  --chip-red: rgba(231, 76, 60, 0.1);
+  --chip-neutral: rgba(0, 0, 0, 0.04);
+  --chip-blue-soft: rgba(52, 152, 219, 0.05);
+  --chip-red-soft: rgba(231, 76, 60, 0.05);
+  --chip-blue-border: rgba(52, 152, 219, 0.2);
+  --chip-red-border: rgba(231, 76, 60, 0.2);
+  --progress-track: #e0e0e0;
+  --gallery-bg: #181f1b;
+  --input-bg: #ffffff;
+  --input-border: rgba(0, 0, 0, 0.23);
+  --input-border-hover: rgba(0, 0, 0, 0.4);
+  --input-border-focus: #3498db;
+  --input-placeholder: #7c8894;
+  --background: #f5f5f5;
+  --foreground: #2c3e50;
+  color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root[data-theme='dark'] {
+  --bg: #121212;
+  --surface: #1e1e1e;
+  --surface-muted: #232323;
+  --surface-tint: rgba(255, 255, 255, 0.08);
+  --surface-tint-strong: rgba(255, 255, 255, 0.14);
+  --text: #e6e6e6;
+  --text-muted: #b3b3b3;
+  --text-soft: #8d99a6;
+  --text-table-head-dark: #1e1e1e;
+  --tab-unselected-text: #1e95e3;
+  --player-name-text: #1e95e3;
+  --player-name-delete: rgb(184 27 27);
+  --pending-chip-text: #e6e6e6;
+  --pending-chip-bg: rgba(255, 255, 255, 0.08);
+  --pending-chip-border: rgba(255, 255, 255, 0.2);
+  --border: rgba(34, 30, 30, 0.16);
+  --border-subtle: rgba(255, 255, 255, 0.12);
+  --divider: rgba(255, 255, 255, 0.12);
+  --shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.55);
+  --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 12px 48px rgba(0, 0, 0, 0.7);
+  --chip-neutral: rgba(255, 255, 255, 0.08);
+  --chip-blue-soft: rgba(52, 152, 219, 0.2);
+  --chip-red-soft: rgba(231, 76, 60, 0.2);
+  --chip-blue-border: rgba(52, 152, 219, 0.35);
+  --chip-red-border: rgba(231, 76, 60, 0.35);
+  --accent-slate: #5d6d7e;
+  --progress-track: #2b3340;
+  --gallery-bg: #141a16;
+  --input-bg: #1f1f1f;
+  --input-border: rgba(255, 255, 255, 0.24);
+  --input-border-hover: rgba(255, 255, 255, 0.4);
+  --input-border-focus: #90caf9;
+  --input-placeholder: #9ea4ab;
+  --background: #121212;
+  --foreground: #e6e6e6;
+  color-scheme: dark;
 }
 
 html,
@@ -17,8 +98,8 @@ body {
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
+  color: var(--text);
+  background: var(--bg);
   font-family: Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -30,13 +111,191 @@ body {
   margin: 0;
 }
 
+.MuiPaper-root,
+.MuiCard-root {
+  background-color: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+:root[data-theme='dark'] .MuiPaper-root,
+:root[data-theme='dark'] .MuiCard-root {
+  background-color: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.MuiTableCell-root {
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.MuiTableCell-head,
+.MuiTableCell-head.MuiTableCell-root {
+  color: var(--text);
+}
+
+:root[data-theme='dark'] .MuiTableCell-head,
+.MuiTableCell-head.MuiTableCell-root {
+  color: var(--text-table-head-dark);
+}
+
+.MuiTableHead-root .MuiTableCell-root {
+  color: var(--text);
+}
+
+.MuiTableCell-body,
+.MuiTableCell-body.MuiTableCell-root {
+  color: var(--text);
+}
+
+.MuiTableRow-root {
+  border-color: var(--border);
+}
+
+.MuiChip-root .MuiChip-deleteIcon {
+  -webkit-tap-highlight-color: transparent;
+  color: var(--player-name-delete) !important;
+  font-size: 22px;
+  cursor: pointer;
+  margin: 0 5px 0 -6px;
+}
+
+.MuiInputBase-root {
+  color: var(--text);
+}
+
+:root[data-theme='dark'] .MuiInputBase-root,
+:root[data-theme='dark'] .MuiInputBase-root.MuiOutlinedInput-root {
+  color: var(--text) !important;
+}
+
+.MuiInputBase-input {
+  color: var(--text);
+}
+
+.MuiOutlinedInput-input {
+  color: var(--text);
+}
+
+.MuiSelect-select {
+  color: var(--text);
+}
+
+.MuiMenuItem-root {
+  color: var(--text);
+}
+
+.MuiMenuItem-root.Mui-selected {
+  color: var(--text);
+  background-color: var(--surface-tint);
+}
+
+.MuiMenuItem-root.Mui-selected:hover {
+  background-color: var(--surface-tint-strong);
+}
+
+.MuiOutlinedInput-root {
+  background-color: var(--input-bg);
+}
+
+:root[data-theme='dark'] .MuiOutlinedInput-root {
+  background-color: var(--input-bg);
+}
+
+:root[data-theme='dark'] .MuiFormHelperText-root {
+  color: var(--text-soft);
+}
+.MuiOutlinedInput-notchedOutline {
+  border-color: var(--input-border);
+}
+
+.MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+  border-color: var(--input-border-hover);
+}
+
+.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: var(--input-border-focus);
+}
+
+.MuiInputLabel-root {
+  color: var(--text-muted);
+}
+
+.MuiFormLabel-root {
+  color: var(--text-muted);
+}
+
+.MuiFormControlLabel-label {
+  color: var(--text);
+}
+
+.MuiInputLabel-root.Mui-focused {
+  color: var(--input-border-focus);
+}
+
+:root[data-theme='dark'] .MuiInputLabel-root {
+  color: var(--text-muted);
+}
+
+:root[data-theme='dark'] .MuiInputLabel-root.Mui-focused {
+  color: var(--input-border-focus);
+}
+
+.MuiFormHelperText-root {
+  color: var(--text-muted);
+}
+
+.MuiInputBase-input::placeholder {
+  color: var(--input-placeholder);
+  opacity: 1;
+}
+
+.MuiInputBase-input:-webkit-autofill {
+  -webkit-text-fill-color: var(--text);
+  box-shadow: 0 0 0 1000px var(--input-bg) inset;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+.MuiSelect-icon {
+  color: var(--text-muted);
+}
+
+.MuiDivider-root {
+  border-color: var(--divider);
+}
+
+.MuiIconButton-root {
+  color: var(--text);
+}
+
+.MuiFilledInput-root {
+  background-color: var(--input-bg);
+}
+
+.MuiFilledInput-underline:before {
+  border-bottom-color: var(--input-border);
+}
+
+.MuiFilledInput-underline:hover:before {
+  border-bottom-color: var(--input-border-hover);
+}
+
+.MuiFilledInput-underline.Mui-focused:after {
+  border-bottom-color: var(--input-border-focus);
+}
+
+.Mui-disabled {
+  color: var(--text-soft);
+  -webkit-text-fill-color: var(--text-soft);
+}
+
+.MuiInputBase-root.Mui-disabled {
+  background-color: var(--surface-muted);
+}
+
 a {
   color: inherit;
   text-decoration: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
-}

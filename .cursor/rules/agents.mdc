@@ -1,0 +1,9 @@
+---
+description: Project agent guidance (AGENTS.md)
+alwaysApply: true
+---
+
+# Use AGENTS.md
+
+- Always read and follow `AGENTS.md` in the repo root before making changes.
+- Apply the coding standards, testing approach (TDD), and UI/UX requirements described there.

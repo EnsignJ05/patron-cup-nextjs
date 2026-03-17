@@ -9,6 +9,7 @@ import Avatar from '@mui/material/Avatar';
 import IconButton from '@mui/material/IconButton';
 import PhotoCamera from '@mui/icons-material/PhotoCamera';
 import CircularProgress from '@mui/material/CircularProgress';
+import styles from './DashboardProfileForm.module.css';
 
 type ProfileFormProps = {
   playerId: string;
@@ -114,15 +115,15 @@ export default function DashboardProfileForm({ firstName, lastName, phone, handi
   };
 
   return (
-    <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+    <Box component="form" onSubmit={handleSubmit} className={styles.form}>
       {error && <Alert severity="error">{error}</Alert>}
       {success && <Alert severity="success">{success}</Alert>}
       
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+      <Box className={styles.headerRow}>
         <Avatar
           src={profileImage || undefined}
           alt={`${firstNameValue} ${lastNameValue}`}
-          sx={{ width: 80, height: 80, fontSize: '2rem', bgcolor: '#1976d2' }}
+          className={styles.avatar}
           imgProps={{
             onError: (e) => {
               console.error('Avatar image failed to load:', profileImage);
@@ -139,7 +140,7 @@ export default function DashboardProfileForm({ firstName, lastName, phone, handi
               ref={fileInputRef}
               type="file"
               accept="image/*"
-              style={{ display: 'none' }}
+              className={styles.fileInput}
               onChange={handleImageUpload}
             />
             <IconButton

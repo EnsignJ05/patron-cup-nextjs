@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import Box from '@mui/material/Box';
+import styles from './GalleryImage.module.css';
 
 interface GalleryImageProps {
   src: string;
@@ -8,22 +9,13 @@ interface GalleryImageProps {
 
 export default function GalleryImage({ src, alt }: GalleryImageProps) {
   return (
-    <Box
-      sx={{
-        width: '100%',
-        borderRadius: 4,
-        overflow: 'hidden',
-        boxShadow: '0 4px 24px rgba(0,0,0,0.18)',
-        bgcolor: '#181f1b',
-        mb: 2,
-      }}
-    >
+    <Box className={styles.imageCard}>
       <Image
         src={src}
         alt={alt}
         width={600}
         height={400}
-        style={{ width: '100%', height: 'auto', display: 'block' }}
+        className={styles.image}
         sizes="(max-width: 600px) 100vw, 50vw"
         placeholder="empty"
       />

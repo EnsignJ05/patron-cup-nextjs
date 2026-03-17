@@ -2,25 +2,15 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import Link from 'next/link';
+import styles from './page.module.css';
 
 export default function UnauthorizedPage() {
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: '#f5f5f5',
-        px: 2,
-        textAlign: 'center',
-      }}
-    >
-      <Typography variant="h4" sx={{ mb: 2, fontWeight: 700, color: '#2c3e50' }}>
+    <Box className={styles.pageRoot}>
+      <Typography variant="h4" className={styles.title}>
         Access denied
       </Typography>
-      <Typography variant="body1" sx={{ mb: 3, color: '#2c3e50' }}>
+      <Typography variant="body1" className={styles.subtitle}>
         You do not have permission to view this page.
       </Typography>
       <Button component={Link} href="/" variant="contained">

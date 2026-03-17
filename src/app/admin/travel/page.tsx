@@ -186,14 +186,14 @@ export default function TravelAdminPage() {
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, color: '#2c3e50' }}>
+        <Typography variant="h4" sx={{ fontWeight: 700, color: 'var(--text)' }}>
           Travel Management
         </Typography>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={handleAdd}
-          sx={{ bgcolor: '#2c3e50' }}
+          sx={{ bgcolor: 'var(--text)', color: 'var(--bg)' }}
         >
           Add Travel Info
         </Button>
@@ -229,13 +229,13 @@ export default function TravelAdminPage() {
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
-            <TableRow sx={{ bgcolor: '#2c3e50' }}>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Player</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Event</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Arrival</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Departure</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Transport</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }} align="right">Actions</TableCell>
+            <TableRow sx={{ bgcolor: 'var(--text)' }}>
+              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Player</TableCell>
+              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Event</TableCell>
+              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Arrival</TableCell>
+              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Departure</TableCell>
+              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Transport</TableCell>
+              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }} align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -456,7 +456,7 @@ export default function TravelAdminPage() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleSave} variant="contained" sx={{ bgcolor: '#2c3e50' }}>
+          <Button onClick={handleSave} variant="contained" sx={{ bgcolor: 'var(--text)', color: 'var(--bg)' }}>
             Save
           </Button>
         </DialogActions>

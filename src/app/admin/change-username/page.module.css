@@ -1,0 +1,9 @@
+.formFields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.submitButton {
+  margin-top: 8px;
+}

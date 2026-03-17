@@ -5,6 +5,7 @@ import Avatar from '@mui/material/Avatar';
 import { createSupabaseServerClient } from '@/lib/supabaseServer';
 import { notFound } from 'next/navigation';
 import DashboardProfileForm from '@/components/player/DashboardProfileForm';
+import styles from './page.module.css';
 // import PlayerRerounds from '@/components/player/PlayerRerounds';
 // import PlayerStats from '@/components/player/PlayerStats';
 
@@ -137,46 +138,24 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
   }
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        background: '#f5f5f5',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        py: { xs: 4, sm: 8 },
-        px: { xs: 2, sm: 4 },
-      }}
-    >
+    <Box className={styles.pageRoot}>
       <Avatar
         src={player.profile_image_url || undefined}
         alt={`${player.first_name} ${player.last_name}`}
-        sx={{
-          width: 120,
-          height: 120,
-          mb: 2,
-          fontSize: '3rem',
-          bgcolor: '#1976d2',
-        }}
+        className={styles.avatar}
       >
         {!player.profile_image_url && `${player.first_name[0]}${player.last_name[0]}`}
       </Avatar>
 
-      <Typography variant="h3" sx={{ mb: 3, fontWeight: 700, color: '#2c3e50' }}>
+      <Typography variant="h3" className={styles.pageTitle}>
         {player.first_name} {player.last_name}
       </Typography>
 
       <Paper
         elevation={2}
-        sx={{
-          width: '100%',
-          maxWidth: 640,
-          p: { xs: 3, sm: 4 },
-          borderRadius: 3,
-          mb: 3,
-        }}
+        className={styles.profileCard}
       >
-        <Typography variant="h6" sx={{ mb: 2, color: '#2c3e50' }}>
+        <Typography variant="h6" className={styles.sectionTitle}>
           Profile Information
         </Typography>
         
@@ -191,46 +170,20 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
         />
       </Paper>
 
-  {/* Player Stats */}
-  {/* <Paper
-    elevation={2}
-    sx={{
-      width: '100%',
-      maxWidth: 640,
-      p: { xs: 3, sm: 4 },
-      borderRadius: 3,
-      mb: 3,
-    }}
-  >
-    <Typography variant="h6" sx={{ mb: 2, color: '#2c3e50' }}>
-      Statistics
-    </Typography>
-    <PlayerStats 
-      handicap={player.current_handicap ?? 'N/A'} 
-      record={record}
-    />
-  </Paper> */}
-
       {/* Player Rerounds */}
       <Paper
         elevation={2}
-        sx={{
-          width: '100%',
-          maxWidth: 640,
-          p: { xs: 3, sm: 4 },
-          borderRadius: 3,
-          mb: 3,
-        }}
+        className={styles.reroundsCard}
       >
-        <Typography variant="h6" sx={{ mb: 2, color: '#2c3e50' }}>
+        <Typography variant="h6" className={styles.sectionTitle}>
           Re-Rounds {activeEvent ? `· ${activeEvent.name} ${activeEvent.year}` : ''}
         </Typography>
         {reroundsList.length === 0 ? (
-          <Typography variant="body2" sx={{ color: '#666' }}>
+          <Typography variant="body2" className={styles.emptyText}>
             No re-rounds scheduled for this player yet.
           </Typography>
         ) : (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box className={styles.reroundList}>
             {reroundsList.map((reround) => {
               const playerNames = [
                 reround.player1_id,
@@ -246,12 +199,12 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
                 .join(', ');
 
               return (
-                <Box key={reround.id} sx={{ p: 2, borderRadius: 2, border: '1px solid #e0e0e0' }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                <Box key={reround.id} className={styles.reroundItem}>
+                  <Typography variant="subtitle1" className={styles.reroundTitle}>
                     {formatDate(reround.reround_date)} · {formatTime(reround.reround_time)} ·{' '}
                     {reround.course?.name || 'Course TBD'}
                   </Typography>
-                  <Typography variant="body2" sx={{ color: '#2c3e50' }}>
+                  <Typography variant="body2" className={styles.reroundPlayers}>
                     {playerNames}
                   </Typography>
                 </Box>

@@ -4,7 +4,7 @@ export const styles = {
   container: {
     minHeight: '100vh',
     width: '100vw',
-    background: '#f5f5f5',
+    background: 'var(--bg)',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
@@ -13,7 +13,7 @@ export const styles = {
   } as SxProps<Theme>,
 
   title: {
-    color: '#2c3e50',
+    color: 'var(--text)',
     mb: 4,
     fontSize: { xs: '1.75rem', sm: '2.5rem' },
     textAlign: 'center',
@@ -52,36 +52,36 @@ export const styles = {
   } as SxProps<Theme>,
 
   thompsonDot: {
-    bgcolor: '#3498db',
+    bgcolor: 'var(--accent-blue)',
   } as SxProps<Theme>,
 
   burgessDot: {
-    bgcolor: '#e74c3c',
+    bgcolor: 'var(--accent-red)',
   } as SxProps<Theme>,
 
   legendText: {
-    color: '#666666',
+    color: 'var(--text-muted)',
   } as SxProps<Theme>,
 
   searchField: {
     width: { xs: '100%', sm: 240 },
     '& .MuiOutlinedInput-root': {
-      bgcolor: '#ffffff',
+      bgcolor: 'var(--surface)',
       '& fieldset': {
-        borderColor: 'rgba(0,0,0,0.12)',
+        borderColor: 'var(--border)',
       },
       '&:hover fieldset': {
-        borderColor: 'rgba(0,0,0,0.24)',
+        borderColor: 'var(--border-subtle)',
       },
     },
   } as SxProps<Theme>,
 
   searchIcon: {
-    color: '#666666',
+    color: 'var(--text-muted)',
   } as SxProps<Theme>,
 
   helperText: {
-    color: '#2c3e50',
+    color: 'var(--text)',
     mb: 3,
     textAlign: 'center',
     fontWeight: 700,
@@ -93,18 +93,18 @@ export const styles = {
   } as SxProps<Theme>,
 
   dataGrid: {
-    bgcolor: '#ffffff',
+    bgcolor: 'var(--surface)',
     borderRadius: 2,
-    boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+    boxShadow: 'var(--shadow-md)',
     border: 'none',
     '& .MuiDataGrid-columnHeader': {
-      bgcolor: 'rgba(0,0,0,0.02)',
-      color: '#2c3e50',
+      bgcolor: 'var(--surface-tint)',
+      color: 'var(--text)',
       fontWeight: 700,
       fontSize: { xs: '0.875rem', sm: '1rem' },
     },
     '& .MuiDataGrid-row:hover': {
-      bgcolor: 'rgba(0,0,0,0.02)',
+      bgcolor: 'var(--surface-tint)',
     },
     '& .MuiDataGrid-cell': {
       padding: { xs: '8px 4px', sm: '8px 16px' },
@@ -112,7 +112,7 @@ export const styles = {
   } as SxProps<Theme>,
 
   playerName: {
-    color: '#1976d2',
+    color: 'var(--accent-blue-strong)',
     fontWeight: 600,
     fontSize: { xs: '0.875rem', sm: '1rem' },
     cursor: 'pointer',
@@ -126,27 +126,27 @@ export const styles = {
       marginLeft: 1,
     },
     '&:hover': {
-      color: '#1565c0',
+      color: 'var(--accent-blue)',
       textDecoration: 'underline',
     },
   } as SxProps<Theme>,
 
   thompsonPlayer: {
     '&::after': {
-      bgcolor: '#3498db',
+      bgcolor: 'var(--accent-blue)',
     },
   } as SxProps<Theme>,
 
   burgessPlayer: {
     '&::after': {
-      bgcolor: '#e74c3e',
+      bgcolor: 'var(--accent-red)',
     },
   } as SxProps<Theme>,
 
   handicap: {
     width: '100%',
     textAlign: 'center',
-    color: '#2c3e50',
+    color: 'var(--text)',
     fontSize: { xs: '0.875rem', sm: '1rem' },
   } as SxProps<Theme>,
 }; 

@@ -1,5 +1,6 @@
+/* eslint-disable @next/next/no-img-element */
 import { fireEvent, render, screen } from '@testing-library/react';
-import RootLayout from '@/app/layout';
+import { NavigationContent } from '@/app/layout';
 import { useAuth } from '@/context/AuthContext';
 
 jest.mock('@/context/AuthContext', () => ({
@@ -21,7 +22,13 @@ jest.mock('next/font/google', () => ({
 
 jest.mock('next/image', () => ({
   __esModule: true,
-  default: (props: React.ImgHTMLAttributes<HTMLImageElement>) => <img {...props} alt={props.alt ?? ''} />,
+  default: ({
+    fill: _fill,
+    priority: _priority,
+    ...props
+  }: React.ImgHTMLAttributes<HTMLImageElement> & { fill?: boolean; priority?: boolean }) => (
+    (void _fill, void _priority, <img {...props} alt={props.alt ?? ''} />)
+  ),
 }));
 
 describe('RootLayout navigation', () => {
@@ -36,11 +43,7 @@ describe('RootLayout navigation', () => {
   });
 
   it('uses admin dashboard route in mobile drawer', () => {
-    render(
-      <RootLayout>
-        <div>Page</div>
-      </RootLayout>,
-    );
+    render(<NavigationContent />);
 
     fireEvent.click(screen.getByLabelText('menu'));
 

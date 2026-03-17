@@ -1,9 +1,10 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
 import Link from 'next/link';
 import Image from 'next/image';
 import IconButton from '@mui/material/IconButton';
@@ -13,26 +14,33 @@ import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
+import Switch from '@mui/material/Switch';
 import { Analytics } from '@vercel/analytics/react';
 import { Inter } from 'next/font/google';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { canAccessDashboard, isAdminRole } from '@/lib/authConfig';
 import { useRouter } from 'next/navigation';
 import './globals.css';
+import styles from './layout.module.css';
 
 const inter = Inter({ subsets: ['latin'], weight: ['400', '700'] });
+const THEME_STORAGE_KEY = 'theme-preference';
+type ThemePreference = 'light' | 'dark';
 
 const navLinks = [
   { label: 'Home', href: '/' },
   { label: 'Teams', href: '/teams' },
+  { label: 'Matches', href: '/matches' },
   // { label: 'Itinerary', href: '/itinerary' },
   // { label: 'Tee Times', href: '/tee-times' },
   // { label: 'Scoreboard', href: '/scoreboard' },
   { label: 'FAQ', href: '/faq' },
 ];
 
-function NavigationContent() {
+export function NavigationContent() {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [themePreference, setThemePreference] = useState<ThemePreference | null>(null);
+  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
   const { user, role, signOut } = useAuth();
   const router = useRouter();
   const isAuthenticated = Boolean(user);
@@ -45,64 +53,90 @@ function NavigationContent() {
     setDrawerOpen(false);
   };
 
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const saved = localStorage.getItem(THEME_STORAGE_KEY);
+    if (saved === 'light' || saved === 'dark') {
+      setThemePreference(saved);
+    } else {
+      setThemePreference(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    if (typeof window.matchMedia !== 'function') {
+      const fallbackTheme = themePreference === 'dark' ? 'dark' : 'light';
+      setResolvedTheme(fallbackTheme);
+      document.documentElement.setAttribute('data-theme', fallbackTheme);
+      return;
+    }
+
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const resolveTheme = (preference: ThemePreference | null) =>
+      preference ?? (media.matches ? 'dark' : 'light');
+    const applyTheme = (preference: ThemePreference | null) => {
+      const nextTheme = resolveTheme(preference);
+      setResolvedTheme(nextTheme);
+      document.documentElement.setAttribute('data-theme', nextTheme);
+    };
+
+    applyTheme(themePreference);
+
+    const handleChange = (event: MediaQueryListEvent) => {
+      if (!themePreference) {
+        const nextTheme = event.matches ? 'dark' : 'light';
+        setResolvedTheme(nextTheme);
+        document.documentElement.setAttribute('data-theme', nextTheme);
+      }
+    };
+
+    media.addEventListener('change', handleChange);
+    return () => media.removeEventListener('change', handleChange);
+  }, [themePreference]);
+
+  const handleThemeToggle = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const nextPreference: ThemePreference = event.target.checked ? 'dark' : 'light';
+    setThemePreference(nextPreference);
+    localStorage.setItem(THEME_STORAGE_KEY, nextPreference);
+  };
+
   return (
     <AppBar
       position="static"
       color="transparent"
       elevation={0}
-      sx={{
-        boxShadow: 'none',
-        background: '#f5f5f5',
-        backdropFilter: 'none',
-        borderBottom: '1px solid rgba(0,0,0,0.06)',
-        minHeight: 72,
-      }}
+      className={styles.appBar}
     >
-      <Toolbar sx={{ justifyContent: 'center', gap: { xs: 1, md: 4 }, minHeight: 72, px: { xs: 1, sm: 2, md: 3 } }}>
+      <Toolbar className={styles.toolbar}>
         {/* Logo */}
         <Box 
           component={Link}
           href="/"
-          sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            mr: { xs: 1, md: 4 },
-            height: 70,
-            width: 70,
-            position: 'relative',
-            '&:hover': {
-              opacity: 0.8,
-            },
-          }}
+          className={styles.logoLink}
         >
           <Image
             src="/gallery/patron-logo.png"
             alt="Patron Cup Logo"
             fill
-            style={{ objectFit: 'contain' }}
+            className={styles.logoImage}
             priority
           />
         </Box>
         {/* Desktop Nav */}
-        <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 3 }}>
+        <Box className={styles.desktopNav}>
           {navLinks.map((link) => (
             <Button
               key={link.href}
               component={Link}
               href={link.href}
-              sx={{
-                color: '#2c3e50',
-                fontWeight: 600,
-                fontSize: 18,
-                textTransform: 'none',
-                fontFamily: inter.style.fontFamily,
-                background: 'none',
-                boxShadow: 'none',
-                px: 1.5,
-                '&:hover': {
-                  background: 'rgba(0,0,0,0.03)',
-                },
-              }}
+              className={styles.navButton}
             >
               {link.label}
             </Button>
@@ -112,38 +146,14 @@ function NavigationContent() {
               <Button
                 component={Link}
                 href="/dashboard"
-                sx={{
-                  color: '#2c3e50',
-                  fontWeight: 600,
-                  fontSize: 18,
-                  textTransform: 'none',
-                  fontFamily: inter.style.fontFamily,
-                  background: 'none',
-                  boxShadow: 'none',
-                  px: 1.5,
-                  '&:hover': {
-                    background: 'rgba(0,0,0,0.03)',
-                  },
-                }}
+                className={styles.navButton}
               >
                 Dashboard
               </Button>
               <Button
                 component={Link}
                 href="/players"
-                sx={{
-                  color: '#2c3e50',
-                  fontWeight: 600,
-                  fontSize: 18,
-                  textTransform: 'none',
-                  fontFamily: inter.style.fontFamily,
-                  background: 'none',
-                  boxShadow: 'none',
-                  px: 1.5,
-                  '&:hover': {
-                    background: 'rgba(0,0,0,0.03)',
-                  },
-                }}
+                className={styles.navButton}
               >
                 Players
               </Button>
@@ -155,38 +165,14 @@ function NavigationContent() {
                 <Button
                   component={Link}
                   href="/admin/dashboard"
-                  sx={{
-                    color: '#2c3e50',
-                    fontWeight: 600,
-                    fontSize: 18,
-                    textTransform: 'none',
-                    fontFamily: inter.style.fontFamily,
-                    background: 'none',
-                    boxShadow: 'none',
-                    px: 1.5,
-                    '&:hover': {
-                      background: 'rgba(0,0,0,0.03)',
-                    },
-                  }}
+                  className={styles.navButton}
                 >
                   Admin
                 </Button>
               )}
               <Button
                 onClick={handleLogout}
-                sx={{
-                  color: '#e74c3c',
-                  fontWeight: 600,
-                  fontSize: 18,
-                  textTransform: 'none',
-                  fontFamily: inter.style.fontFamily,
-                  background: 'none',
-                  boxShadow: 'none',
-                  px: 1.5,
-                  '&:hover': {
-                    background: 'rgba(231, 76, 60, 0.03)',
-                  },
-                }}
+                className={styles.navButtonDanger}
               >
                 Logout
               </Button>
@@ -196,40 +182,37 @@ function NavigationContent() {
             <Button
               component={Link}
               href="/login"
-              sx={{
-                color: '#2c3e50',
-                fontWeight: 600,
-                fontSize: 18,
-                textTransform: 'none',
-                fontFamily: inter.style.fontFamily,
-                background: 'none',
-                boxShadow: 'none',
-                px: 1.5,
-                '&:hover': {
-                  background: 'rgba(0,0,0,0.03)',
-                },
-              }}
+              className={styles.navButton}
             >
               Login
             </Button>
           )}
+          <Box className={styles.themeToggle}>
+            <Typography className={styles.themeToggleLabel}>Dark mode</Typography>
+            <Switch
+              checked={resolvedTheme === 'dark'}
+              onChange={handleThemeToggle}
+              color="default"
+              inputProps={{ 'aria-label': 'Toggle dark mode' }}
+            />
+          </Box>
         </Box>
         {/* Mobile Nav */}
-        <Box sx={{ display: { xs: 'flex', md: 'none' }, ml: 'auto' }}>
+        <Box className={styles.mobileNav}>
           <IconButton
             edge="end"
             color="inherit"
             aria-label="menu"
             onClick={() => setDrawerOpen(true)}
-            sx={{ color: '#2c3e50' }}
+            className={styles.menuButton}
           >
-            <MenuIcon sx={{ fontSize: 32 }} />
+            <MenuIcon className={styles.menuIcon} />
           </IconButton>
           <Drawer
             anchor="right"
             open={drawerOpen}
             onClose={() => setDrawerOpen(false)}
-            PaperProps={{ sx: { bgcolor: '#f5f5f5', color: '#2c3e50', minWidth: 220 } }}
+            PaperProps={{ className: styles.drawerPaper }}
           >
             <List>
               {navLinks.map((link) => (
@@ -238,16 +221,7 @@ function NavigationContent() {
                     component={Link}
                     href={link.href}
                     onClick={() => setDrawerOpen(false)}
-                    sx={{
-                      fontWeight: 600,
-                      fontSize: 18,
-                      fontFamily: inter.style.fontFamily,
-                      color: '#2c3e50',
-                      py: 2,
-                      '&:hover': {
-                        background: 'rgba(0,0,0,0.03)',
-                      },
-                    }}
+                    className={styles.drawerItem}
                   >
                     <ListItemText primary={link.label} />
                   </ListItemButton>
@@ -260,16 +234,7 @@ function NavigationContent() {
                       component={Link}
                       href="/dashboard"
                       onClick={() => setDrawerOpen(false)}
-                      sx={{
-                        fontWeight: 600,
-                        fontSize: 18,
-                        fontFamily: inter.style.fontFamily,
-                        color: '#2c3e50',
-                        py: 2,
-                        '&:hover': {
-                          background: 'rgba(0,0,0,0.03)',
-                        },
-                      }}
+                      className={styles.drawerItem}
                     >
                       <ListItemText primary="Dashboard" />
                     </ListItemButton>
@@ -279,16 +244,7 @@ function NavigationContent() {
                       component={Link}
                       href="/players"
                       onClick={() => setDrawerOpen(false)}
-                      sx={{
-                        fontWeight: 600,
-                        fontSize: 18,
-                        fontFamily: inter.style.fontFamily,
-                        color: '#2c3e50',
-                        py: 2,
-                        '&:hover': {
-                          background: 'rgba(0,0,0,0.03)',
-                        },
-                      }}
+                      className={styles.drawerItem}
                     >
                       <ListItemText primary="Players" />
                     </ListItemButton>
@@ -303,16 +259,7 @@ function NavigationContent() {
                         component={Link}
                         href="/admin/dashboard"
                         onClick={() => setDrawerOpen(false)}
-                        sx={{
-                          fontWeight: 600,
-                          fontSize: 18,
-                          fontFamily: inter.style.fontFamily,
-                          color: '#2c3e50',
-                          py: 2,
-                          '&:hover': {
-                            background: 'rgba(0,0,0,0.03)',
-                          },
-                        }}
+                      className={styles.drawerItem}
                       >
                         <ListItemText primary="Admin" />
                       </ListItemButton>
@@ -324,16 +271,7 @@ function NavigationContent() {
                         handleLogout();
                         setDrawerOpen(false);
                       }}
-                      sx={{
-                        fontWeight: 600,
-                        fontSize: 18,
-                        fontFamily: inter.style.fontFamily,
-                        color: '#e74c3c',
-                        py: 2,
-                        '&:hover': {
-                          background: 'rgba(231, 76, 60, 0.03)',
-                        },
-                      }}
+                      className={`${styles.drawerItem} ${styles.drawerItemDanger}`}
                     >
                       <ListItemText primary="Logout" />
                     </ListItemButton>
@@ -346,21 +284,21 @@ function NavigationContent() {
                     component={Link}
                     href="/login"
                     onClick={() => setDrawerOpen(false)}
-                    sx={{
-                      fontWeight: 600,
-                      fontSize: 18,
-                      fontFamily: inter.style.fontFamily,
-                      color: '#2c3e50',
-                      py: 2,
-                      '&:hover': {
-                        background: 'rgba(0,0,0,0.03)',
-                      },
-                    }}
+                    className={styles.drawerItem}
                   >
                     <ListItemText primary="Login" />
                   </ListItemButton>
                 </ListItem>
               )}
+              <ListItem className={styles.drawerToggleItem}>
+                <ListItemText primary="Dark mode" className={styles.drawerToggleLabel} />
+                <Switch
+                  checked={resolvedTheme === 'dark'}
+                  onChange={handleThemeToggle}
+                  color="default"
+                  inputProps={{ 'aria-label': 'Toggle dark mode' }}
+                />
+              </ListItem>
             </List>
           </Drawer>
         </Box>
@@ -386,7 +324,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta property="og:image:height" content="630" />
         <meta property="og:type" content="website" />
       </head>
-      <body className={inter.className} style={{ margin: 0, background: '#f5f5f5' }}>
+      <body className={inter.className}>
         <AuthProvider>
           <NavigationContent />
           <main>

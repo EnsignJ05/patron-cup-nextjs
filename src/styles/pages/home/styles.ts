@@ -4,8 +4,8 @@ export const styles = {
   container: {
     minHeight: '100vh',
     width: '100vw',
-    background: '#f5f5f5',
-    color: '#2c3e50',
+    background: 'var(--bg)',
+    color: 'var(--text)',
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'flex-start',
@@ -31,7 +31,7 @@ export const styles = {
     letterSpacing: '-1.5px',
     mb: { xs: 1, sm: 2 },
     wordBreak: 'break-word',
-    color: '#2c3e50',
+    color: 'var(--text)',
     textShadow: '0 2px 12px rgba(0,0,0,0.1)',
   } as SxProps<Theme>,
 
@@ -57,7 +57,7 @@ export const styles = {
     justifyContent: 'center',
     overflow: 'hidden',
     borderRadius: 5,
-    boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
+    boxShadow: 'var(--shadow-md)',
   } as SxProps<Theme>,
 
   infoContainer: {
@@ -70,7 +70,7 @@ export const styles = {
   resortName: {
     fontWeight: 600,
     fontSize: { xs: '1.1rem', sm: '1.7rem', md: '2.5rem', lg: '3rem' },
-    color: '#2c3e50',
+    color: 'var(--text)',
     mb: { xs: 1, sm: 2 },
     wordBreak: 'break-word',
   } as SxProps<Theme>,
@@ -78,7 +78,7 @@ export const styles = {
   date: {
     fontWeight: 400,
     fontSize: { xs: '0.95rem', sm: '1.2rem', md: '1.5rem' },
-    color: '#666666',
+    color: 'var(--text-muted)',
     mb: { xs: 2, sm: 4 },
     wordBreak: 'break-word',
   } as SxProps<Theme>,

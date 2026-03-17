@@ -4,6 +4,7 @@ import { Box, Button, TextField } from '@mui/material';
 import { tempPasswordPolicy } from '@/lib/authConfig';
 import { generateTempPassword } from '@/lib/passwordUtils';
 import FormPage from '@/components/shared/FormPage';
+import styles from './page.module.css';
 
 type InviteRole = 'committee' | 'player' | 'admin';
 
@@ -71,8 +72,8 @@ export default function AdminInvitePage() {
       success={success}
     >
       <form onSubmit={handleSubmit}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <Box sx={{ display: 'flex', gap: 2 }}>
+        <Box className={styles.formFields}>
+          <Box className={styles.formRow}>
             <TextField
               label="First Name"
               value={firstName}
@@ -126,7 +127,7 @@ export default function AdminInvitePage() {
             variant="contained"
             size="large"
             disabled={submitting || !firstName || !lastName || !email || !tempPassword}
-            sx={{ mt: 1 }}
+            className={styles.submitButton}
           >
             {submitting ? 'Creating invite...' : 'Send Invite'}
           </Button>

@@ -1,0 +1,72 @@
+.container {
+  width: 100%;
+  max-width: 900px;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+.title {
+  color: var(--text);
+  margin-bottom: 24px;
+  font-size: 1.5rem;
+  text-align: center;
+}
+
+.emptyCard {
+  background-color: var(--surface);
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.emptyText {
+  color: var(--text-soft);
+  font-size: 1rem;
+}
+
+.list {
+  background-color: var(--surface);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.reroundCard {
+  margin-bottom: 16px;
+}
+
+.reroundContent {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.reroundTitle {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.reroundMeta {
+  color: var(--text-muted);
+}
+
+.reroundGroup {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+@media (min-width: 600px) {
+  .container {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  .title {
+    font-size: 2rem;
+  }
+
+  .emptyText {
+    font-size: 1.125rem;
+  }
+}

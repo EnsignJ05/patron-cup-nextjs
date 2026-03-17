@@ -1,0 +1,68 @@
+.courseCard {
+  width: 100%;
+  max-width: 800px;
+  background-color: var(--surface);
+  border-radius: 24px;
+  box-shadow: var(--shadow-md);
+  padding: 32px;
+  margin-bottom: 24px;
+  border: 1px solid var(--border);
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.courseCard:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.courseTitle {
+  margin-bottom: 24px;
+  color: var(--text);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid var(--divider);
+  padding-bottom: 8px;
+  display: inline-block;
+}
+
+.tableContainer {
+  background-color: transparent;
+  box-shadow: none;
+}
+
+.tableContainer :global(.MuiTableCell-root) {
+  border-color: var(--border);
+  padding-top: 12px;
+  padding-bottom: 12px;
+  color: var(--text);
+}
+
+.tableContainer :global(.MuiTableHead-root .MuiTableCell-root) {
+  background-color: var(--surface-tint);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.tableContainer :global(.MuiTableBody-root .MuiTableRow-root:hover) {
+  background-color: var(--surface-tint);
+}
+
+.timeCell {
+  font-weight: 500;
+  color: var(--text);
+}
+
+.playerEntry {
+  padding-top: 4px;
+  padding-bottom: 4px;
+  color: var(--text);
+}
+
+.playerEntry:not(:last-child) {
+  margin-bottom: 8px;
+}
+
+.courseDescription {
+  font-style: italic;
+  color: var(--text-muted);
+}

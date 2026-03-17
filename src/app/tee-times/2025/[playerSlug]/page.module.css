@@ -1,0 +1,62 @@
+.container {
+  min-height: 100vh;
+  width: 100vw;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 16px;
+}
+
+.title {
+  margin-bottom: 32px;
+  color: var(--text);
+  font-weight: 700;
+  text-align: center;
+}
+
+.playerCard {
+  width: 100%;
+  max-width: 600px;
+  margin-bottom: 32px;
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+  background-color: var(--surface);
+}
+
+.playerInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px;
+}
+
+.playerName {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.playerDetails {
+  display: flex;
+  gap: 16px;
+  color: var(--text-muted);
+}
+
+.matchesContainer {
+  width: 100%;
+  max-width: 800px;
+}
+
+.reroundsContainer {
+  width: 100%;
+  max-width: 800px;
+  margin-top: 32px;
+}
+
+@media (min-width: 600px) {
+  .container {
+    padding: 64px 32px;
+  }
+}

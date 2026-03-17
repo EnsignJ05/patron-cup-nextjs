@@ -1,0 +1,40 @@
+.loading {
+  text-align: center;
+  padding-top: 32px;
+  padding-bottom: 32px;
+}
+
+.loadingText {
+  color: var(--text-muted);
+}
+
+.courseSelect {
+  margin-bottom: 24px;
+}
+
+.tabs {
+  margin-bottom: 24px;
+}
+
+.tabs :global(.MuiTab-root) {
+  color: var(--text-muted);
+}
+
+.tabs :global(.MuiTab-root.Mui-selected) {
+  color: var(--accent-blue-strong);
+}
+
+.tabs :global(.MuiTabs-indicator) {
+  background-color: var(--accent-blue-strong);
+}
+
+.emptyState {
+  color: var(--text-muted);
+  font-style: italic;
+  margin-top: 16px;
+  text-align: center;
+}
+
+.matchList {
+  margin-top: 16px;
+}

@@ -231,14 +231,14 @@ export default function LodgingAdminPage() {
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, color: '#2c3e50' }}>
+        <Typography variant="h4" sx={{ fontWeight: 700, color: 'var(--text)' }}>
           Lodging Management
         </Typography>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={handleAdd}
-          sx={{ bgcolor: '#2c3e50' }}
+          sx={{ bgcolor: 'var(--text)', color: 'var(--bg)' }}
         >
           Add Room
         </Button>
@@ -266,14 +266,14 @@ export default function LodgingAdminPage() {
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
-            <TableRow sx={{ bgcolor: '#2c3e50' }}>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Building</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Room #</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Type</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Event</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Dates</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Notes</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }} align="right">Actions</TableCell>
+            <TableRow sx={{ bgcolor: 'var(--text)' }}>
+              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Building</TableCell>
+              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Room #</TableCell>
+              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Type</TableCell>
+              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Event</TableCell>
+              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Dates</TableCell>
+              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Notes</TableCell>
+              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }} align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -383,7 +383,7 @@ export default function LodgingAdminPage() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleSave} variant="contained" sx={{ bgcolor: '#2c3e50' }}>
+          <Button onClick={handleSave} variant="contained" sx={{ bgcolor: 'var(--text)', color: 'var(--bg)' }}>
             Save
           </Button>
         </DialogActions>
@@ -414,7 +414,7 @@ export default function LodgingAdminPage() {
               variant="contained" 
               onClick={addAssignment}
               disabled={!selectedPlayerId}
-              sx={{ bgcolor: '#2c3e50' }}
+              sx={{ bgcolor: 'var(--text)', color: 'var(--bg)' }}
             >
               Add
             </Button>

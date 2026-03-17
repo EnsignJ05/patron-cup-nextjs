@@ -1,0 +1,24 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.avatar {
+  width: 80px;
+  height: 80px;
+  font-size: 2rem;
+  background-color: var(--accent-blue-strong);
+}
+
+.fileInput {
+  display: none;
+}

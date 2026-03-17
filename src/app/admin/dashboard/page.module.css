@@ -1,0 +1,160 @@
+.pageRoot {
+  padding: 24px;
+}
+
+.pageTitle {
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.pageSubtitle {
+  color: var(--text-muted);
+  margin-bottom: 32px;
+}
+
+.sectionGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+.sectionLink {
+  text-decoration: none;
+}
+
+.sectionCard {
+  padding: 24px;
+  height: 100%;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  border-left: 4px solid transparent;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+.sectionCard:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.sectionIcon {
+  font-size: 40px;
+  margin-right: 16px;
+}
+
+.sectionTitle {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.sectionDescription {
+  color: var(--text-muted);
+}
+
+.sectionColorblue {
+  border-left-color: var(--accent-blue);
+}
+
+.sectionColorblue.sectionIcon {
+  color: var(--accent-blue);
+}
+
+.sectionColorteal {
+  border-left-color: var(--accent-green);
+}
+
+.sectionColorteal.sectionIcon {
+  color: var(--accent-green);
+}
+
+.sectionColorslate {
+  border-left-color: var(--accent-slate);
+}
+
+.sectionColorslate.sectionIcon {
+  color: var(--accent-slate);
+}
+
+.sectionColorred {
+  border-left-color: var(--accent-red);
+}
+
+.sectionColorred.sectionIcon {
+  color: var(--accent-red);
+}
+
+.sectionColorpurple {
+  border-left-color: var(--accent-purple);
+}
+
+.sectionColorpurple.sectionIcon {
+  color: var(--accent-purple);
+}
+
+.sectionColorgreen {
+  border-left-color: var(--accent-emerald);
+}
+
+.sectionColorgreen.sectionIcon {
+  color: var(--accent-emerald);
+}
+
+.sectionColoremerald {
+  border-left-color: var(--accent-lime);
+}
+
+.sectionColoremerald.sectionIcon {
+  color: var(--accent-lime);
+}
+
+.sectionColorviolet {
+  border-left-color: var(--accent-violet);
+}
+
+.sectionColorviolet.sectionIcon {
+  color: var(--accent-violet);
+}
+
+.sectionColororange {
+  border-left-color: var(--accent-amber);
+}
+
+.sectionColororange.sectionIcon {
+  color: var(--accent-amber);
+}
+
+.sectionColorsea {
+  border-left-color: var(--accent-teal);
+}
+
+.sectionColorsea.sectionIcon {
+  color: var(--accent-teal);
+}
+
+.sectionColormint {
+  border-left-color: var(--accent-cyan);
+}
+
+.sectionColormint.sectionIcon {
+  color: var(--accent-cyan);
+}
+
+@media (min-width: 600px) {
+  .sectionGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 900px) {
+  .sectionGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

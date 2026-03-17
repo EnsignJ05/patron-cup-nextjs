@@ -25,6 +25,7 @@ import Switch from '@mui/material/Switch';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
 import type { Event } from '@/types/database';
+import styles from './page.module.css';
 
 const emptyEvent: Partial<Event> = {
   name: '',
@@ -152,35 +153,35 @@ export default function EventsAdminPage() {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, color: '#2c3e50' }}>
+    <Box className={styles.pageRoot}>
+      <Box className={styles.headerRow}>
+        <Typography variant="h4" className={styles.pageTitle}>
           Events Management
         </Typography>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={handleAdd}
-          sx={{ bgcolor: '#2c3e50' }}
+          className={styles.primaryButton}
         >
           Add Event
         </Button>
       </Box>
 
-      {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
-      {success && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>{success}</Alert>}
+      {error && <Alert severity="error" className={styles.alert} onClose={() => setError('')}>{error}</Alert>}
+      {success && <Alert severity="success" className={styles.alert} onClose={() => setSuccess('')}>{success}</Alert>}
 
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
-            <TableRow sx={{ bgcolor: '#2c3e50' }}>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Name</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Year</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Location</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Resort</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Dates</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }}>Status</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 600 }} align="right">Actions</TableCell>
+            <TableRow className={styles.tableHeaderRow}>
+              <TableCell className={styles.tableHeaderCell}>Name</TableCell>
+              <TableCell className={styles.tableHeaderCell}>Year</TableCell>
+              <TableCell className={styles.tableHeaderCell}>Location</TableCell>
+              <TableCell className={styles.tableHeaderCell}>Resort</TableCell>
+              <TableCell className={styles.tableHeaderCell}>Dates</TableCell>
+              <TableCell className={styles.tableHeaderCell}>Status</TableCell>
+              <TableCell className={styles.tableHeaderCell} align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -195,7 +196,7 @@ export default function EventsAdminPage() {
             ) : (
               events.map((event) => (
                 <TableRow key={event.id} hover>
-                  <TableCell sx={{ fontWeight: 600 }}>{event.name}</TableCell>
+                  <TableCell className={styles.tableStrongCell}>{event.name}</TableCell>
                   <TableCell>{event.year}</TableCell>
                   <TableCell>{event.location_city}, {event.location_state}</TableCell>
                   <TableCell>{event.resort_name || '-'}</TableCell>
@@ -228,7 +229,7 @@ export default function EventsAdminPage() {
           {editingEvent?.id ? 'Edit Event' : 'Add Event'}
         </DialogTitle>
         <DialogContent>
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, mt: 1 }}>
+          <Box className={styles.dialogGrid}>
             <TextField
               label="Event Name"
               value={editingEvent?.name || ''}
@@ -267,7 +268,7 @@ export default function EventsAdminPage() {
               onChange={(e) => setEditingEvent({ ...editingEvent, resort_name: e.target.value })}
               fullWidth
               placeholder="e.g., Bandon Dunes Golf Resort"
-              sx={{ gridColumn: { md: '1 / -1' } }}
+              className={styles.fullRow}
             />
             <TextField
               label="Start Date"
@@ -292,7 +293,7 @@ export default function EventsAdminPage() {
               value={editingEvent?.logo_url || ''}
               onChange={(e) => setEditingEvent({ ...editingEvent, logo_url: e.target.value })}
               fullWidth
-              sx={{ gridColumn: { md: '1 / -1' } }}
+              className={styles.fullRow}
             />
             <TextField
               label="Description"
@@ -301,7 +302,7 @@ export default function EventsAdminPage() {
               fullWidth
               multiline
               rows={3}
-              sx={{ gridColumn: { md: '1 / -1' } }}
+              className={styles.fullRow}
             />
             <FormControlLabel
               control={
@@ -316,7 +317,7 @@ export default function EventsAdminPage() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleSave} variant="contained" sx={{ bgcolor: '#2c3e50' }}>
+          <Button onClick={handleSave} variant="contained" className={styles.primaryButton}>
             Save
           </Button>
         </DialogActions>

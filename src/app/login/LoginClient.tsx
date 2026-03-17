@@ -11,6 +11,7 @@ import {
   Paper,
   Alert,
 } from '@mui/material';
+import styles from './LoginClient.module.css';
 
 export default function LoginClient() {
   const [error, setError] = useState('');
@@ -55,43 +56,25 @@ export default function LoginClient() {
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        width: '100vw',
-        background: '#f5f5f5',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        p: 2,
-      }}
-    >
+    <Box className={styles.pageRoot}>
       <Paper
         elevation={3}
-        sx={{
-          p: 4,
-          width: '100%',
-          maxWidth: 400,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 3,
-        }}
+        className={styles.formCard}
       >
-        <Typography variant="h4" component="h1" sx={{ textAlign: 'center', mb: 2 }}>
+        <Typography variant="h4" component="h1" className={styles.title}>
           Login
         </Typography>
-        <Typography variant="body2" sx={{ textAlign: 'center', color: '#666', mb: 1 }}>
+        <Typography variant="body2" className={styles.subtitle}>
           Invite-only access. Use the email and temporary password you were given.
         </Typography>
 
         {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
+          <Alert severity="error" className={styles.alert}>
             {error}
           </Alert>
         )}
         <form onSubmit={handleSubmit}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box className={styles.formFields}>
             <TextField
               label="Email"
               type="email"
@@ -116,7 +99,7 @@ export default function LoginClient() {
               size="large"
               fullWidth
               disabled={submitting}
-              sx={{ mt: 2 }}
+              className={styles.submitButton}
             >
               {submitting ? 'Signing in...' : 'Sign in'}
             </Button>

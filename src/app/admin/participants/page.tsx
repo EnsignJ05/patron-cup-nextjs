@@ -199,7 +199,7 @@ export default function EventParticipantsPage() {
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, color: '#2c3e50' }}>
+        <Typography variant="h4" sx={{ fontWeight: 700, color: 'var(--text)' }}>
           Event Participants
         </Typography>
         <Box sx={{ display: 'flex', gap: 2 }}>
@@ -244,7 +244,7 @@ export default function EventParticipantsPage() {
           </Select>
         </FormControl>
         {currentEvent && (
-          <Typography variant="body2" sx={{ color: '#666' }}>
+          <Typography variant="body2" sx={{ color: 'var(--text-muted)' }}>
             {participants.length} participants | {participants.filter((p) => p.is_confirmed).length} confirmed
           </Typography>
         )}
@@ -253,13 +253,13 @@ export default function EventParticipantsPage() {
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
-            <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-              <TableCell sx={{ fontWeight: 600 }}>Player</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Email</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Handicap at Event</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Notes</TableCell>
-              <TableCell sx={{ fontWeight: 600 }} align="right">
+            <TableRow sx={{ backgroundColor: 'var(--text)' }}>
+              <TableCell sx={{ fontWeight: 600, color: 'var(--bg)' }}>Player</TableCell>
+              <TableCell sx={{ fontWeight: 600, color: 'var(--bg)' }}>Email</TableCell>
+              <TableCell sx={{ fontWeight: 600, color: 'var(--bg)' }}>Handicap at Event</TableCell>
+              <TableCell sx={{ fontWeight: 600, color: 'var(--bg)' }}>Status</TableCell>
+              <TableCell sx={{ fontWeight: 600, color: 'var(--bg)' }}>Notes</TableCell>
+              <TableCell sx={{ fontWeight: 600, color: 'var(--bg)' }} align="right">
                 Actions
               </TableCell>
             </TableRow>

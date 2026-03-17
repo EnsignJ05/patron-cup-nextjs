@@ -31,8 +31,10 @@ type MatchPlayerWithJoins = MatchPlayer & {
 
 const formatTime = (timeStr: string | null) => {
   if (!timeStr) return '-';
-  const date = new Date(`1970-01-01T${timeStr}:00`);
-  return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  const normalized = timeStr.length === 5 ? `${timeStr}:00` : timeStr;
+  const date = new Date(`1970-01-01T${normalized}`);
+  if (Number.isNaN(date.getTime())) return '-';
+  return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
 };
 
 export default function ScoresAdminPage() {
@@ -228,7 +230,7 @@ export default function ScoresAdminPage() {
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, color: '#2c3e50' }}>
+        <Typography variant="h4" sx={{ fontWeight: 700, color: 'var(--text)' }}>
           Match Scores
         </Typography>
       </Box>
@@ -279,12 +281,12 @@ export default function ScoresAdminPage() {
             variant="scrollable"
             scrollButtons="auto"
             sx={{
-              backgroundColor: '#f5f7fa',
+              backgroundColor: 'var(--surface-muted)',
               px: 2,
               '& .MuiTabs-indicator': {
                 height: 4,
                 borderRadius: 2,
-                backgroundColor: '#2c3e50',
+                backgroundColor: 'var(--text)',
               },
             }}
           >
@@ -300,9 +302,10 @@ export default function ScoresAdminPage() {
                   minHeight: 56,
                   px: 2.5,
                   mr: 1,
+                  color: 'var(--tab-unselected-text)',
                   '&.Mui-selected': {
-                    color: '#1f2d3d',
-                    backgroundColor: '#e1e8f0',
+                    color: 'var(--text)',
+                    backgroundColor: 'var(--surface-muted)',
                   },
                 }}
               />
@@ -327,7 +330,7 @@ export default function ScoresAdminPage() {
                         <Typography variant="h6" sx={{ fontWeight: 600 }}>
                           {groupLabel}
                         </Typography>
-                        <Typography variant="body2" sx={{ color: '#666' }}>
+                        <Typography variant="body2" sx={{ color: 'var(--text-muted)' }}>
                           {groupMatch.course?.name || 'Course TBD'}
                         </Typography>
                       </Box>
@@ -345,6 +348,7 @@ export default function ScoresAdminPage() {
                           ? matchPlayersForMatch.filter((mp) => mp.team_id === teamB.id)
                           : [];
                         const winnerValue = match.is_halved ? 'halved' : match.winner_team_id || '';
+                        const isPending = !match.is_halved && !match.winner_team_id;
                         const winnerLabel = match.is_halved
                           ? 'Halved'
                           : match.winner_team_id
@@ -359,7 +363,7 @@ export default function ScoresAdminPage() {
                                   <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                                     Match #{match.match_number}
                                   </Typography>
-                                  <Typography variant="body2" sx={{ color: '#666' }}>
+                                  <Typography variant="body2" sx={{ color: 'var(--text-muted)' }}>
                                     {match.match_type}
                                   </Typography>
                                 </Box>
@@ -367,6 +371,15 @@ export default function ScoresAdminPage() {
                                   label={winnerLabel}
                                   size="small"
                                   color={match.is_halved ? 'info' : match.winner_team_id ? 'success' : 'default'}
+                                  sx={
+                                    isPending
+                                      ? {
+                                        color: 'var(--pending-chip-text)',
+                                        backgroundColor: 'var(--pending-chip-bg)',
+                                        border: '1px solid var(--pending-chip-border)',
+                                      }
+                                      : undefined
+                                  }
                                 />
                               </Box>
 
@@ -388,10 +401,11 @@ export default function ScoresAdminPage() {
                                               label={`${mp.player?.first_name || ''} ${mp.player?.last_name || ''}`.trim()}
                                               variant="outlined"
                                               size="small"
+                                              sx={{ color: 'var(--player-name-text)' }}
                                             />
                                           ))
                                         ) : (
-                                          <Typography variant="caption" sx={{ color: '#777' }}>
+                                          <Typography variant="caption" sx={{ color: 'var(--text-muted)' }}>
                                             No players assigned
                                           </Typography>
                                         )}
@@ -461,7 +475,7 @@ export default function ScoresAdminPage() {
           <Typography sx={{ mb: 1 }}>
             Set result for match #{pendingResult?.match.match_number} to <strong>{confirmLabel}</strong>?
           </Typography>
-          <Typography variant="body2" sx={{ color: '#666' }}>
+          <Typography variant="body2" sx={{ color: 'var(--text-muted)' }}>
             This will clear any previously selected winner or halved status.
           </Typography>
         </DialogContent>

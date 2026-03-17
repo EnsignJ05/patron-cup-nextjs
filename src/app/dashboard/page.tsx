@@ -6,6 +6,8 @@ import { redirect } from 'next/navigation';
 import { createSupabaseServerClient, getCachedUser, getCachedPlayerProfile } from '@/lib/supabaseServer';
 import { canAccessDashboard } from '@/lib/authConfig';
 import DashboardProfileForm from '@/components/player/DashboardProfileForm';
+import MatchCard from '@/components/matches/MatchCard';
+import styles from './page.module.css';
 
 // Revalidate every 5 seconds to show updated profile images quickly
 export const revalidate = 5;
@@ -19,8 +21,10 @@ const formatDate = (dateStr: string) =>
 
 const formatTime = (timeStr: string | null) => {
   if (!timeStr) return 'TBD';
-  const date = new Date(`2000-01-01T${timeStr}`);
-  return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  const normalized = timeStr.length === 5 ? `${timeStr}:00` : timeStr;
+  const date = new Date(`2000-01-01T${normalized}`);
+  if (Number.isNaN(date.getTime())) return 'TBD';
+  return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 };
 
 export default async function DashboardPage() {
@@ -53,7 +57,7 @@ export default async function DashboardPage() {
     .eq('is_active', true)
     .single();
 
-  type MatchCard = {
+  type DashboardMatch = {
     match: {
       id: string;
       match_date: string;
@@ -61,14 +65,37 @@ export default async function DashboardPage() {
       match_number: number;
       match_type: string;
       group_number: number | null;
+      winner_team_id: string | null;
+      is_halved: boolean;
       course?: { name?: string | null } | null;
     };
-    players: Array<{ name: string; team?: string | null }>;
+    playersByTeam: Map<string, Array<{ id: string; name: string; profileImageUrl: string | null }>>;
   };
 
-  let matchesList: MatchCard[] = [];
+  let matchesList: DashboardMatch[] = [];
+  let eventTeams: Array<{ id: string; name: string; color: string | null }> = [];
+  let handicapByPlayerId = new Map<string, number | null>();
 
   if (playerRecord?.id && activeEvent?.id) {
+    const { data: teamsData } = await supabase
+      .from('teams')
+      .select('id, name, color')
+      .eq('event_id', activeEvent.id)
+      .order('name');
+
+    eventTeams = teamsData || [];
+
+    if (eventTeams.length > 0) {
+      const { data: rosterData } = await supabase
+        .from('team_rosters')
+        .select('player_id, handicap_at_event')
+        .in('team_id', eventTeams.map((team) => team.id));
+
+      handicapByPlayerId = new Map(
+        (rosterData || []).map((roster) => [roster.player_id, roster.handicap_at_event ?? null]),
+      );
+    }
+
     const { data: playerMatchIds } = await supabase
       .from('match_players')
       .select('match_id')
@@ -80,27 +107,36 @@ export default async function DashboardPage() {
       const { data: matchPlayers } = await supabase
         .from('match_players')
         .select(
-          'match_id, player:players(id, first_name, last_name), team:teams(id, name), match:matches!inner(id, event_id, match_date, match_time, match_number, match_type, group_number, course:courses(name))'
+          'match_id, player:players(id, first_name, last_name, profile_image_url), team:teams(id, name, color), match:matches!inner(id, event_id, match_date, match_time, match_number, match_type, group_number, winner_team_id, is_halved, course:courses(name))'
         )
         .in('match_id', matchIds)
         .eq('match.event_id', activeEvent.id);
 
-      const matchMap = new Map<string, MatchCard>();
+      const matchMap = new Map<string, DashboardMatch>();
       (matchPlayers || []).forEach((row) => {
         const matchRecord = Array.isArray(row.match) ? row.match[0] : row.match;
         if (!matchRecord) return;
-        const normalizedMatch: MatchCard['match'] = {
+        const normalizedMatch: DashboardMatch['match'] = {
           ...matchRecord,
           course: Array.isArray(matchRecord.course) ? matchRecord.course[0] : matchRecord.course,
         };
         const existing = matchMap.get(row.match_id) || {
           match: normalizedMatch,
-          players: [] as MatchCard['players'],
+          playersByTeam: new Map<string, Array<{ id: string; name: string; profileImageUrl: string | null }>>(),
         };
         const playerRecord = Array.isArray(row.player) ? row.player[0] : row.player;
         const teamRecord = Array.isArray(row.team) ? row.team[0] : row.team;
         const playerName = playerRecord ? `${playerRecord.first_name} ${playerRecord.last_name}` : 'TBD';
-        existing.players.push({ name: playerName, team: teamRecord?.name });
+        const teamId = teamRecord?.id;
+        if (teamId) {
+          const list = existing.playersByTeam.get(teamId) || [];
+          list.push({
+            id: playerRecord?.id || `${row.match_id}-${playerName}`,
+            name: playerName,
+            profileImageUrl: playerRecord?.profile_image_url || null,
+          });
+          existing.playersByTeam.set(teamId, list);
+        }
         matchMap.set(row.match_id, existing);
       });
 
@@ -166,70 +202,49 @@ export default async function DashboardPage() {
   }
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        background: '#f5f5f5',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        py: { xs: 4, sm: 8 },
-        px: { xs: 2, sm: 4 },
-      }}
-    >
+    <Box className={styles.pageRoot}>
       {playerRecord && (
         <Avatar
           src={playerRecord.profile_image_url || undefined}
           alt={`${playerRecord.first_name} ${playerRecord.last_name}`}
-          sx={{
-            width: 100,
-            height: 100,
-            mb: 2,
-            fontSize: '2.5rem',
-            bgcolor: '#1976d2',
-          }}
+          className={styles.avatar}
         >
           {!playerRecord.profile_image_url && `${playerRecord.first_name[0]}${playerRecord.last_name[0]}`}
         </Avatar>
       )}
       
-      <Typography variant="h3" sx={{ mb: 3, fontWeight: 700, color: '#2c3e50' }}>
+      <Typography variant="h3" className={styles.pageTitle}>
         Player Dashboard
       </Typography>
       <Paper
         elevation={2}
-        sx={{
-          width: '100%',
-          maxWidth: 640,
-          p: { xs: 3, sm: 4 },
-          borderRadius: 3,
-        }}
+        className={styles.profileCard}
       >
-        <Typography variant="h6" sx={{ mb: 1, color: '#2c3e50' }}>
+        <Typography variant="h6" className={styles.sectionTitle}>
           Account details
         </Typography>
-        <Typography variant="body2" sx={{ mb: 2, color: '#666' }}>
+        <Typography variant="body2" className={styles.sectionSubtitle}>
           Signed in as {user.email}
         </Typography>
         {playerRecord && (
           <>
-            <Typography variant="body2" sx={{ mb: 1, color: '#666' }}>
+            <Typography variant="body2" className={styles.detailText}>
               Name: {playerRecord.first_name} {playerRecord.last_name}
             </Typography>
-            <Typography variant="body2" sx={{ mb: 1, color: '#666' }}>
+            <Typography variant="body2" className={styles.detailText}>
               Role: {playerRecord.role}
             </Typography>
-            <Typography variant="body2" sx={{ mb: 3, color: '#666' }}>
+            <Typography variant="body2" className={styles.detailTextWide}>
               Handicap: {playerRecord.current_handicap ?? 'Not set'}
             </Typography>
           </>
         )}
         {!playerRecord && (
-          <Typography variant="body2" sx={{ mb: 3, color: '#666' }}>
+          <Typography variant="body2" className={styles.detailTextWide}>
             Player record: Not linked yet.
           </Typography>
         )}
-        <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#2c3e50' }}>
+        <Typography variant="subtitle1" className={styles.sectionSubtitleStrong}>
           Update your profile
         </Typography>
         <DashboardProfileForm
@@ -244,55 +259,75 @@ export default async function DashboardPage() {
 
       <Paper
         elevation={2}
-        sx={{
-          width: '100%',
-          maxWidth: 800,
-          p: { xs: 3, sm: 4 },
-          borderRadius: 3,
-          mt: 4,
-        }}
+        className={styles.matchesCard}
       >
-        <Typography variant="h5" sx={{ mb: 2, fontWeight: 700, color: '#2c3e50' }}>
+        <Typography variant="h5" className={styles.sectionHeading}>
           {activeEvent ? `${activeEvent.name} ${activeEvent.year}` : 'Current Event'}
         </Typography>
 
-        <Typography variant="h6" sx={{ mb: 1, color: '#2c3e50' }}>
+        <Typography variant="h6" className={styles.sectionTitle}>
           Matches
         </Typography>
         {matchesList.length === 0 ? (
-          <Typography variant="body2" sx={{ mb: 3, color: '#666' }}>
+          <Typography variant="body2" className={styles.detailTextWide}>
             No matches scheduled for you yet.
           </Typography>
         ) : (
-          <Box sx={{ mb: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {matchesList.map(({ match, players }) => (
-              <Box key={match.id} sx={{ p: 2, borderRadius: 2, border: '1px solid #e0e0e0' }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                  {formatDate(match.match_date)} · {formatTime(match.match_time)} · {match.course?.name || 'Course TBD'}
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#666', mb: 1 }}>
-                  Match #{match.match_number} · {match.match_type}
-                  {match.group_number !== null && ` · Group ${match.group_number}`}
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#2c3e50' }}>
-                  {players
-                    .map((player) => (player.team ? `${player.name} (${player.team})` : player.name))
-                    .join(', ')}
-                </Typography>
-              </Box>
-            ))}
+          <Box className={styles.matchList}>
+            {matchesList.map(({ match, playersByTeam }) => {
+              const [teamA, teamB] = eventTeams;
+              const teamAPlayers = teamA ? playersByTeam.get(teamA.id) || [] : [];
+              const teamBPlayers = teamB ? playersByTeam.get(teamB.id) || [] : [];
+
+              const buildPlayers = (players: Array<{ id: string; name: string; profileImageUrl: string | null }>) =>
+                players.map((player) => ({
+                  ...player,
+                  handicap: handicapByPlayerId.get(player.id) ?? null,
+                }));
+
+              return (
+                <MatchCard
+                  key={match.id}
+                  matchNumber={match.match_number}
+                  matchType={match.match_type}
+                  teeTime={formatTime(match.match_time)}
+                  winnerTeamId={match.winner_team_id}
+                  isHalved={match.is_halved}
+                  teamA={
+                    teamA
+                      ? {
+                          id: teamA.id,
+                          name: teamA.name,
+                          color: teamA.color,
+                          players: buildPlayers(teamAPlayers),
+                        }
+                      : null
+                  }
+                  teamB={
+                    teamB
+                      ? {
+                          id: teamB.id,
+                          name: teamB.name,
+                          color: teamB.color,
+                          players: buildPlayers(teamBPlayers),
+                        }
+                      : null
+                  }
+                />
+              );
+            })}
           </Box>
         )}
 
-        <Typography variant="h6" sx={{ mb: 1, color: '#2c3e50' }}>
+        <Typography variant="h6" className={styles.sectionTitle}>
           Re-rounds
         </Typography>
         {reroundsList.length === 0 ? (
-          <Typography variant="body2" sx={{ color: '#666' }}>
+          <Typography variant="body2" className={styles.detailText}>
             No re-rounds scheduled for you yet.
           </Typography>
         ) : (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box className={styles.reroundList}>
             {reroundsList.map((reround) => {
               const playerNames = [
                 reround.player1_id,
@@ -308,12 +343,12 @@ export default async function DashboardPage() {
                 .join(', ');
 
               return (
-                <Box key={reround.id} sx={{ p: 2, borderRadius: 2, border: '1px solid #e0e0e0' }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                <Box key={reround.id} className={styles.reroundItem}>
+                  <Typography variant="subtitle1" className={styles.matchTitle}>
                     {formatDate(reround.reround_date)} · {formatTime(reround.reround_time)} ·{' '}
                     {reround.course?.name || 'Course TBD'}
                   </Typography>
-                  <Typography variant="body2" sx={{ color: '#2c3e50' }}>
+                  <Typography variant="body2" className={styles.matchPlayers}>
                     {playerNames}
                   </Typography>
                 </Box>

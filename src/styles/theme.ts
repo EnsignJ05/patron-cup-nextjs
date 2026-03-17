@@ -1,12 +1,8 @@
 export const colors = {
-  primary: '#2c3e50',
-  secondary: '#666666',
-  background: '#f5f5f5',
-  white: '#ffffff',
-  shadow: {
-    light: 'rgba(0,0,0,0.12)',
-    medium: 'rgba(0,0,0,0.15)',
-  }
+  primary: 'var(--text)',
+  secondary: 'var(--text-muted)',
+  background: 'var(--bg)',
+  white: 'var(--surface)',
 };
 
 export const spacing = {
@@ -60,11 +56,11 @@ export const commonStyles = {
   card: {
     height: '100%',
     borderRadius: borderRadius.large,
-    boxShadow: `0 8px 32px ${colors.shadow.light}`,
+    boxShadow: 'var(--shadow-md)',
     transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
     '&:hover': {
       transform: 'translateY(-4px)',
-      boxShadow: `0 12px 48px ${colors.shadow.medium}`,
+      boxShadow: 'var(--shadow-lg)',
     },
   },
   comingSoonCard: {
@@ -76,7 +72,7 @@ export const commonStyles = {
     px: spacing.md,
     bgcolor: colors.white,
     borderRadius: borderRadius.large,
-    boxShadow: `0 8px 32px ${colors.shadow.light}`,
+    boxShadow: 'var(--shadow-md)',
     maxWidth: '600px',
     width: '100%',
   },
