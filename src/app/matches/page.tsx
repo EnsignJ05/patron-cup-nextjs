@@ -29,8 +29,10 @@ type TeamRosterLite = Pick<TeamRoster, 'player_id' | 'team_id' | 'handicap_at_ev
 
 const formatTime = (timeStr: string | null) => {
   if (!timeStr) return 'TBD';
-  const date = new Date(`1970-01-01T${timeStr}:00`);
-  return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  const normalized = timeStr.length === 5 ? `${timeStr}:00` : timeStr;
+  const date = new Date(`1970-01-01T${normalized}`);
+  if (Number.isNaN(date.getTime())) return 'TBD';
+  return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
 };
 
 const getDefaultTeamColor = (index: number) =>

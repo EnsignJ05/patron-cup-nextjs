@@ -21,8 +21,10 @@ const formatDate = (dateStr: string) =>
 
 const formatTime = (timeStr: string | null) => {
   if (!timeStr) return 'TBD';
-  const date = new Date(`2000-01-01T${timeStr}`);
-  return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  const normalized = timeStr.length === 5 ? `${timeStr}:00` : timeStr;
+  const date = new Date(`2000-01-01T${normalized}`);
+  if (Number.isNaN(date.getTime())) return 'TBD';
+  return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 };
 
 export default async function DashboardPage() {

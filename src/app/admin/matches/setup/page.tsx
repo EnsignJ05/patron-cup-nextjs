@@ -42,8 +42,10 @@ const getFormatConfig = (matchType: string) => {
 
 const formatTime = (timeStr: string | null) => {
   if (!timeStr) return '-';
-  const date = new Date(`1970-01-01T${timeStr}:00`);
-  return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  const normalized = timeStr.length === 5 ? `${timeStr}:00` : timeStr;
+  const date = new Date(`1970-01-01T${normalized}`);
+  if (Number.isNaN(date.getTime())) return '-';
+  return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
 };
 
 export default function MatchSetupAdminPage() {

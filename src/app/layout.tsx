@@ -4,6 +4,7 @@ import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
 import Link from 'next/link';
 import Image from 'next/image';
 import IconButton from '@mui/material/IconButton';
@@ -13,6 +14,7 @@ import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
+import Switch from '@mui/material/Switch';
 import { Analytics } from '@vercel/analytics/react';
 import { Inter } from 'next/font/google';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
@@ -23,7 +25,7 @@ import styles from './layout.module.css';
 
 const inter = Inter({ subsets: ['latin'], weight: ['400', '700'] });
 const THEME_STORAGE_KEY = 'theme-preference';
-type ThemePreference = 'system' | 'light' | 'dark';
+type ThemePreference = 'light' | 'dark';
 
 const navLinks = [
   { label: 'Home', href: '/' },
@@ -37,7 +39,7 @@ const navLinks = [
 
 export function NavigationContent() {
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [themePreference, setThemePreference] = useState<ThemePreference>('system');
+  const [themePreference, setThemePreference] = useState<ThemePreference | null>(null);
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
   const { user, role, signOut } = useAuth();
   const router = useRouter();
@@ -57,10 +59,10 @@ export function NavigationContent() {
     }
 
     const saved = localStorage.getItem(THEME_STORAGE_KEY);
-    if (saved === 'light' || saved === 'dark' || saved === 'system') {
+    if (saved === 'light' || saved === 'dark') {
       setThemePreference(saved);
     } else {
-      setThemePreference('system');
+      setThemePreference(null);
     }
   }, []);
 
@@ -77,9 +79,9 @@ export function NavigationContent() {
     }
 
     const media = window.matchMedia('(prefers-color-scheme: dark)');
-    const resolveTheme = (preference: ThemePreference) =>
-      preference === 'system' ? (media.matches ? 'dark' : 'light') : preference;
-    const applyTheme = (preference: ThemePreference) => {
+    const resolveTheme = (preference: ThemePreference | null) =>
+      preference ?? (media.matches ? 'dark' : 'light');
+    const applyTheme = (preference: ThemePreference | null) => {
       const nextTheme = resolveTheme(preference);
       setResolvedTheme(nextTheme);
       document.documentElement.setAttribute('data-theme', nextTheme);
@@ -88,7 +90,7 @@ export function NavigationContent() {
     applyTheme(themePreference);
 
     const handleChange = (event: MediaQueryListEvent) => {
-      if (themePreference === 'system') {
+      if (!themePreference) {
         const nextTheme = event.matches ? 'dark' : 'light';
         setResolvedTheme(nextTheme);
         document.documentElement.setAttribute('data-theme', nextTheme);
@@ -99,21 +101,11 @@ export function NavigationContent() {
     return () => media.removeEventListener('change', handleChange);
   }, [themePreference]);
 
-  const cycleThemePreference = () => {
-    const nextPreference: ThemePreference =
-      themePreference === 'system' ? 'dark' : themePreference === 'dark' ? 'light' : 'system';
+  const handleThemeToggle = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const nextPreference: ThemePreference = event.target.checked ? 'dark' : 'light';
     setThemePreference(nextPreference);
-    if (nextPreference === 'system') {
-      localStorage.removeItem(THEME_STORAGE_KEY);
-    } else {
-      localStorage.setItem(THEME_STORAGE_KEY, nextPreference);
-    }
+    localStorage.setItem(THEME_STORAGE_KEY, nextPreference);
   };
-
-  const themeLabel =
-    themePreference === 'system'
-      ? `Theme: System (${resolvedTheme})`
-      : `Theme: ${resolvedTheme === 'dark' ? 'Dark' : 'Light'}`;
 
   return (
     <AppBar
@@ -195,12 +187,15 @@ export function NavigationContent() {
               Login
             </Button>
           )}
-          <Button
-            onClick={cycleThemePreference}
-            className={styles.navButton}
-          >
-            {themeLabel}
-          </Button>
+          <Box className={styles.themeToggle}>
+            <Typography className={styles.themeToggleLabel}>Dark mode</Typography>
+            <Switch
+              checked={resolvedTheme === 'dark'}
+              onChange={handleThemeToggle}
+              color="default"
+              inputProps={{ 'aria-label': 'Toggle dark mode' }}
+            />
+          </Box>
         </Box>
         {/* Mobile Nav */}
         <Box className={styles.mobileNav}>
@@ -295,16 +290,14 @@ export function NavigationContent() {
                   </ListItemButton>
                 </ListItem>
               )}
-              <ListItem disablePadding>
-                <ListItemButton
-                  onClick={() => {
-                    cycleThemePreference();
-                    setDrawerOpen(false);
-                  }}
-                  className={styles.drawerItem}
-                >
-                  <ListItemText primary={themeLabel} />
-                </ListItemButton>
+              <ListItem className={styles.drawerToggleItem}>
+                <ListItemText primary="Dark mode" className={styles.drawerToggleLabel} />
+                <Switch
+                  checked={resolvedTheme === 'dark'}
+                  onChange={handleThemeToggle}
+                  color="default"
+                  inputProps={{ 'aria-label': 'Toggle dark mode' }}
+                />
               </ListItem>
             </List>
           </Drawer>
