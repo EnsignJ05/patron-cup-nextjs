@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation';
 import { createSupabaseServerClient, getCachedUser, getCachedPlayerProfile } from '@/lib/supabaseServer';
 import { canAccessDashboard } from '@/lib/authConfig';
 import DashboardProfileForm from '@/components/player/DashboardProfileForm';
+import MatchCard from '@/components/matches/MatchCard';
 import styles from './page.module.css';
 
 // Revalidate every 5 seconds to show updated profile images quickly
@@ -54,7 +55,7 @@ export default async function DashboardPage() {
     .eq('is_active', true)
     .single();
 
-  type MatchCard = {
+  type DashboardMatch = {
     match: {
       id: string;
       match_date: string;
@@ -62,14 +63,37 @@ export default async function DashboardPage() {
       match_number: number;
       match_type: string;
       group_number: number | null;
+      winner_team_id: string | null;
+      is_halved: boolean;
       course?: { name?: string | null } | null;
     };
-    players: Array<{ name: string; team?: string | null }>;
+    playersByTeam: Map<string, Array<{ id: string; name: string; profileImageUrl: string | null }>>;
   };
 
-  let matchesList: MatchCard[] = [];
+  let matchesList: DashboardMatch[] = [];
+  let eventTeams: Array<{ id: string; name: string; color: string | null }> = [];
+  let handicapByPlayerId = new Map<string, number | null>();
 
   if (playerRecord?.id && activeEvent?.id) {
+    const { data: teamsData } = await supabase
+      .from('teams')
+      .select('id, name, color')
+      .eq('event_id', activeEvent.id)
+      .order('name');
+
+    eventTeams = teamsData || [];
+
+    if (eventTeams.length > 0) {
+      const { data: rosterData } = await supabase
+        .from('team_rosters')
+        .select('player_id, handicap_at_event')
+        .in('team_id', eventTeams.map((team) => team.id));
+
+      handicapByPlayerId = new Map(
+        (rosterData || []).map((roster) => [roster.player_id, roster.handicap_at_event ?? null]),
+      );
+    }
+
     const { data: playerMatchIds } = await supabase
       .from('match_players')
       .select('match_id')
@@ -81,27 +105,36 @@ export default async function DashboardPage() {
       const { data: matchPlayers } = await supabase
         .from('match_players')
         .select(
-          'match_id, player:players(id, first_name, last_name), team:teams(id, name), match:matches!inner(id, event_id, match_date, match_time, match_number, match_type, group_number, course:courses(name))'
+          'match_id, player:players(id, first_name, last_name, profile_image_url), team:teams(id, name, color), match:matches!inner(id, event_id, match_date, match_time, match_number, match_type, group_number, winner_team_id, is_halved, course:courses(name))'
         )
         .in('match_id', matchIds)
         .eq('match.event_id', activeEvent.id);
 
-      const matchMap = new Map<string, MatchCard>();
+      const matchMap = new Map<string, DashboardMatch>();
       (matchPlayers || []).forEach((row) => {
         const matchRecord = Array.isArray(row.match) ? row.match[0] : row.match;
         if (!matchRecord) return;
-        const normalizedMatch: MatchCard['match'] = {
+        const normalizedMatch: DashboardMatch['match'] = {
           ...matchRecord,
           course: Array.isArray(matchRecord.course) ? matchRecord.course[0] : matchRecord.course,
         };
         const existing = matchMap.get(row.match_id) || {
           match: normalizedMatch,
-          players: [] as MatchCard['players'],
+          playersByTeam: new Map<string, Array<{ id: string; name: string; profileImageUrl: string | null }>>(),
         };
         const playerRecord = Array.isArray(row.player) ? row.player[0] : row.player;
         const teamRecord = Array.isArray(row.team) ? row.team[0] : row.team;
         const playerName = playerRecord ? `${playerRecord.first_name} ${playerRecord.last_name}` : 'TBD';
-        existing.players.push({ name: playerName, team: teamRecord?.name });
+        const teamId = teamRecord?.id;
+        if (teamId) {
+          const list = existing.playersByTeam.get(teamId) || [];
+          list.push({
+            id: playerRecord?.id || `${row.match_id}-${playerName}`,
+            name: playerName,
+            profileImageUrl: playerRecord?.profile_image_url || null,
+          });
+          existing.playersByTeam.set(teamId, list);
+        }
         matchMap.set(row.match_id, existing);
       });
 
@@ -239,22 +272,48 @@ export default async function DashboardPage() {
           </Typography>
         ) : (
           <Box className={styles.matchList}>
-            {matchesList.map(({ match, players }) => (
-              <Box key={match.id} className={styles.matchItem}>
-                <Typography variant="subtitle1" className={styles.matchTitle}>
-                  {formatDate(match.match_date)} · {formatTime(match.match_time)} · {match.course?.name || 'Course TBD'}
-                </Typography>
-                <Typography variant="body2" className={styles.matchMeta}>
-                  Match #{match.match_number} · {match.match_type}
-                  {match.group_number !== null && ` · Group ${match.group_number}`}
-                </Typography>
-                <Typography variant="body2" className={styles.matchPlayers}>
-                  {players
-                    .map((player) => (player.team ? `${player.name} (${player.team})` : player.name))
-                    .join(', ')}
-                </Typography>
-              </Box>
-            ))}
+            {matchesList.map(({ match, playersByTeam }) => {
+              const [teamA, teamB] = eventTeams;
+              const teamAPlayers = teamA ? playersByTeam.get(teamA.id) || [] : [];
+              const teamBPlayers = teamB ? playersByTeam.get(teamB.id) || [] : [];
+
+              const buildPlayers = (players: Array<{ id: string; name: string; profileImageUrl: string | null }>) =>
+                players.map((player) => ({
+                  ...player,
+                  handicap: handicapByPlayerId.get(player.id) ?? null,
+                }));
+
+              return (
+                <MatchCard
+                  key={match.id}
+                  matchNumber={match.match_number}
+                  matchType={match.match_type}
+                  teeTime={formatTime(match.match_time)}
+                  winnerTeamId={match.winner_team_id}
+                  isHalved={match.is_halved}
+                  teamA={
+                    teamA
+                      ? {
+                          id: teamA.id,
+                          name: teamA.name,
+                          color: teamA.color,
+                          players: buildPlayers(teamAPlayers),
+                        }
+                      : null
+                  }
+                  teamB={
+                    teamB
+                      ? {
+                          id: teamB.id,
+                          name: teamB.name,
+                          color: teamB.color,
+                          players: buildPlayers(teamBPlayers),
+                        }
+                      : null
+                  }
+                />
+              );
+            })}
           </Box>
         )}
 

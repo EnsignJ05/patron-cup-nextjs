@@ -1,5 +1,12 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Node version
+
+This project targets **Node 20 or 22 LTS** (see `engines` in `package.json`). If you're on Node 23, `npm install` may show engine warnings; the app should still run.
+
+- **Without nvm:** Install [Node 20 or 22](https://nodejs.org) and use that when working in this repo.
+- **With nvm:** Run `nvm use` in the project (`.nvmrc` is set to 22).
+
 ## Getting Started
 
 First, run the development server:

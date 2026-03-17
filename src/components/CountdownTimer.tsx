@@ -1,9 +1,10 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import Link from 'next/link';
-import { getAllPlayersAndMatches } from '@/lib/getAllPlayersAndMatches';
+import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
+import { getTeamTotals } from '@/lib/matchScoring';
 import styles from './CountdownTimer.module.css';
 
 interface TimeLeft {
@@ -19,7 +20,9 @@ const TEST_EXPIRED = false;
 export default function CountdownTimer() {
   const [timeLeft, setTimeLeft] = useState<TimeLeft>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [isExpired, setIsExpired] = useState(TEST_EXPIRED);
-  const [teamScores, setTeamScores] = useState({ thompson: 0, burgess: 0 });
+  const [teamScores, setTeamScores] = useState<Record<string, number>>({});
+  const [teams, setTeams] = useState<Array<{ id: string; name: string }>>([]);
+  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
   useEffect(() => {
     const calculateTimeLeft = () => {
@@ -59,20 +62,38 @@ export default function CountdownTimer() {
   }, []);
 
   useEffect(() => {
-    if (isExpired) {
-      getAllPlayersAndMatches()
-        .then(({ matches }) => {
-          let thompson = 0, burgess = 0;
-          matches.forEach((m: any) => {
-            if (m.winner === 'team_thompson') thompson += 1;
-            else if (m.winner === 'team_burgess') burgess += 1;
-            else if (m.winner === 'tie') { thompson += 0.5; burgess += 0.5; }
-          });
-          setTeamScores({ thompson, burgess });
-        })
-        .catch(console.error);
-    }
-  }, [isExpired]);
+    if (!isExpired) return;
+
+    const loadScores = async () => {
+      const { data: activeEvent } = await supabase
+        .from('events')
+        .select('id')
+        .eq('is_active', true)
+        .single();
+
+      if (!activeEvent) return;
+
+      const [teamsRes, matchesRes] = await Promise.all([
+        supabase.from('teams').select('id, name').eq('event_id', activeEvent.id).order('name'),
+        supabase
+          .from('matches')
+          .select('winner_team_id, is_halved')
+          .eq('event_id', activeEvent.id),
+      ]);
+
+      if (teamsRes.error || matchesRes.error) {
+        console.error(teamsRes.error || matchesRes.error);
+        return;
+      }
+
+      const teamsData = teamsRes.data || [];
+      const matchesData = matchesRes.data || [];
+      setTeams(teamsData);
+      setTeamScores(getTeamTotals(matchesData, teamsData.map((team) => team.id)));
+    };
+
+    loadScores().catch(console.error);
+  }, [isExpired, supabase]);
 
   const timeUnits = [
     { value: timeLeft.days, label: 'Days' },
@@ -118,27 +139,19 @@ export default function CountdownTimer() {
         </>
       ) : (
         <>
-          <Typography
-            variant="h6"
-            className={styles.scoreboardTitle}
-          >
-            Scoreboard
+          <Typography variant="h6" className={styles.scoreboardTitle}>
+            Overall Score
           </Typography>
 
           <Box
             className={styles.scoreboardRow}
           >
             <Box className={styles.scoreColumn}>
-              <Typography
-                variant="h2"
-                className={styles.scoreValueThompson}
-              >
-                {teamScores.thompson}
+              <Typography variant="h2" className={styles.scoreValueThompson}>
+                {teamScores[teams[0]?.id || ''] ?? 0}
               </Typography>
-              <Typography
-                className={styles.scoreLabelThompson}
-              >
-                Team Thompson
+              <Typography className={styles.scoreLabelThompson}>
+                {teams[0]?.name || 'Team A'}
               </Typography>
             </Box>
 
@@ -146,25 +159,17 @@ export default function CountdownTimer() {
             <Box className={styles.scoreDivider} />
 
             <Box className={styles.scoreColumn}>
-              <Typography
-                variant="h2"
-                className={styles.scoreValueBurgess}
-              >
-                {teamScores.burgess}
+              <Typography variant="h2" className={styles.scoreValueBurgess}>
+                {teamScores[teams[1]?.id || ''] ?? 0}
               </Typography>
-              <Typography
-                className={styles.scoreLabelBurgess}
-              >
-                Team Burgess
+              <Typography className={styles.scoreLabelBurgess}>
+                {teams[1]?.name || 'Team B'}
               </Typography>
             </Box>
           </Box>
 
-          <Link
-            href="/scoreboard"
-            className={styles.scoreLink}
-          >
-            View scoreboard
+          <Link href="/matches" className={styles.scoreLink}>
+            View matches
           </Link>
         </>
       )}
