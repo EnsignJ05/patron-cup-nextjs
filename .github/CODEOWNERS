@@ -1,0 +1,12 @@
+# Default owner for everything
+*  @EnsignJ05
+
+# TypeScript files
+*.ts  @EnsignJ05
+*.tsx  @EnsignJ05
+
+# CSS files
+*.css  @EnsignJ05
+
+# Protect the CODEOWNERS file itself
+/.github/CODEOWNERS  @EnsignJ05
