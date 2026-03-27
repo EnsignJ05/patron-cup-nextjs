@@ -25,11 +25,19 @@ import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
+import FormHelperText from '@mui/material/FormHelperText';
 import Chip from '@mui/material/Chip';
 import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
 import type { Lodging, LodgingAssignment, Event, Player } from '@/types/database';
 
 export default function LodgingAdminPage() {
+  type SlotDraft = {
+    assignmentId: string | null;
+    playerId: string;
+    confirmationNum: string;
+    isPrimary: boolean;
+  };
+
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const [lodgings, setLodgings] = useState<(Lodging & { event?: Event })[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
@@ -47,7 +55,8 @@ export default function LodgingAdminPage() {
   const [assignmentsDialogOpen, setAssignmentsDialogOpen] = useState(false);
   const [selectedLodging, setSelectedLodging] = useState<Lodging | null>(null);
   const [assignments, setAssignments] = useState<(LodgingAssignment & { player?: Player })[]>([]);
-  const [selectedPlayerId, setSelectedPlayerId] = useState('');
+  const [slotDrafts, setSlotDrafts] = useState<SlotDraft[]>([]);
+  const [initialSlotDrafts, setInitialSlotDrafts] = useState<SlotDraft[]>([]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -113,6 +122,10 @@ export default function LodgingAdminPage() {
   const handleSave = async () => {
     if (!editingLodging) return;
     setError('');
+    if (hasValidationErrors) {
+      setError('Please fix the form validation errors before saving.');
+      return;
+    }
 
     const lodgingData = {
       event_id: editingLodging.event_id,
@@ -121,6 +134,8 @@ export default function LodgingAdminPage() {
       room_type: editingLodging.room_type || null,
       check_in_date: editingLodging.check_in_date || null,
       check_out_date: editingLodging.check_out_date || null,
+      bedrooms: editingLodging.bedrooms ?? null,
+      num_of_people: editingLodging.num_of_people ?? null,
       notes: editingLodging.notes || null,
     };
 
@@ -165,68 +180,150 @@ export default function LodgingAdminPage() {
     if (error) {
       setError(error.message);
     } else {
-      setAssignments(data || []);
+      const assignmentRows = data || [];
+      setAssignments(assignmentRows);
+      const roomCapacity = Math.max(lodging.num_of_people ?? 0, assignmentRows.length);
+      const drafts: SlotDraft[] = Array.from({ length: roomCapacity }, (_, index) => {
+        const assignment = assignmentRows[index];
+        if (!assignment) {
+          return {
+            assignmentId: null,
+            playerId: '',
+            confirmationNum: '',
+            isPrimary: false,
+          };
+        }
+        return {
+          assignmentId: assignment.id,
+          playerId: assignment.player_id,
+          confirmationNum: assignment.confirmation_num || '',
+          isPrimary: assignment.is_primary,
+        };
+      });
+      setSlotDrafts(drafts);
+      setInitialSlotDrafts(drafts);
     }
   };
 
-  const addAssignment = async () => {
-    if (!selectedLodging || !selectedPlayerId) return;
+  const clearSlotAssignment = (slotIndex: number) => {
+    const draft = slotDrafts[slotIndex];
+    if (!draft) return;
+    setSlotDrafts((prev) =>
+      prev.map((slot, index) =>
+        index === slotIndex
+          ? { ...slot, assignmentId: null, playerId: '', confirmationNum: '', isPrimary: false }
+          : slot
+      )
+    );
+  };
 
-    const { error } = await supabase
-      .from('lodging_assignments')
-      .insert([{
+  const saveAllAssignments = async () => {
+    if (!selectedLodging) return;
+
+    const selectedPlayers = slotDrafts.map((slot) => slot.playerId).filter(Boolean);
+    const uniquePlayers = new Set(selectedPlayers);
+    if (selectedPlayers.length !== uniquePlayers.size) {
+      setError('A player can only be assigned to one slot in this room.');
+      return;
+    }
+
+    const payload = slotDrafts
+      .filter((slot) => Boolean(slot.playerId))
+      .map((slot) => ({
         lodging_id: selectedLodging.id,
-        player_id: selectedPlayerId,
-      }]);
+        player_id: slot.playerId,
+        confirmation_num: slot.confirmationNum.trim() || null,
+        is_primary: slot.isPrimary,
+      }));
 
-    if (error) {
-      setError(error.message);
-    } else {
-      setSuccess('Player assigned to room');
-      setSelectedPlayerId('');
-      openAssignmentsDialog(selectedLodging);
-    }
-  };
-
-  const removeAssignment = async (assignmentId: string) => {
-    const { error } = await supabase
+    const { error: deleteError } = await supabase
       .from('lodging_assignments')
       .delete()
-      .eq('id', assignmentId);
+      .eq('lodging_id', selectedLodging.id);
 
-    if (error) {
-      setError(error.message);
-    } else {
-      setSuccess('Player removed from room');
-      if (selectedLodging) openAssignmentsDialog(selectedLodging);
+    if (deleteError) {
+      setError(deleteError.message);
+      return;
     }
+
+    if (payload.length > 0) {
+      const { error: insertError } = await supabase
+        .from('lodging_assignments')
+        .insert(payload);
+      if (insertError) {
+        setError(insertError.message);
+        return;
+      }
+    }
+
+    setSuccess('Room assignments saved');
+    openAssignmentsDialog(selectedLodging);
   };
 
-  const togglePrimary = async (assignmentId: string, currentValue: boolean) => {
-    const { error } = await supabase
-      .from('lodging_assignments')
-      .update({ is_primary: !currentValue })
-      .eq('id', assignmentId);
-
-    if (error) {
-      setError(error.message);
-    } else {
-      if (selectedLodging) openAssignmentsDialog(selectedLodging);
-    }
+  const togglePrimary = (slotIndex: number) => {
+    setSlotDrafts((prev) =>
+      prev.map((slot, index) =>
+        index === slotIndex
+          ? { ...slot, isPrimary: !slot.isPrimary }
+          : slot
+      )
+    );
   };
 
   const filteredLodgings = selectedEventId 
     ? lodgings.filter(l => l.event_id === selectedEventId)
     : lodgings;
 
-  const availablePlayers = players.filter(
-    p => !assignments.some(a => a.player_id === p.id)
-  );
+  const getSelectablePlayersForSlot = (slotIndex: number) => {
+    const takenPlayerIds = new Set(
+      slotDrafts
+        .filter((_, index) => index !== slotIndex)
+        .map((slot) => slot.playerId)
+        .filter(Boolean)
+    );
+    return players.filter((player) => !takenPlayerIds.has(player.id));
+  };
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return '-';
     return new Date(dateStr).toLocaleDateString();
   };
+
+  const validationErrors = useMemo(() => {
+    const errors: Partial<Record<'event_id' | 'bedrooms' | 'num_of_people', string>> = {};
+    const bedrooms = editingLodging?.bedrooms;
+    const numOfPeople = editingLodging?.num_of_people;
+
+    if (!editingLodging?.event_id) {
+      errors.event_id = 'Event is required';
+    }
+
+    if (bedrooms === null || bedrooms === undefined) {
+      errors.bedrooms = 'Bedrooms is required';
+    } else if (!Number.isInteger(bedrooms) || bedrooms < 0) {
+      errors.bedrooms = 'Bedrooms must be a non-negative whole number';
+    }
+
+    if (numOfPeople === null || numOfPeople === undefined) {
+      errors.num_of_people = 'Number of people is required';
+    } else if (!Number.isInteger(numOfPeople) || numOfPeople < 0) {
+      errors.num_of_people = 'Number of people must be a non-negative whole number';
+    }
+
+    return errors;
+  }, [editingLodging]);
+
+  const hasValidationErrors = Object.keys(validationErrors).length > 0;
+  const hasUnsavedAssignmentChanges = useMemo(() => {
+    const normalizeDrafts = (drafts: SlotDraft[]) =>
+      drafts.map((draft) => ({
+        playerId: draft.playerId,
+        confirmationNum: draft.confirmationNum.trim(),
+        isPrimary: draft.isPrimary && Boolean(draft.playerId),
+      }));
+
+    return JSON.stringify(normalizeDrafts(slotDrafts)) !== JSON.stringify(normalizeDrafts(initialSlotDrafts));
+  }, [slotDrafts, initialSlotDrafts]);
 
   return (
     <Box sx={{ p: 3 }}>
@@ -270,6 +367,8 @@ export default function LodgingAdminPage() {
               <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Building</TableCell>
               <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Room #</TableCell>
               <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Type</TableCell>
+              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Bedrooms</TableCell>
+              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>People</TableCell>
               <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Event</TableCell>
               <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Dates</TableCell>
               <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Notes</TableCell>
@@ -279,11 +378,11 @@ export default function LodgingAdminPage() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={7} align="center">Loading...</TableCell>
+                <TableCell colSpan={9} align="center">Loading...</TableCell>
               </TableRow>
             ) : filteredLodgings.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} align="center">No lodging found</TableCell>
+                <TableCell colSpan={9} align="center">No lodging found</TableCell>
               </TableRow>
             ) : (
               filteredLodgings.map((lodging) => (
@@ -291,6 +390,8 @@ export default function LodgingAdminPage() {
                   <TableCell sx={{ fontWeight: 600 }}>{lodging.building_name || '-'}</TableCell>
                   <TableCell>{lodging.room_number || '-'}</TableCell>
                   <TableCell>{lodging.room_type || '-'}</TableCell>
+                  <TableCell>{lodging.bedrooms ?? '-'}</TableCell>
+                  <TableCell>{lodging.num_of_people ?? '-'}</TableCell>
                   <TableCell>{lodging.event?.name || '-'}</TableCell>
                   <TableCell>
                     {formatDate(lodging.check_in_date)} - {formatDate(lodging.check_out_date)}
@@ -321,7 +422,7 @@ export default function LodgingAdminPage() {
         </DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-            <FormControl fullWidth required>
+            <FormControl fullWidth required error={Boolean(validationErrors.event_id)}>
               <InputLabel>Event</InputLabel>
               <Select
                 value={editingLodging?.event_id || ''}
@@ -334,6 +435,7 @@ export default function LodgingAdminPage() {
                   </MenuItem>
                 ))}
               </Select>
+              <FormHelperText>{validationErrors.event_id}</FormHelperText>
             </FormControl>
             <TextField
               label="Building Name"
@@ -354,6 +456,34 @@ export default function LodgingAdminPage() {
               onChange={(e) => setEditingLodging({ ...editingLodging, room_type: e.target.value })}
               fullWidth
               placeholder="e.g., Suite, Double, Single"
+            />
+            <TextField
+              label="Bedrooms"
+              type="number"
+              value={editingLodging?.bedrooms ?? ''}
+              onChange={(e) => setEditingLodging({
+                ...editingLodging,
+                bedrooms: e.target.value === '' ? null : Number(e.target.value),
+              })}
+              fullWidth
+              required
+              error={Boolean(validationErrors.bedrooms)}
+              helperText={validationErrors.bedrooms}
+              inputProps={{ min: 0, step: 1 }}
+            />
+            <TextField
+              label="Number of People"
+              type="number"
+              value={editingLodging?.num_of_people ?? ''}
+              onChange={(e) => setEditingLodging({
+                ...editingLodging,
+                num_of_people: e.target.value === '' ? null : Number(e.target.value),
+              })}
+              fullWidth
+              required
+              error={Boolean(validationErrors.num_of_people)}
+              helperText={validationErrors.num_of_people}
+              inputProps={{ min: 0, step: 1 }}
             />
             <TextField
               label="Check-in Date"
@@ -383,7 +513,12 @@ export default function LodgingAdminPage() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleSave} variant="contained" sx={{ bgcolor: 'var(--text)', color: 'var(--bg)' }}>
+          <Button
+            onClick={handleSave}
+            variant="contained"
+            disabled={hasValidationErrors}
+            sx={{ bgcolor: 'var(--text)', color: 'var(--bg)' }}
+          >
             Save
           </Button>
         </DialogActions>
@@ -395,67 +530,92 @@ export default function LodgingAdminPage() {
           Room Assignments - {selectedLodging?.building_name} {selectedLodging?.room_number}
         </DialogTitle>
         <DialogContent>
-          <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-            <FormControl sx={{ flex: 2 }}>
-              <InputLabel>Select Player</InputLabel>
-              <Select
-                value={selectedPlayerId}
-                label="Select Player"
-                onChange={(e) => setSelectedPlayerId(e.target.value)}
-              >
-                {availablePlayers.map((player) => (
-                  <MenuItem key={player.id} value={player.id}>
-                    {player.first_name} {player.last_name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <Button 
-              variant="contained" 
-              onClick={addAssignment}
-              disabled={!selectedPlayerId}
-              sx={{ bgcolor: 'var(--text)', color: 'var(--bg)' }}
-            >
-              Add
-            </Button>
-          </Box>
-
           <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-            Guests ({assignments.length})
+            Guests ({slotDrafts.filter((slot) => Boolean(slot.playerId)).length}/{selectedLodging?.num_of_people ?? 0})
           </Typography>
           
           <TableContainer component={Paper} variant="outlined">
             <Table size="small">
               <TableHead>
                 <TableRow>
+                  <TableCell>Slot</TableCell>
                   <TableCell>Player</TableCell>
+                  <TableCell>Confirmation #</TableCell>
                   <TableCell>Primary</TableCell>
                   <TableCell align="right">Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {assignments.length === 0 ? (
+                {slotDrafts.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={3} align="center">No guests assigned</TableCell>
+                    <TableCell colSpan={5} align="center">This room has zero slots. Increase People on the room first.</TableCell>
                   </TableRow>
                 ) : (
-                  assignments.map((a) => (
-                    <TableRow key={a.id}>
-                      <TableCell>{a.player?.first_name} {a.player?.last_name}</TableCell>
+                  slotDrafts.map((slot, slotIndex) => (
+                    <TableRow key={slot.assignmentId ?? `slot-${slotIndex}`}>
+                      <TableCell>{slotIndex + 1}</TableCell>
                       <TableCell>
-                        <Chip 
-                          label={a.is_primary ? 'Primary' : 'Guest'} 
-                          size="small" 
-                          color={a.is_primary ? 'primary' : 'default'}
-                          onClick={() => togglePrimary(a.id, a.is_primary)}
-                          sx={{ cursor: 'pointer' }}
+                        <FormControl size="small" fullWidth>
+                          <InputLabel>Player</InputLabel>
+                          <Select
+                            value={slot.playerId}
+                            label="Player"
+                            onChange={(e) =>
+                              setSlotDrafts((prev) =>
+                                prev.map((currentSlot, index) =>
+                                  index === slotIndex
+                                    ? { ...currentSlot, playerId: e.target.value }
+                                    : currentSlot
+                                )
+                              )
+                            }
+                          >
+                            <MenuItem value="">
+                              <em>Empty slot</em>
+                            </MenuItem>
+                            {getSelectablePlayersForSlot(slotIndex).map((player) => (
+                              <MenuItem key={player.id} value={player.id}>
+                                {player.first_name} {player.last_name}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      </TableCell>
+                      <TableCell>
+                        <TextField
+                          size="small"
+                          label="Confirmation #"
+                          value={slot.confirmationNum}
+                          placeholder="Optional"
+                          onChange={(e) =>
+                            setSlotDrafts((prev) =>
+                              prev.map((currentSlot, index) =>
+                                index === slotIndex
+                                  ? { ...currentSlot, confirmationNum: e.target.value }
+                                  : currentSlot
+                              )
+                            )
+                          }
                         />
+                      </TableCell>
+                      <TableCell>
+                        {slot.playerId ? (
+                          <Chip
+                            label={slot.isPrimary ? 'Primary' : 'Guest'}
+                            size="small"
+                            color={slot.isPrimary ? 'primary' : 'default'}
+                            onClick={() => togglePrimary(slotIndex)}
+                            sx={{ cursor: 'pointer' }}
+                          />
+                        ) : (
+                          '-'
+                        )}
                       </TableCell>
                       <TableCell align="right">
                         <IconButton 
                           size="small" 
                           color="error"
-                          onClick={() => removeAssignment(a.id)}
+                          onClick={() => clearSlotAssignment(slotIndex)}
                         >
                           <DeleteIcon />
                         </IconButton>
@@ -468,6 +628,14 @@ export default function LodgingAdminPage() {
           </TableContainer>
         </DialogContent>
         <DialogActions>
+          <Button
+            onClick={saveAllAssignments}
+            variant="contained"
+            disabled={!hasUnsavedAssignmentChanges}
+            sx={{ bgcolor: 'var(--text)', color: 'var(--bg)' }}
+          >
+            Save Changes
+          </Button>
           <Button onClick={() => setAssignmentsDialogOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>

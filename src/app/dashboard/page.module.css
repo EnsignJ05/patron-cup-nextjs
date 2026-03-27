@@ -23,12 +23,13 @@
 
 .profileCard {
   width: 100%;
-  max-width: 640px;
+  max-width: 800px;
   padding: 24px;
-  border-radius: 24px;
+  border-radius: 24px !important;
   background: var(--surface);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-sm);
+  overflow: hidden;
 }
 
 .sectionTitle {
@@ -60,11 +61,84 @@
   width: 100%;
   max-width: 800px;
   padding: 24px;
-  border-radius: 24px;
+  border-radius: 24px !important;
   margin-top: 32px;
   background: var(--surface);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.lodgingCard {
+  width: 100%;
+  max-width: 800px;
+  padding: 24px;
+  border-radius: 24px !important;
+  margin-top: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.reroundsCard {
+  width: 100%;
+  max-width: 800px;
+  padding: 24px;
+  border-radius: 24px !important;
+  margin-top: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.profileCardAccent {
+  border: 1px solid var(--accent-blue);
+  background: linear-gradient(135deg, var(--surface-tint) 0%, var(--surface) 45%);
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--accent-blue) 10%, var(--surface)) 0%,
+      var(--surface) 45%
+    );
+  background-color: var(--surface) !important;
+}
+
+.matchesCardAccent {
+  border: 1px solid var(--accent-violet);
+  background: linear-gradient(135deg, var(--surface-tint) 0%, var(--surface) 45%);
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--accent-violet) 10%, var(--surface)) 0%,
+      var(--surface) 45%
+    );
+  background-color: var(--surface) !important;
+}
+
+.lodgingCardAccent {
+  border: 1px solid var(--accent-cyan);
+  background: linear-gradient(135deg, var(--surface-tint) 0%, var(--surface) 45%);
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--accent-cyan) 12%, var(--surface)) 0%,
+      var(--surface) 45%
+    );
+  background-color: var(--surface) !important;
+}
+
+.reroundsCardAccent {
+  border: 1px solid var(--accent-teal);
+  background: linear-gradient(135deg, var(--surface-tint) 0%, var(--surface) 45%);
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--accent-teal) 10%, var(--surface)) 0%,
+      var(--surface) 45%
+    );
+  background-color: var(--surface) !important;
 }
 
 .sectionHeading {
@@ -100,6 +174,13 @@
   color: var(--text);
 }
 
+.lodgingConfirmation {
+  margin-top: -4px;
+  margin-bottom: 12px;
+  font-weight: 700;
+  color: var(--text);
+}
+
 .reroundList {
   display: flex;
   flex-direction: column;
@@ -113,6 +194,24 @@
   background: var(--surface-muted);
 }
 
+.roommatesList {
+  margin: 8px 0 0 20px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.roommateLink {
+  color: var(--accent-blue-strong);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.roommateLink:hover {
+  color: var(--accent-violet);
+}
+
 @media (min-width: 600px) {
   .pageRoot {
     padding: 64px 32px;
@@ -123,6 +222,14 @@
   }
 
   .matchesCard {
+    padding: 32px;
+  }
+
+  .lodgingCard {
+    padding: 32px;
+  }
+
+  .reroundsCard {
     padding: 32px;
   }
 }

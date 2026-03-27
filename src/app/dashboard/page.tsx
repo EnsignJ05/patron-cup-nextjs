@@ -7,6 +7,7 @@ import { createSupabaseServerClient, getCachedUser, getCachedPlayerProfile } fro
 import { canAccessDashboard } from '@/lib/authConfig';
 import DashboardProfileForm from '@/components/player/DashboardProfileForm';
 import MatchCard from '@/components/matches/MatchCard';
+import LodgingInfoCard from '@/components/player/LodgingInfoCard';
 import styles from './page.module.css';
 
 // Revalidate every 5 seconds to show updated profile images quickly
@@ -161,6 +162,50 @@ export default async function DashboardPage() {
     player4_id: string | null;
   }> = [];
   let reroundPlayersById = new Map<string, { first_name: string; last_name: string }>();
+  let lodgingInfo: {
+    buildingName: string | null;
+    roomNumber: string | null;
+    roomType: string | null;
+    confirmationNum: string | null;
+    roommates: Array<{ id: string; name: string }>;
+  } | null = null;
+
+  if (activeEvent?.id && playerRecord?.id) {
+    const { data: myLodgingAssignment } = await supabase
+      .from('lodging_assignments')
+      .select('id, player_id, lodging_id, confirmation_num, lodging:lodging!inner(id, event_id, building_name, room_number, room_type)')
+      .eq('player_id', playerRecord.id)
+      .eq('lodging.event_id', activeEvent.id)
+      .limit(1)
+      .maybeSingle();
+
+    const lodgingRecord = myLodgingAssignment?.lodging;
+    const normalizedLodging = Array.isArray(lodgingRecord) ? lodgingRecord[0] : lodgingRecord;
+
+    if (myLodgingAssignment?.lodging_id && normalizedLodging) {
+      const { data: roommateAssignments } = await supabase
+        .from('lodging_assignments')
+        .select('player_id, player:players(first_name, last_name)')
+        .eq('lodging_id', myLodgingAssignment.lodging_id)
+        .neq('player_id', playerRecord.id);
+
+      const roommateNames = (roommateAssignments || [])
+        .map((assignment) => {
+          const roommate = Array.isArray(assignment.player) ? assignment.player[0] : assignment.player;
+          if (!roommate) return null;
+          return { id: assignment.player_id, name: `${roommate.first_name} ${roommate.last_name}` };
+        })
+        .filter((roommate): roommate is { id: string; name: string } => Boolean(roommate));
+
+      lodgingInfo = {
+        buildingName: normalizedLodging.building_name ?? null,
+        roomNumber: normalizedLodging.room_number ?? null,
+        roomType: normalizedLodging.room_type ?? null,
+        confirmationNum: myLodgingAssignment.confirmation_num ?? null,
+        roommates: roommateNames,
+      };
+    }
+  }
 
   if (activeEvent?.id && playerRecord?.id) {
     const { data: rerounds } = await supabase
@@ -218,7 +263,7 @@ export default async function DashboardPage() {
       </Typography>
       <Paper
         elevation={2}
-        className={styles.profileCard}
+        className={`${styles.profileCard} ${styles.profileCardAccent}`}
       >
         <Typography variant="h6" className={styles.sectionTitle}>
           Account details
@@ -259,7 +304,7 @@ export default async function DashboardPage() {
 
       <Paper
         elevation={2}
-        className={styles.matchesCard}
+        className={`${styles.matchesCard} ${styles.matchesCardAccent}`}
       >
         <Typography variant="h5" className={styles.sectionHeading}>
           {activeEvent ? `${activeEvent.name} ${activeEvent.year}` : 'Current Event'}
@@ -319,6 +364,19 @@ export default async function DashboardPage() {
           </Box>
         )}
 
+      </Paper>
+
+      <LodgingInfoCard
+        lodgingInfo={lodgingInfo}
+        showConfirmationNumber
+        cardClassName={styles.lodgingCard}
+        emptyMessage="No room assignment found for you yet."
+      />
+
+      <Paper
+        elevation={2}
+        className={`${styles.reroundsCard} ${styles.reroundsCardAccent}`}
+      >
         <Typography variant="h6" className={styles.sectionTitle}>
           Re-rounds
         </Typography>
