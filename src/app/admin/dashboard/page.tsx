@@ -10,6 +10,7 @@ import GolfCourseIcon from '@mui/icons-material/GolfCourse';
 import SportsIcon from '@mui/icons-material/Sports';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import ScoreboardIcon from '@mui/icons-material/Scoreboard';
+import HotelIcon from '@mui/icons-material/Hotel';
 import LockResetIcon from '@mui/icons-material/LockReset';
 import AlternateEmailIcon from '@mui/icons-material/AlternateEmail';
 import styles from './page.module.css';
@@ -91,6 +92,13 @@ const adminSections = [
     href: '/admin/scores',
     icon: ScoreboardIcon,
     colorKey: 'mint',
+  },
+  {
+    title: 'Lodging',
+    description: 'Manage rooms, assignments, and confirmations',
+    href: '/admin/lodging',
+    icon: HotelIcon,
+    colorKey: 'teal',
   },
 ];
 

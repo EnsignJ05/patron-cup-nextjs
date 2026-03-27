@@ -5,6 +5,8 @@ import Avatar from '@mui/material/Avatar';
 import { createSupabaseServerClient } from '@/lib/supabaseServer';
 import { notFound } from 'next/navigation';
 import DashboardProfileForm from '@/components/player/DashboardProfileForm';
+import MatchCard from '@/components/matches/MatchCard';
+import LodgingInfoCard from '@/components/player/LodgingInfoCard';
 import styles from './page.module.css';
 // import PlayerRerounds from '@/components/player/PlayerRerounds';
 // import PlayerStats from '@/components/player/PlayerStats';
@@ -18,7 +20,9 @@ const formatDate = (dateStr: string) =>
 
 const formatTime = (timeStr: string | null) => {
   if (!timeStr) return 'TBD';
-  const date = new Date(`2000-01-01T${timeStr}`);
+  const normalized = timeStr.length === 5 ? `${timeStr}:00` : timeStr;
+  const date = new Date(`2000-01-01T${normalized}`);
+  if (Number.isNaN(date.getTime())) return 'TBD';
   return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 };
 
@@ -85,6 +89,142 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
     .select('id, name, year')
     .eq('is_active', true)
     .single();
+
+  type PlayerDashboardMatch = {
+    match: {
+      id: string;
+      match_date: string;
+      match_time: string | null;
+      match_number: number;
+      match_type: string;
+      group_number: number | null;
+      winner_team_id: string | null;
+      is_halved: boolean;
+      course?: { name?: string | null } | null;
+    };
+    playersByTeam: Map<string, Array<{ id: string; name: string; profileImageUrl: string | null }>>;
+  };
+
+  let matchesList: PlayerDashboardMatch[] = [];
+  let eventTeams: Array<{ id: string; name: string; color: string | null }> = [];
+  let handicapByPlayerId = new Map<string, number | null>();
+
+  if (activeEvent?.id) {
+    const { data: teamsData } = await supabase
+      .from('teams')
+      .select('id, name, color')
+      .eq('event_id', activeEvent.id)
+      .order('name');
+
+    eventTeams = teamsData || [];
+
+    if (eventTeams.length > 0) {
+      const { data: rosterData } = await supabase
+        .from('team_rosters')
+        .select('player_id, handicap_at_event')
+        .in('team_id', eventTeams.map((team) => team.id));
+
+      handicapByPlayerId = new Map(
+        (rosterData || []).map((roster) => [roster.player_id, roster.handicap_at_event ?? null]),
+      );
+    }
+
+    const { data: playerMatchIds } = await supabase
+      .from('match_players')
+      .select('match_id')
+      .eq('player_id', playerId);
+
+    const matchIds = Array.from(new Set((playerMatchIds || []).map((row) => row.match_id))).filter(Boolean);
+
+    if (matchIds.length > 0) {
+      const { data: matchPlayers } = await supabase
+        .from('match_players')
+        .select(
+          'match_id, player:players(id, first_name, last_name, profile_image_url), team:teams(id, name, color), match:matches!inner(id, event_id, match_date, match_time, match_number, match_type, group_number, winner_team_id, is_halved, course:courses(name))'
+        )
+        .in('match_id', matchIds)
+        .eq('match.event_id', activeEvent.id);
+
+      const matchMap = new Map<string, PlayerDashboardMatch>();
+      (matchPlayers || []).forEach((row) => {
+        const matchRecord = Array.isArray(row.match) ? row.match[0] : row.match;
+        if (!matchRecord) return;
+        const normalizedMatch: PlayerDashboardMatch['match'] = {
+          ...matchRecord,
+          course: Array.isArray(matchRecord.course) ? matchRecord.course[0] : matchRecord.course,
+        };
+        const existing = matchMap.get(row.match_id) || {
+          match: normalizedMatch,
+          playersByTeam: new Map<string, Array<{ id: string; name: string; profileImageUrl: string | null }>>(),
+        };
+        const playerRecord = Array.isArray(row.player) ? row.player[0] : row.player;
+        const teamRecord = Array.isArray(row.team) ? row.team[0] : row.team;
+        const playerName = playerRecord ? `${playerRecord.first_name} ${playerRecord.last_name}` : 'TBD';
+        const teamId = teamRecord?.id;
+        if (teamId) {
+          const list = existing.playersByTeam.get(teamId) || [];
+          list.push({
+            id: playerRecord?.id || `${row.match_id}-${playerName}`,
+            name: playerName,
+            profileImageUrl: playerRecord?.profile_image_url || null,
+          });
+          existing.playersByTeam.set(teamId, list);
+        }
+        matchMap.set(row.match_id, existing);
+      });
+
+      matchesList = Array.from(matchMap.values()).sort((a, b) => {
+        const dateCompare = a.match.match_date.localeCompare(b.match.match_date);
+        if (dateCompare !== 0) return dateCompare;
+        const timeA = a.match.match_time || '99:99';
+        const timeB = b.match.match_time || '99:99';
+        return timeA.localeCompare(timeB);
+      });
+    }
+  }
+
+  let lodgingInfo: {
+    buildingName: string | null;
+    roomNumber: string | null;
+    roomType: string | null;
+    roommates: Array<{ id: string; name: string }>;
+  } | null = null;
+
+  if (activeEvent?.id) {
+    const { data: myLodgingAssignment } = await supabase
+      .from('lodging_assignments')
+      .select('id, player_id, lodging_id, confirmation_num, lodging:lodging!inner(id, event_id, building_name, room_number, room_type)')
+      .eq('player_id', playerId)
+      .eq('lodging.event_id', activeEvent.id)
+      .limit(1)
+      .maybeSingle();
+
+    const lodgingRecord = myLodgingAssignment?.lodging;
+    const normalizedLodging = Array.isArray(lodgingRecord) ? lodgingRecord[0] : lodgingRecord;
+
+    if (myLodgingAssignment?.lodging_id && normalizedLodging) {
+      const { data: roommateAssignments } = await supabase
+        .from('lodging_assignments')
+        .select('player_id, player:players(first_name, last_name)')
+        .eq('lodging_id', myLodgingAssignment.lodging_id)
+        .neq('player_id', playerId);
+
+      const roommateNames = (roommateAssignments || [])
+        .map((assignment) => {
+          const roommate = Array.isArray(assignment.player) ? assignment.player[0] : assignment.player;
+          if (!roommate) return null;
+          return { id: assignment.player_id, name: `${roommate.first_name} ${roommate.last_name}` };
+        })
+        .filter((roommate): roommate is { id: string; name: string } => Boolean(roommate));
+
+      lodgingInfo = {
+        buildingName: normalizedLodging.building_name ?? null,
+        roomNumber: normalizedLodging.room_number ?? null,
+        roomType: normalizedLodging.room_type ?? null,
+        roommates: roommateNames,
+      };
+    }
+  }
 
   let reroundsList: Array<{
     id: string;
@@ -153,7 +293,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
 
       <Paper
         elevation={2}
-        className={styles.profileCard}
+        className={`${styles.profileCard} ${styles.profileCardAccent}`}
       >
         <Typography variant="h6" className={styles.sectionTitle}>
           Profile Information
@@ -170,10 +310,75 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
         />
       </Paper>
 
+      <Paper
+        elevation={2}
+        className={`${styles.matchesCard} ${styles.matchesCardAccent}`}
+      >
+        <Typography variant="h6" className={styles.sectionTitle}>
+          Matches {activeEvent ? `· ${activeEvent.name} ${activeEvent.year}` : ''}
+        </Typography>
+        {matchesList.length === 0 ? (
+          <Typography variant="body2" className={styles.emptyText}>
+            No matches scheduled for this player yet.
+          </Typography>
+        ) : (
+          <Box className={styles.matchList}>
+            {matchesList.map(({ match, playersByTeam }) => {
+              const [teamA, teamB] = eventTeams;
+              const teamAPlayers = teamA ? playersByTeam.get(teamA.id) || [] : [];
+              const teamBPlayers = teamB ? playersByTeam.get(teamB.id) || [] : [];
+
+              const buildPlayers = (playersForTeam: Array<{ id: string; name: string; profileImageUrl: string | null }>) =>
+                playersForTeam.map((matchPlayer) => ({
+                  ...matchPlayer,
+                  handicap: handicapByPlayerId.get(matchPlayer.id) ?? null,
+                }));
+
+              return (
+                <MatchCard
+                  key={match.id}
+                  matchNumber={match.match_number}
+                  matchType={match.match_type}
+                  teeTime={formatTime(match.match_time)}
+                  winnerTeamId={match.winner_team_id}
+                  isHalved={match.is_halved}
+                  teamA={
+                    teamA
+                      ? {
+                          id: teamA.id,
+                          name: teamA.name,
+                          color: teamA.color,
+                          players: buildPlayers(teamAPlayers),
+                        }
+                      : null
+                  }
+                  teamB={
+                    teamB
+                      ? {
+                          id: teamB.id,
+                          name: teamB.name,
+                          color: teamB.color,
+                          players: buildPlayers(teamBPlayers),
+                        }
+                      : null
+                  }
+                />
+              );
+            })}
+          </Box>
+        )}
+      </Paper>
+
+      <LodgingInfoCard
+        lodgingInfo={lodgingInfo}
+        cardClassName={`${styles.lodgingCard} ${styles.lodgingCardAccent}`}
+        emptyMessage="No room assignment found for this player yet."
+      />
+
       {/* Player Rerounds */}
       <Paper
         elevation={2}
-        className={styles.reroundsCard}
+        className={`${styles.reroundsCard} ${styles.reroundsCardAccent}`}
       >
         <Typography variant="h6" className={styles.sectionTitle}>
           Re-Rounds {activeEvent ? `· ${activeEvent.name} ${activeEvent.year}` : ''}

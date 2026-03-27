@@ -212,6 +212,8 @@ export interface Lodging {
   room_type: string | null;
   check_in_date: string | null;
   check_out_date: string | null;
+  bedrooms: number | null;
+  num_of_people: number | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -224,6 +226,7 @@ export interface LodgingAssignment {
   lodging_id: string;
   player_id: string;
   is_primary: boolean;
+  confirmation_num: string | null;
   created_at: string;
   // Joined data
   lodging?: Lodging;
