@@ -148,6 +148,14 @@ export default function MatchesPage() {
       .sort((a, b) => a.firstDate.localeCompare(b.firstDate));
   }, [matches]);
 
+  /** Avoids invalid Tabs `value` (e.g. "") before the sync effect runs after data loads. */
+  const resolvedCourseId = useMemo(() => {
+    if (!matchCourses.length) return '';
+    const ids = matchCourses.map((c) => c.id);
+    if (selectedCourseId && ids.includes(selectedCourseId)) return selectedCourseId;
+    return matchCourses[0].id;
+  }, [matchCourses, selectedCourseId]);
+
   useEffect(() => {
     if (!matchCourses.length) {
       setSelectedCourseId('');
@@ -174,8 +182,8 @@ export default function MatchesPage() {
   }, [teamRosters]);
 
   const groupedMatches = useMemo(() => {
-    const filtered = selectedCourseId
-      ? matches.filter((match) => (match.course?.id || 'tbd') === selectedCourseId)
+    const filtered = resolvedCourseId
+      ? matches.filter((match) => (match.course?.id || 'tbd') === resolvedCourseId)
       : [];
     const groups = new Map<string, MatchWithJoins[]>();
     filtered.forEach((match) => {
@@ -202,7 +210,7 @@ export default function MatchesPage() {
         const bGroup = bMatch.group_number ?? 999;
         return aGroup - bGroup;
       });
-  }, [matches, selectedCourseId]);
+  }, [matches, resolvedCourseId]);
 
   const eventTeams = teams.map((team, index) => ({
     ...team,
@@ -254,7 +262,7 @@ export default function MatchesPage() {
       ) : (
         <Paper className={styles.matchesCard}>
           <Tabs
-            value={selectedCourseId}
+            value={resolvedCourseId}
             onChange={(_, value) => setSelectedCourseId(value)}
             variant="scrollable"
             scrollButtons="auto"
