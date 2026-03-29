@@ -18,9 +18,11 @@ import Divider from '@mui/material/Divider';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import DeleteIcon from '@mui/icons-material/Delete';
-import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
+import { applyMatchBoardPersist } from '@/lib/applyMatchBoardPersist';
+import type { TeeTimeSlotSpec } from '@/lib/matchSetupBoard';
 import type { Match, Event, Course, Team, Player, MatchPlayer, TeamRoster } from '@/types/database';
+import TeeTimeBoard from './TeeTimeBoard';
 
 type MatchWithJoins = Match & { course?: Course; winner_team?: Team };
 type MatchPlayerWithJoins = MatchPlayer & { player?: Player; match?: Pick<Match, 'id' | 'event_id' | 'match_date'> };
@@ -46,6 +48,17 @@ const formatTime = (timeStr: string | null) => {
   const date = new Date(`1970-01-01T${normalized}`);
   if (Number.isNaN(date.getTime())) return '-';
   return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
+};
+
+const formatHandicapDisplay = (value: number | null | undefined) => {
+  if (value === null || value === undefined || Number.isNaN(value)) return '—';
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+};
+
+const averageHandicaps = (values: (number | null | undefined)[]): number | null => {
+  const nums = values.filter((v): v is number => v !== null && v !== undefined && !Number.isNaN(v));
+  if (!nums.length) return null;
+  return nums.reduce((a, b) => a + b, 0) / nums.length;
 };
 
 export default function MatchSetupAdminPage() {
@@ -145,6 +158,14 @@ export default function MatchSetupAdminPage() {
       .sort((a, b) => a.firstDate.localeCompare(b.firstDate));
   }, [matches]);
 
+  /** Avoids invalid Tabs `value` (e.g. "") before the sync effect runs after data loads. */
+  const resolvedCourseId = useMemo(() => {
+    if (!matchCourses.length) return '';
+    const ids = matchCourses.map((c) => c.id);
+    if (selectedCourseId && ids.includes(selectedCourseId)) return selectedCourseId;
+    return matchCourses[0].id;
+  }, [matchCourses, selectedCourseId]);
+
   useEffect(() => {
     if (!matchCourses.length) {
       setSelectedCourseId('');
@@ -195,38 +216,49 @@ export default function MatchSetupAdminPage() {
     return map;
   }, [teamRosters]);
 
-  const groupedMatches = useMemo(() => {
-    const filtered = selectedCourseId
-      ? matches.filter((match) => (match.course?.id || 'tbd') === selectedCourseId)
-      : [];
-    const groups = new Map<string, MatchWithJoins[]>();
-    filtered.forEach((match) => {
-      const key = [
-        match.event_id,
-        match.match_date,
-        match.match_time || 'unscheduled',
-        match.group_number ?? 'unscheduled',
-      ].join('|');
-      const list = groups.get(key) || [];
-      list.push(match);
-      groups.set(key, list);
+  const handicapAtEventByTeamAndPlayer = useMemo(() => {
+    const map = new Map<string, number | null>();
+    teamRosters.forEach((r) => {
+      if (!r.team_id || !r.player_id) return;
+      map.set(`${r.team_id}|${r.player_id}`, r.handicap_at_event);
     });
+    return map;
+  }, [teamRosters]);
 
-    return Array.from(groups.entries())
-      .map(([key, groupMatches]) => ({ key, matches: groupMatches }))
-      .sort((a, b) => {
-        const aMatch = a.matches[0];
-        const bMatch = b.matches[0];
-        const aTime = aMatch.match_time || '99:99';
-        const bTime = bMatch.match_time || '99:99';
-        if (aTime !== bTime) return aTime.localeCompare(bTime);
-        const aGroup = aMatch.group_number ?? 999;
-        const bGroup = bMatch.group_number ?? 999;
-        return aGroup - bGroup;
-      });
-  }, [matches, selectedCourseId]);
+  const getHandicapAtEvent = useCallback(
+    (teamId: string, playerId: string) => handicapAtEventByTeamAndPlayer.get(`${teamId}|${playerId}`) ?? null,
+    [handicapAtEventByTeamAndPlayer],
+  );
+
+  const courseMatches = useMemo(() => {
+    if (!resolvedCourseId) return [];
+    return matches.filter((match) => (match.course?.id || 'tbd') === resolvedCourseId);
+  }, [matches, resolvedCourseId]);
 
   const eventTeams = teams;
+
+  const formatSlotLabel = useCallback((spec: TeeTimeSlotSpec) => {
+    if (spec.match_time === null && spec.group_number === null) return 'TBD';
+    const time = formatTime(spec.match_time);
+    const g = spec.group_number !== null ? ` · Group ${spec.group_number}` : '';
+    return `${time}${g}`;
+  }, []);
+
+  const handleBoardPersist = useCallback(
+    async (start: Record<string, string[]>, end: Record<string, string[]>) => {
+      setError('');
+      try {
+        await applyMatchBoardPersist(supabase, courseMatches, start, end);
+        setSuccess('Schedule updated.');
+        await fetchEventData(selectedEventId);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to update schedule.';
+        setError(message);
+        throw err;
+      }
+    },
+    [supabase, courseMatches, selectedEventId, fetchEventData],
+  );
 
   const getAvailablePlayers = (match: MatchWithJoins, teamId: string) => {
     const rosterPlayers = rosterPlayersByTeamId.get(teamId);
@@ -324,7 +356,7 @@ export default function MatchSetupAdminPage() {
       ) : (
         <Paper>
           <Tabs
-            value={selectedCourseId}
+            value={resolvedCourseId}
             onChange={(_, value) => setSelectedCourseId(value)}
             variant="scrollable"
             scrollButtons="auto"
@@ -365,134 +397,107 @@ export default function MatchSetupAdminPage() {
             {loading ? (
               <Typography>Loading match setup...</Typography>
             ) : (
-              groupedMatches.map((group) => {
-                const groupMatch = group.matches[0];
-                const groupLabel =
-                  groupMatch.match_time && groupMatch.group_number !== null
-                    ? `${formatTime(groupMatch.match_time)} · Group ${groupMatch.group_number}`
-                    : '';
-                const courseName = groupMatch.course?.name || 'Course TBD';
-                const formatConfig = getFormatConfig(groupMatch.match_type);
-                const expectedMatches = formatConfig.matchesPerGroup;
-                const groupMismatch = group.matches.length !== expectedMatches;
-
-                return (
-                  <Paper key={group.key} sx={{ p: 3, mb: 3 }} variant="outlined">
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                      <Box>
-                        <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                          {courseName}
-                        </Typography>
-                        {groupLabel && (
-                          <Typography variant="body2" sx={{ color: 'var(--text-muted)' }}>
-                            {groupLabel}
+              <TeeTimeBoard<MatchWithJoins>
+                matches={courseMatches}
+                formatSlotLabel={formatSlotLabel}
+                onPersist={handleBoardPersist}
+                renderCard={(match) => {
+                  const { playersPerTeam } = getFormatConfig(match.match_type);
+                  const matchPlayersForMatch = matchPlayersByMatchId.get(match.id) || [];
+                  const teamA = eventTeams[0];
+                  const teamB = eventTeams[1];
+                  const teamAPlayers = teamA
+                    ? matchPlayersForMatch.filter((mp) => mp.team_id === teamA.id)
+                    : [];
+                  const teamBPlayers = teamB
+                    ? matchPlayersForMatch.filter((mp) => mp.team_id === teamB.id)
+                    : [];
+                  return (
+                    <Card variant="outlined" sx={{ backgroundColor: 'var(--surface-elevated)' }}>
+                      <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                        <Box sx={{ mb: 1.5 }}>
+                          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                            Match #{match.match_number}
                           </Typography>
-                        )}
-                      </Box>
-                      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                        {formatConfig.isUnknown && (
-                          <Chip icon={<WarningAmberIcon />} label="Unknown format" color="warning" size="small" />
-                        )}
-                        {groupMismatch && (
-                          <Chip
-                            label={`Expected ${expectedMatches} match${expectedMatches > 1 ? 'es' : ''}`}
-                            color="warning"
-                            size="small"
-                          />
-                        )}
-                      </Box>
-                    </Box>
+                          <Typography variant="body2" sx={{ color: 'var(--text-muted)' }}>
+                            {match.match_type}
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: 'var(--text-muted)' }}>
+                            Tee time: {formatTime(match.match_time)}
+                          </Typography>
+                        </Box>
+                        <Divider sx={{ mb: 2 }} />
 
-                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 2 }}>
-                      {group.matches.map((match) => {
-                        const { playersPerTeam } = getFormatConfig(match.match_type);
-                        const matchPlayersForMatch = matchPlayersByMatchId.get(match.id) || [];
-                        const teamA = eventTeams[0];
-                        const teamB = eventTeams[1];
-                        const teamAPlayers = teamA
-                          ? matchPlayersForMatch.filter((mp) => mp.team_id === teamA.id)
-                          : [];
-                        const teamBPlayers = teamB
-                          ? matchPlayersForMatch.filter((mp) => mp.team_id === teamB.id)
-                          : [];
-                        return (
-                          <Card key={match.id} variant="outlined">
-                            <CardContent>
-                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                                <Box>
-                                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                                    Match #{match.match_number}
-                                  </Typography>
-                                  <Typography variant="body2" sx={{ color: 'var(--text-muted)' }}>
-                                    {match.match_type}
-                                  </Typography>
-                                  <Typography variant="body2" sx={{ color: 'var(--text-muted)' }}>
-                                    Tee time: {formatTime(match.match_time)}
-                                  </Typography>
+                        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                          {[teamA, teamB].map((team, teamIndex) => {
+                            if (!team) return null;
+                            const assignedPlayers = teamIndex === 0 ? teamAPlayers : teamBPlayers;
+                            const availablePlayers = getAvailablePlayers(match, team.id);
+                            const remainingSlots = Math.max(playersPerTeam - assignedPlayers.length, 0);
+
+                            const teamAvg = averageHandicaps(
+                              assignedPlayers.map((mp) => getHandicapAtEvent(team.id, mp.player_id)),
+                            );
+
+                            return (
+                              <Box key={team.id}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.25 }}>
+                                  {team.name}
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: 'var(--text-muted)', display: 'block', mb: 1 }}>
+                                  Avg handicap: {formatHandicapDisplay(teamAvg)}
+                                </Typography>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                  {assignedPlayers.map((mp) => {
+                                    const name =
+                                      `${mp.player?.first_name || ''} ${mp.player?.last_name || ''}`.trim();
+                                    const h = getHandicapAtEvent(team.id, mp.player_id);
+                                    return (
+                                      <Chip
+                                        key={mp.id}
+                                        label={`${name} (${formatHandicapDisplay(h)})`}
+                                        onDelete={() => removeMatchPlayer(mp.id)}
+                                        deleteIcon={<DeleteIcon />}
+                                        variant="outlined"
+                                        sx={{ color: 'var(--player-name-text)' }}
+                                      />
+                                    );
+                                  })}
+                                  {Array.from({ length: remainingSlots }).map((_, slotIndex) => (
+                                    <FormControl key={`${match.id}-${team.id}-slot-${slotIndex}`} size="small">
+                                      <InputLabel>Select player</InputLabel>
+                                      <Select
+                                        value=""
+                                        label="Select player"
+                                        disabled={!availablePlayers.length}
+                                        onChange={(event) =>
+                                          addMatchPlayer(match, team.id, event.target.value as string)
+                                        }
+                                      >
+                                        {availablePlayers.map((player) => (
+                                          <MenuItem key={player.id} value={player.id}>
+                                            {player.first_name} {player.last_name} (
+                                            {formatHandicapDisplay(getHandicapAtEvent(team.id, player.id))})
+                                          </MenuItem>
+                                        ))}
+                                      </Select>
+                                    </FormControl>
+                                  ))}
+                                  {!availablePlayers.length && remainingSlots > 0 && (
+                                    <Typography variant="caption" sx={{ color: 'var(--text-muted)' }}>
+                                      No eligible players available
+                                    </Typography>
+                                  )}
                                 </Box>
                               </Box>
-                              <Divider sx={{ mb: 2 }} />
-
-                              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
-                                {[teamA, teamB].map((team, teamIndex) => {
-                                  if (!team) return null;
-                                  const assignedPlayers = teamIndex === 0 ? teamAPlayers : teamBPlayers;
-                                  const availablePlayers = getAvailablePlayers(match, team.id);
-                                  const remainingSlots = Math.max(playersPerTeam - assignedPlayers.length, 0);
-
-                                  return (
-                                    <Box key={team.id}>
-                                      <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                                        {team.name}
-                                      </Typography>
-                                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                        {assignedPlayers.map((mp) => (
-                                          <Chip
-                                            key={mp.id}
-                                            label={`${mp.player?.first_name || ''} ${mp.player?.last_name || ''}`.trim()}
-                                            onDelete={() => removeMatchPlayer(mp.id)}
-                                            deleteIcon={<DeleteIcon />}
-                                            variant="outlined"
-                                            sx={{ color: 'var(--player-name-text)' }}
-                                          />
-                                        ))}
-                                        {Array.from({ length: remainingSlots }).map((_, slotIndex) => (
-                                          <FormControl key={`${match.id}-${team.id}-slot-${slotIndex}`} size="small">
-                                            <InputLabel>Select player</InputLabel>
-                                            <Select
-                                              value=""
-                                              label="Select player"
-                                              disabled={!availablePlayers.length}
-                                              onChange={(event) =>
-                                                addMatchPlayer(match, team.id, event.target.value as string)
-                                              }
-                                            >
-                                              {availablePlayers.map((player) => (
-                                                <MenuItem key={player.id} value={player.id}>
-                                                  {player.first_name} {player.last_name}
-                                                </MenuItem>
-                                              ))}
-                                            </Select>
-                                          </FormControl>
-                                        ))}
-                                        {!availablePlayers.length && remainingSlots > 0 && (
-                                          <Typography variant="caption" sx={{ color: 'var(--text-muted)' }}>
-                                            No eligible players available
-                                          </Typography>
-                                        )}
-                                      </Box>
-                                    </Box>
-                                  );
-                                })}
-                              </Box>
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
-                    </Box>
-                  </Paper>
-                );
-              })
+                            );
+                          })}
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  );
+                }}
+              />
             )}
           </Box>
         </Paper>

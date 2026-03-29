@@ -1,0 +1,110 @@
+.boardWrap {
+  width: 100%;
+  padding-bottom: 0.5rem;
+}
+
+/* Tee times stack top → bottom (earliest first). Matches stack vertically inside each lane. */
+.board {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1rem;
+  width: 100%;
+  min-height: 200px;
+}
+
+.column {
+  flex: 0 0 auto;
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-muted, rgba(0, 0, 0, 0.04));
+  border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.12));
+  border-radius: 8px;
+  min-height: 72px;
+}
+
+.columnHeader {
+  padding: 0.5rem 0.75rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--text);
+  border-bottom: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.12));
+  background: var(--surface-elevated, var(--surface-muted));
+}
+
+.columnBody {
+  flex: 1;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.75rem;
+  min-height: 72px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.sortableCard {
+  touch-action: none;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.sortableCardDragging {
+  opacity: 0.45;
+}
+
+.dragHandle {
+  cursor: grab;
+  padding: 0.25rem 0.5rem 0.25rem 0;
+  color: var(--text-muted);
+  display: flex;
+  align-items: flex-start;
+  flex-shrink: 0;
+}
+
+.dragHandle:active {
+  cursor: grabbing;
+}
+
+.cardInner {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0;
+}
+
+.cardContent {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+}
+
+/* Match cards fill the swimlane width (MUI Card defaults to inline-block sizing). */
+.cardContent :global(.MuiCard-root) {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.overlayCard {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  border-radius: 8px;
+  background: var(--surface-elevated, #fff);
+  width: min(360px, 92vw);
+  max-width: 92vw;
+}
+
+@media (prefers-color-scheme: dark) {
+  .overlayCard {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  }
+}
+
+.hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+}
