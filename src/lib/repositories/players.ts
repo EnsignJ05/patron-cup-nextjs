@@ -12,7 +12,7 @@ export async function fetchPlayerRoleByAuthUserId(supabase: SupabaseClient, user
 export async function fetchPlayerProfileByAuthUserId(supabase: SupabaseClient, userId: string) {
   return supabase
     .from('players')
-    .select('id, first_name, last_name, current_handicap, email, phone, role, profile_image_url')
+    .select('id, first_name, last_name, current_handicap, ghin_number, ghin_club, email, phone, role, profile_image_url')
     .eq('auth_user_id', userId)
     .single();
 }

@@ -284,7 +284,11 @@ export default async function DashboardPage() {
               Role: {playerRecord.role}
             </Typography>
             <Typography variant="body2" className={styles.detailTextWide}>
-              Handicap: {playerRecord.current_handicap ?? 'Not set'}
+              GHIN Handicap: {playerRecord.current_handicap ?? 'Not set'}
+            </Typography>
+            <Typography variant="body2" className={styles.detailTextWide}>
+              Official Event Handicap:{' '}
+              {handicapByPlayerId.get(playerRecord.id) ?? 'Not set'}
             </Typography>
           </>
         )}
@@ -302,6 +306,11 @@ export default async function DashboardPage() {
           lastName={playerRecord?.last_name ?? ''}
           phone={playerRecord?.phone ?? ''}
           handicap={playerRecord?.current_handicap?.toString() ?? ''}
+          ghinNumber={playerRecord?.ghin_number ?? ''}
+          ghinClub={playerRecord?.ghin_club ?? ''}
+          officialEventHandicap={
+            playerRecord?.id ? handicapByPlayerId.get(playerRecord.id) ?? null : null
+          }
           profileImageUrl={playerRecord?.profile_image_url ?? ''}
         />
       </Paper>

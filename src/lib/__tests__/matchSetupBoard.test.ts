@@ -4,7 +4,9 @@ import {
   compareTeeTimeSlots,
   groupMatchesBySlotId,
   parseSlotId,
+  slotIdFromMatch,
   slotIdFromSpec,
+  withUnscheduledSlotIfMissing,
 } from '../matchSetupBoard';
 
 function m(
@@ -30,6 +32,30 @@ describe('matchSetupBoard', () => {
       const id = slotIdFromSpec(spec);
       expect(parseSlotId(id)).toEqual(spec);
     });
+
+    it('matches slotIdFromMatch to slotIdFromSpec', () => {
+      const spec = { match_time: '10:00:00', group_number: 3 };
+      expect(slotIdFromMatch(spec)).toBe(slotIdFromSpec(spec));
+    });
+
+    it('returns null for invalid slot ids', () => {
+      expect(parseSlotId('not-a-slot')).toBeNull();
+      expect(parseSlotId('slot:no-pipe')).toBeNull();
+    });
+
+    it('parses empty group segment as null', () => {
+      expect(parseSlotId('slot:09:00:00|')).toEqual({
+        match_time: '09:00:00',
+        group_number: null,
+      });
+    });
+
+    it('parses non-numeric group as null', () => {
+      expect(parseSlotId('slot:09:00:00|oops')).toEqual({
+        match_time: '09:00:00',
+        group_number: null,
+      });
+    });
   });
 
   describe('compareTeeTimeSlots', () => {
@@ -48,6 +74,16 @@ describe('matchSetupBoard', () => {
         null,
       ]);
       expect(slots.map((s) => s.group_number)).toEqual([1, 2, 1, null]);
+    });
+
+    it('uses default group rank when group_number is null at the same tee time', () => {
+      const ordered = [
+        { match_time: '09:00:00', group_number: 1 },
+        { match_time: '09:00:00', group_number: null },
+      ].sort(compareTeeTimeSlots);
+
+      expect(ordered[0].group_number).toBe(1);
+      expect(ordered[1].group_number).toBeNull();
     });
   });
 
@@ -92,6 +128,13 @@ describe('matchSetupBoard', () => {
       const { slots, bySlotId } = buildTeeTimeBoardModel([m('y', '09:00:00', 1, 1)]);
       expect(slots.map((s) => slotIdFromSpec(s))).toEqual(['slot:09:00:00|1', 'slot:null|null']);
       expect(bySlotId.get('slot:null|null')).toBeUndefined();
+    });
+  });
+
+  describe('withUnscheduledSlotIfMissing', () => {
+    it('returns the same array when an unscheduled slot already exists', () => {
+      const slots = [{ match_time: null as const, group_number: null as const }];
+      expect(withUnscheduledSlotIfMissing(slots)).toBe(slots);
     });
   });
 });

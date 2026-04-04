@@ -32,6 +32,8 @@ export async function POST(request: Request) {
   const phone = normalizeString(body.phone, 20);
   const handicapStr = normalizeString(body.handicap, 10);
   const handicap = handicapStr ? parseFloat(handicapStr) : null;
+  const ghinNumber = normalizeString(body.ghinNumber, 32) || null;
+  const ghinClub = normalizeString(body.ghinClub, 80) || null;
 
   // Update the players table
   const { error } = await supabase
@@ -41,6 +43,8 @@ export async function POST(request: Request) {
       last_name: lastName,
       phone,
       current_handicap: handicap,
+      ghin_number: ghinNumber,
+      ghin_club: ghinClub,
     })
     .eq('id', playerRecord.id);
 

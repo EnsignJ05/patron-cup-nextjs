@@ -66,11 +66,52 @@ describe('exportEventMatchesCsv', () => {
       expect(lines[1]).toContain('Ocean');
       expect(lines[1]).toContain('Alpha');
     });
+
+    it('uses empty event columns when event is null', () => {
+      const teams = [
+        { id: 't1', name: 'Only', event_id: 'e1', color: null, logo_url: null, created_at: '', updated_at: '' },
+      ];
+      const matches = [
+        {
+          id: 'm1',
+          event_id: 'e1',
+          match_number: 1,
+          group_number: null,
+          course_id: null,
+          match_date: '2026-01-01',
+          match_time: null,
+          match_type: 'Fourball',
+          winner_team_id: null,
+          is_halved: true,
+          notes: 'Note, with comma',
+          created_at: '',
+          updated_at: '',
+          course: null,
+          winner_team: null,
+        },
+      ];
+      const map = new Map<string, { team_id: string; player?: { first_name: string; last_name: string } | null }[]>();
+      map.set('m1', [
+        { team_id: 't1', player: { first_name: '', last_name: '' } },
+        { team_id: 't1', player: null },
+      ]);
+
+      const csv = buildEventMatchesCsv(null, matches, teams, map);
+      const lines = csv.split(/\r\n/);
+      expect(lines[1]).toMatch(/^,/);
+      expect(lines[1]).toContain('true');
+      expect(lines[1]).toContain('"Note, with comma"');
+    });
   });
 
   describe('sanitizeFilenameSegment', () => {
     it('replaces unsafe characters', () => {
       expect(sanitizeFilenameSegment('Hello / World!')).toBe('Hello-World');
+    });
+
+    it('returns fallback when segment is empty after sanitizing', () => {
+      expect(sanitizeFilenameSegment('   ')).toBe('event');
+      expect(sanitizeFilenameSegment('---')).toBe('event');
     });
   });
 });

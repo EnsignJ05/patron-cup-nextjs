@@ -9,11 +9,13 @@ function buildSupabaseMock(options: {
   matches?: any[];
   players?: any[];
   playerId?: string;
-  record?: { wins: number; losses: number; ties: number } | null;
+  record?: { wins: number | null; losses: number | null; ties: number | null } | null;
   matchError?: Error | null;
   playerError?: Error | null;
   recordError?: Error | null;
   playerSelectReturnsList?: boolean;
+  /** When true, player .single() returns { data: null, error: null } */
+  playerLookupEmpty?: boolean;
 }) {
   const {
     playerId = 'player-1',
@@ -22,6 +24,7 @@ function buildSupabaseMock(options: {
     playerError,
     recordError,
     playerSelectReturnsList = false,
+    playerLookupEmpty = false,
   } = options;
 
   const matches = Object.prototype.hasOwnProperty.call(options, 'matches') ? options.matches : [];
@@ -44,7 +47,7 @@ function buildSupabaseMock(options: {
               eq: () => ({
                 single: () =>
                   Promise.resolve({
-                    data: playerError ? null : { id: playerId },
+                    data: playerLookupEmpty ? null : playerError ? null : { id: playerId },
                     error: playerError ?? null,
                   }),
               }),
@@ -181,6 +184,38 @@ describe('bandon repository', () => {
     });
 
     await expect(fetchBandonMatchesAndPlayers(supabase)).rejects.toThrow('player failed');
+  });
+
+  it('throws when player query fails in fetchBandonMatchesWithPlayers', async () => {
+    const supabase = buildSupabaseMock({
+      matches: [],
+      playerError: new Error('player failed'),
+      playerSelectReturnsList: true,
+    });
+
+    await expect(fetchBandonMatchesWithPlayers(supabase)).rejects.toThrow('player failed');
+  });
+
+  it('coalesces null record stats to zero', async () => {
+    const supabase = buildSupabaseMock({
+      record: { wins: null, losses: null, ties: null },
+    });
+
+    const result = await fetchBandonPlayerRecordByName(supabase, 'James', 'Thompson');
+
+    expect(result.error).toBeNull();
+    expect(result.data).toEqual({ wins: 0, losses: 0, ties: 0 });
+  });
+
+  it('returns error when player row is missing without db error', async () => {
+    const supabase = buildSupabaseMock({
+      playerLookupEmpty: true,
+    });
+
+    const result = await fetchBandonPlayerRecordByName(supabase, 'Ghost', 'User');
+
+    expect(result.data).toBeNull();
+    expect(result.error?.message).toBe('Player not found');
   });
 
   it('returns error when player lookup fails', async () => {

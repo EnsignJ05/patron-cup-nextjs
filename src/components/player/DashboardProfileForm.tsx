@@ -17,16 +17,32 @@ type ProfileFormProps = {
   lastName: string;
   phone: string;
   handicap: string;
+  ghinNumber: string;
+  ghinClub: string;
+  /** From team_rosters.handicap_at_event for the active event; read-only in UI */
+  officialEventHandicap: number | null;
   profileImageUrl?: string;
   readOnly?: boolean;
 };
 
-export default function DashboardProfileForm({ firstName, lastName, phone, handicap, profileImageUrl = '', readOnly = false }: ProfileFormProps) {
+export default function DashboardProfileForm({
+  firstName,
+  lastName,
+  phone,
+  handicap,
+  ghinNumber,
+  ghinClub,
+  officialEventHandicap,
+  profileImageUrl = '',
+  readOnly = false,
+}: ProfileFormProps) {
   const router = useRouter();
   const [firstNameValue, setFirstNameValue] = useState(firstName);
   const [lastNameValue, setLastNameValue] = useState(lastName);
   const [phoneValue, setPhoneValue] = useState(phone);
   const [handicapValue, setHandicapValue] = useState(handicap);
+  const [ghinNumberValue, setGhinNumberValue] = useState(ghinNumber);
+  const [ghinClubValue, setGhinClubValue] = useState(ghinClub);
   const [profileImage, setProfileImage] = useState(profileImageUrl);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -97,6 +113,8 @@ export default function DashboardProfileForm({ firstName, lastName, phone, handi
           lastName: lastNameValue,
           phone: phoneValue,
           handicap: handicapValue,
+          ghinNumber: ghinNumberValue,
+          ghinClub: ghinClubValue,
         }),
       });
 
@@ -180,13 +198,37 @@ export default function DashboardProfileForm({ firstName, lastName, phone, handi
         InputProps={{ readOnly }}
       />
       <TextField
-        label="Handicap"
+        label="GHIN Handicap"
         type="number"
         value={handicapValue}
         onChange={(event) => setHandicapValue(event.target.value)}
         fullWidth
         disabled={readOnly}
         InputProps={{ readOnly }}
+        inputProps={{ step: '0.1' }}
+      />
+      <TextField
+        label="GHIN Number"
+        value={ghinNumberValue}
+        onChange={(event) => setGhinNumberValue(event.target.value)}
+        fullWidth
+        disabled={readOnly}
+        InputProps={{ readOnly }}
+      />
+      <TextField
+        label="GHIN Club"
+        value={ghinClubValue}
+        onChange={(event) => setGhinClubValue(event.target.value)}
+        fullWidth
+        disabled={readOnly}
+        InputProps={{ readOnly }}
+      />
+      <TextField
+        label="Official Event Handicap"
+        value={officialEventHandicap === null ? 'Not set' : String(officialEventHandicap)}
+        fullWidth
+        disabled
+        InputProps={{ readOnly: true }}
       />
       {!readOnly && (
         <Button type="submit" variant="contained" disabled={saving}>

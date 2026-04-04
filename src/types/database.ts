@@ -17,6 +17,8 @@ export interface Player {
   zip_code: string | null;
   country: string;
   current_handicap: number | null;
+  ghin_number: string | null;
+  ghin_club: string | null;
   shirt_size: string | null;
   dietary_restrictions: string | null;
   emergency_contact_name: string | null;
