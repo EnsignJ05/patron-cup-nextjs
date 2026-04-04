@@ -253,6 +253,10 @@ export default async function DashboardPage() {
           src={playerRecord.profile_image_url || undefined}
           alt={`${playerRecord.first_name} ${playerRecord.last_name}`}
           className={styles.avatar}
+          sx={{
+            width: 'min(320px, calc(100vw - 32px))',
+            height: 'min(320px, calc(100vw - 32px))',
+          }}
         >
           {!playerRecord.profile_image_url && `${playerRecord.first_name[0]}${playerRecord.last_name[0]}`}
         </Avatar>
