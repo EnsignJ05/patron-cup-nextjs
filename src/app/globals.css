@@ -60,7 +60,6 @@
   --text: #e6e6e6;
   --text-muted: #b3b3b3;
   --text-soft: #8d99a6;
-  --text-table-head-dark: #1e1e1e;
   --tab-unselected-text: #1e95e3;
   --player-name-text: #1e95e3;
   --player-name-delete: rgb(184 27 27);
@@ -133,11 +132,6 @@ body {
 .MuiTableCell-head,
 .MuiTableCell-head.MuiTableCell-root {
   color: var(--text);
-}
-
-:root[data-theme='dark'] .MuiTableCell-head,
-.MuiTableCell-head.MuiTableCell-root {
-  color: var(--text-table-head-dark);
 }
 
 .MuiTableHead-root .MuiTableCell-root {
@@ -292,6 +286,18 @@ body {
 
 .MuiInputBase-root.Mui-disabled {
   background-color: var(--surface-muted);
+}
+
+/* MUI applies strong default disabled text color; keep inputs readable in light and dark */
+.MuiInputBase-root.Mui-disabled .MuiInputBase-input,
+.MuiOutlinedInput-root.Mui-disabled .MuiInputBase-input {
+  color: var(--text-muted) !important;
+  -webkit-text-fill-color: var(--text-muted) !important;
+  opacity: 1;
+}
+
+.MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline {
+  border-color: var(--input-border) !important;
 }
 
 a {

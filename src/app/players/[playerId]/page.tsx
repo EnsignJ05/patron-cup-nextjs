@@ -309,6 +309,9 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
           lastName={player.last_name}
           phone={player.phone ?? ''}
           handicap={player.current_handicap?.toString() ?? ''}
+          ghinNumber={player.ghin_number ?? ''}
+          ghinClub={player.ghin_club ?? ''}
+          officialEventHandicap={handicapByPlayerId.get(player.id) ?? null}
           profileImageUrl={player.profile_image_url ?? ''}
           readOnly={!canEdit}
         />

@@ -18,6 +18,7 @@ const customJestConfig = {
     'src/components/shared/**/*.{ts,tsx,js,jsx}',
     'src/components/layout/**/*.{ts,tsx,js,jsx}',
     '!src/**/*.d.ts',
+    '!src/**/*.stories.{ts,tsx}',
     '!src/**/__tests__/**',
     '!src/styles/**',
     '!src/data/**',

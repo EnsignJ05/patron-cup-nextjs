@@ -76,6 +76,20 @@ describe('getAuthRedirectDecision', () => {
     expect(decision).toBeNull();
   });
 
+  it('blocks dashboard routes when role is missing', () => {
+    const decision = getAuthRedirectDecision({
+      pathname: '/dashboard',
+      isAuthenticated: true,
+      role: null,
+      mustChangePassword: false,
+    });
+
+    expect(decision).toEqual({
+      type: 'unauthorized',
+      path: authRoutes.unauthorized,
+    });
+  });
+
   it('evaluates role and path helpers', () => {
     expect(isAdminRole('admin')).toBe(true);
     expect(isAdminRole('player')).toBe(false);

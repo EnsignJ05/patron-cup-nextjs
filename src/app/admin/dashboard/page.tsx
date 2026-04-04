@@ -13,6 +13,7 @@ import ScoreboardIcon from '@mui/icons-material/Scoreboard';
 import HotelIcon from '@mui/icons-material/Hotel';
 import LockResetIcon from '@mui/icons-material/LockReset';
 import AlternateEmailIcon from '@mui/icons-material/AlternateEmail';
+import SportsGolfIcon from '@mui/icons-material/SportsGolf';
 import styles from './page.module.css';
 
 const adminSections = [
@@ -92,6 +93,13 @@ const adminSections = [
     href: '/admin/scores',
     icon: ScoreboardIcon,
     colorKey: 'mint',
+  },
+  {
+    title: 'Handicaps',
+    description: 'View and edit official event handicaps and export GHIN data',
+    href: '/admin/handicaps',
+    icon: SportsGolfIcon,
+    colorKey: 'slate',
   },
   {
     title: 'Lodging',

@@ -1,6 +1,17 @@
 import { generateTempPassword } from '@/lib/passwordUtils';
 
 describe('generateTempPassword', () => {
+  it('uses default length and charset when options are omitted', () => {
+    const password = generateTempPassword({
+      getRandomValues: (values) => {
+        values.fill(0);
+      },
+    });
+
+    expect(password).toHaveLength(12);
+    expect(password).toMatch(/^[A-Za-z0-9]+$/);
+  });
+
   it('generates a password with the requested length and charset', () => {
     const getRandomValues = (values: Uint32Array) => {
       values.set([0, 1, 2, 0]);

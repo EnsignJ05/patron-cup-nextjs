@@ -38,4 +38,20 @@ describe('getUserRole', () => {
 
     expect(role).toBeNull();
   });
+
+  it('returns null when profile row is missing but query succeeds', async () => {
+    createSupabaseServerClientMock.mockReturnValue({
+      from: () => ({
+        select: () => ({
+          eq: () => ({
+            single: () => Promise.resolve({ data: null, error: null }),
+          }),
+        }),
+      }),
+    });
+
+    const role = await getUserRole('user-no-row');
+
+    expect(role).toBeNull();
+  });
 });
