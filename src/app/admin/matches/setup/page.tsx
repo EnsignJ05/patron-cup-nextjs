@@ -18,8 +18,10 @@ import Divider from '@mui/material/Divider';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import DeleteIcon from '@mui/icons-material/Delete';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
 import { applyMatchBoardPersist } from '@/lib/applyMatchBoardPersist';
+import { buildEventMatchesCsv, sanitizeFilenameSegment } from '@/lib/exportEventMatchesCsv';
 import type { TeeTimeSlotSpec } from '@/lib/matchSetupBoard';
 import type { Match, Event, Course, Team, Player, MatchPlayer, TeamRoster } from '@/types/database';
 import TeeTimeBoard from './TeeTimeBoard';
@@ -244,6 +246,26 @@ export default function MatchSetupAdminPage() {
     return `${time}${g}`;
   }, []);
 
+  const selectedEvent = useMemo(
+    () => events.find((event) => event.id === selectedEventId) ?? null,
+    [events, selectedEventId],
+  );
+
+  const handleExportMatchesCsv = useCallback(() => {
+    if (!selectedEventId) return;
+    const csv = buildEventMatchesCsv(selectedEvent, matches, teams, matchPlayersByMatchId);
+    const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    const base = selectedEvent
+      ? `${sanitizeFilenameSegment(selectedEvent.name)}-${selectedEvent.year}`
+      : 'matches';
+    anchor.download = `${base}-matches.csv`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }, [selectedEventId, selectedEvent, matches, teams, matchPlayersByMatchId]);
+
   const handleBoardPersist = useCallback(
     async (start: Record<string, string[]>, end: Record<string, string[]>) => {
       setError('');
@@ -308,7 +330,16 @@ export default function MatchSetupAdminPage() {
         <Typography variant="h4" sx={{ fontWeight: 700, color: 'var(--text)' }}>
           Match Setup
         </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+          <Button
+            variant="outlined"
+            startIcon={<FileDownloadIcon />}
+            disabled={!selectedEventId || loading}
+            onClick={handleExportMatchesCsv}
+            sx={{ borderColor: 'var(--text)', color: 'var(--text)' }}
+          >
+            Export matches (CSV)
+          </Button>
           <Button variant="outlined" href="/admin/matches" sx={{ borderColor: 'var(--text)', color: 'var(--text)' }}>
             Back to Matches
           </Button>

@@ -283,6 +283,10 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
         src={player.profile_image_url || undefined}
         alt={`${player.first_name} ${player.last_name}`}
         className={styles.avatar}
+        sx={{
+          width: 'min(320px, calc(100vw - 32px))',
+          height: 'min(320px, calc(100vw - 32px))',
+        }}
       >
         {!player.profile_image_url && `${player.first_name[0]}${player.last_name[0]}`}
       </Avatar>

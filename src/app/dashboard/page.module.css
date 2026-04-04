@@ -8,11 +8,16 @@
 }
 
 .avatar {
-  width: 100px;
-  height: 100px;
-  margin-bottom: 16px;
-  font-size: 2.5rem;
+  margin-bottom: 40px;
+  font-size: clamp(3.75rem, 18vw, 7.5rem);
   background-color: var(--accent-blue-strong);
+}
+
+/* sx sets width/height so they win over MUI defaults; ensure the photo fills the circle */
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .pageTitle {
