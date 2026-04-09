@@ -21,6 +21,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
+import { setOfficialMatchResult } from '@/lib/matchResultMutations';
 import type { Match, Event, Course, Team, Player, MatchPlayer } from '@/types/database';
 
 type MatchWithJoins = Match & { course?: Course; winner_team?: Team };
@@ -194,16 +195,9 @@ export default function ScoresAdminPage() {
   };
 
   const updateMatchResult = async (matchId: string, value: string) => {
-    let update: Partial<Match> = { winner_team_id: null, is_halved: false };
-    if (value === 'halved') {
-      update = { winner_team_id: null, is_halved: true };
-    } else if (value) {
-      update = { winner_team_id: value, is_halved: false };
-    }
-
-    const { error: updateError } = await supabase.from('matches').update(update).eq('id', matchId);
-    if (updateError) {
-      setError(updateError.message);
+    const result = await setOfficialMatchResult(supabase, { matchId, value });
+    if (!result.ok) {
+      setError(result.message);
       return false;
     }
     setSuccess('Match result updated.');
@@ -349,6 +343,7 @@ export default function ScoresAdminPage() {
                           : [];
                         const winnerValue = match.is_halved ? 'halved' : match.winner_team_id || '';
                         const isPending = !match.is_halved && !match.winner_team_id;
+                        const isOfficial = match.result_set_by_official === true;
                         const winnerLabel = match.is_halved
                           ? 'Halved'
                           : match.winner_team_id
@@ -367,20 +362,25 @@ export default function ScoresAdminPage() {
                                     {match.match_type}
                                   </Typography>
                                 </Box>
-                                <Chip
-                                  label={winnerLabel}
-                                  size="small"
-                                  color={match.is_halved ? 'info' : match.winner_team_id ? 'success' : 'default'}
-                                  sx={
-                                    isPending
-                                      ? {
-                                        color: 'var(--pending-chip-text)',
-                                        backgroundColor: 'var(--pending-chip-bg)',
-                                        border: '1px solid var(--pending-chip-border)',
-                                      }
-                                      : undefined
-                                  }
-                                />
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, justifyContent: 'flex-end' }}>
+                                  <Chip
+                                    label={winnerLabel}
+                                    size="small"
+                                    color={match.is_halved ? 'info' : match.winner_team_id ? 'success' : 'default'}
+                                    sx={
+                                      isPending
+                                        ? {
+                                            color: 'var(--pending-chip-text)',
+                                            backgroundColor: 'var(--pending-chip-bg)',
+                                            border: '1px solid var(--pending-chip-border)',
+                                          }
+                                        : undefined
+                                    }
+                                  />
+                                  {isOfficial ? (
+                                    <Chip label="Official" size="small" color="secondary" variant="outlined" />
+                                  ) : null}
+                                </Box>
                               </Box>
 
                               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>

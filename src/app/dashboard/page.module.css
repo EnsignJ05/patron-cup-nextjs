@@ -159,6 +159,12 @@
   gap: 16px;
 }
 
+.matchBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
 .matchItem {
   padding: 16px;
   border-radius: 16px;

@@ -108,6 +108,31 @@ export interface CourseHole {
   created_at: string;
 }
 
+/** Row in match_results_pending (player propose → opponent confirm). */
+export type MatchResultsPendingStatus =
+  | 'pending'
+  | 'confirmed'
+  | 'rejected'
+  | 'superseded'
+  | 'cancelled';
+
+export interface MatchResultsPending {
+  id: string;
+  match_id: string;
+  winner_team_id: string | null;
+  is_halved: boolean;
+  proposed_by_player_id: string;
+  confirmed_by_player_id: string | null;
+  rejected_by_player_id: string | null;
+  superseded_by_proposal_id: string | null;
+  status: MatchResultsPendingStatus;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  confirmed_at: string | null;
+  promoted_at: string | null;
+}
+
 export interface Match {
   id: string;
   event_id: string;
@@ -119,6 +144,8 @@ export interface Match {
   match_type: string;
   winner_team_id: string | null;
   is_halved: boolean;
+  /** When true, only committee/admin may change the result (via official path). Omitted/false otherwise. */
+  result_set_by_official?: boolean;
   notes: string | null;
   created_at: string;
   updated_at: string;

@@ -76,19 +76,20 @@ export default function PlayersPage() {
             <TableRow className={styles.tableHeaderRow}>
               <TableCell className={styles.tableHeaderCell}>Player</TableCell>
               <TableCell className={styles.tableHeaderCell}>Handicap</TableCell>
+              <TableCell className={styles.tableHeaderCell}>GHIN club</TableCell>
               <TableCell className={styles.tableHeaderCell}>Location</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={3} align="center">
+                <TableCell colSpan={4} align="center">
                   Loading...
                 </TableCell>
               </TableRow>
             ) : filteredPlayers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={3} align="center">
+                <TableCell colSpan={4} align="center">
                   No players found
                 </TableCell>
               </TableRow>
@@ -127,6 +128,7 @@ export default function PlayersPage() {
                       '-'
                     )}
                   </TableCell>
+                  <TableCell>{player.ghin_club?.trim() ? player.ghin_club : '—'}</TableCell>
                   <TableCell>
                     {player.city && player.state ? `${player.city}, ${player.state}` : '-'}
                   </TableCell>

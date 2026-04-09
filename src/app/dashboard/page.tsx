@@ -6,8 +6,10 @@ import { redirect } from 'next/navigation';
 import { createSupabaseServerClient, getCachedUser, getCachedPlayerProfile } from '@/lib/supabaseServer';
 import { canAccessDashboard } from '@/lib/authConfig';
 import DashboardProfileForm from '@/components/player/DashboardProfileForm';
+import PlayerMatchResultActions from '@/components/player/PlayerMatchResultActions';
 import MatchCard from '@/components/matches/MatchCard';
 import LodgingInfoCard from '@/components/player/LodgingInfoCard';
+import type { MatchResultsPending } from '@/types/database';
 import styles from './page.module.css';
 
 // Revalidate every 5 seconds to show updated profile images quickly
@@ -68,12 +70,15 @@ export default async function DashboardPage() {
       group_number: number | null;
       winner_team_id: string | null;
       is_halved: boolean;
+      result_set_by_official?: boolean;
       course?: { name?: string | null } | null;
     };
     playersByTeam: Map<string, Array<{ id: string; name: string; profileImageUrl: string | null }>>;
+    participantPlayerIds: string[];
   };
 
   let matchesList: DashboardMatch[] = [];
+  let pendingByMatchId = new Map<string, MatchResultsPending>();
   let eventTeams: Array<{ id: string; name: string; color: string | null }> = [];
   let handicapByPlayerId = new Map<string, number | null>();
 
@@ -108,7 +113,7 @@ export default async function DashboardPage() {
       const { data: matchPlayers } = await supabase
         .from('match_players')
         .select(
-          'match_id, player:players(id, first_name, last_name, profile_image_url), team:teams(id, name, color), match:matches!inner(id, event_id, match_date, match_time, match_number, match_type, group_number, winner_team_id, is_halved, course:courses(name))'
+          'match_id, player:players(id, first_name, last_name, profile_image_url), team:teams(id, name, color), match:matches!inner(id, event_id, match_date, match_time, match_number, match_type, group_number, winner_team_id, is_halved, result_set_by_official, course:courses(name))'
         )
         .in('match_id', matchIds)
         .eq('match.event_id', activeEvent.id);
@@ -124,22 +129,38 @@ export default async function DashboardPage() {
         const existing = matchMap.get(row.match_id) || {
           match: normalizedMatch,
           playersByTeam: new Map<string, Array<{ id: string; name: string; profileImageUrl: string | null }>>(),
+          participantPlayerIds: [] as string[],
         };
-        const playerRecord = Array.isArray(row.player) ? row.player[0] : row.player;
+        const playerRow = Array.isArray(row.player) ? row.player[0] : row.player;
         const teamRecord = Array.isArray(row.team) ? row.team[0] : row.team;
-        const playerName = playerRecord ? `${playerRecord.first_name} ${playerRecord.last_name}` : 'TBD';
+        const playerName = playerRow ? `${playerRow.first_name} ${playerRow.last_name}` : 'TBD';
+        if (playerRow?.id && !existing.participantPlayerIds.includes(playerRow.id)) {
+          existing.participantPlayerIds.push(playerRow.id);
+        }
         const teamId = teamRecord?.id;
         if (teamId) {
           const list = existing.playersByTeam.get(teamId) || [];
           list.push({
-            id: playerRecord?.id || `${row.match_id}-${playerName}`,
+            id: playerRow?.id || `${row.match_id}-${playerName}`,
             name: playerName,
-            profileImageUrl: playerRecord?.profile_image_url || null,
+            profileImageUrl: playerRow?.profile_image_url || null,
           });
           existing.playersByTeam.set(teamId, list);
         }
         matchMap.set(row.match_id, existing);
       });
+
+      const pendingMatchIds = Array.from(matchMap.keys());
+      if (pendingMatchIds.length > 0) {
+        const { data: pendingRows } = await supabase
+          .from('match_results_pending')
+          .select('*')
+          .in('match_id', pendingMatchIds)
+          .eq('status', 'pending');
+        pendingByMatchId = new Map(
+          (pendingRows || []).map((row) => [row.match_id, row as MatchResultsPending]),
+        );
+      }
 
       matchesList = Array.from(matchMap.values()).sort((a, b) => {
         const dateCompare = a.match.match_date.localeCompare(b.match.match_date);
@@ -332,7 +353,7 @@ export default async function DashboardPage() {
           </Typography>
         ) : (
           <Box className={styles.matchList}>
-            {matchesList.map(({ match, playersByTeam }) => {
+            {matchesList.map(({ match, playersByTeam, participantPlayerIds }) => {
               const [teamA, teamB] = eventTeams;
               const teamAPlayers = teamA ? playersByTeam.get(teamA.id) || [] : [];
               const teamBPlayers = teamB ? playersByTeam.get(teamB.id) || [] : [];
@@ -344,34 +365,50 @@ export default async function DashboardPage() {
                 }));
 
               return (
-                <MatchCard
-                  key={match.id}
-                  matchNumber={match.match_number}
-                  matchType={match.match_type}
-                  teeTime={formatTime(match.match_time)}
-                  winnerTeamId={match.winner_team_id}
-                  isHalved={match.is_halved}
-                  teamA={
-                    teamA
-                      ? {
-                          id: teamA.id,
-                          name: teamA.name,
-                          color: teamA.color,
-                          players: buildPlayers(teamAPlayers),
-                        }
-                      : null
-                  }
-                  teamB={
-                    teamB
-                      ? {
-                          id: teamB.id,
-                          name: teamB.name,
-                          color: teamB.color,
-                          players: buildPlayers(teamBPlayers),
-                        }
-                      : null
-                  }
-                />
+                <Box key={match.id} className={styles.matchBlock}>
+                  <MatchCard
+                    matchNumber={match.match_number}
+                    matchType={match.match_type}
+                    teeTime={formatTime(match.match_time)}
+                    winnerTeamId={match.winner_team_id}
+                    isHalved={match.is_halved}
+                    teamA={
+                      teamA
+                        ? {
+                            id: teamA.id,
+                            name: teamA.name,
+                            color: teamA.color,
+                            players: buildPlayers(teamAPlayers),
+                          }
+                        : null
+                    }
+                    teamB={
+                      teamB
+                        ? {
+                            id: teamB.id,
+                            name: teamB.name,
+                            color: teamB.color,
+                            players: buildPlayers(teamBPlayers),
+                          }
+                        : null
+                    }
+                  />
+                  {playerRecord?.id ? (
+                    <PlayerMatchResultActions
+                      matchId={match.id}
+                      matchDate={match.match_date}
+                      matchTime={match.match_time}
+                      teamA={teamA ? { id: teamA.id, name: teamA.name } : null}
+                      teamB={teamB ? { id: teamB.id, name: teamB.name } : null}
+                      winnerTeamId={match.winner_team_id}
+                      isHalved={match.is_halved}
+                      resultSetByOfficial={match.result_set_by_official === true}
+                      pending={pendingByMatchId.get(match.id) ?? null}
+                      currentPlayerId={playerRecord.id}
+                      participantPlayerIds={participantPlayerIds}
+                    />
+                  ) : null}
+                </Box>
               );
             })}
           </Box>

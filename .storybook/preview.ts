@@ -1,6 +1,14 @@
 import type { Preview } from '@storybook/nextjs-vite';
 import '../src/app/globals.css';
 
+// Avoid missing-env crashes for components that import the Supabase browser client.
+if (typeof process !== 'undefined') {
+  process.env.NEXT_PUBLIC_SUPABASE_URL =
+    process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.local.supabase.co';
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY =
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key';
+}
+
 const preview: Preview = {
   parameters: {
     controls: {
