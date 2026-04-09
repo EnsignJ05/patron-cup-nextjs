@@ -1,0 +1,71 @@
+.pageRoot {
+  min-height: 100vh;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 16px;
+}
+
+.pageTitle {
+  margin-bottom: 8px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.subtitle {
+  margin-bottom: 24px;
+  color: var(--text-muted);
+  text-align: center;
+  max-width: 560px;
+}
+
+.formCard {
+  width: 100%;
+  max-width: 560px;
+  padding: 24px;
+  border-radius: 24px !important;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+.formCardAccent {
+  border: 1px solid var(--accent-amber);
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--accent-amber) 10%, var(--surface)) 0%,
+      var(--surface) 45%
+    );
+  background-color: var(--surface) !important;
+}
+
+.sectionTitle {
+  margin-bottom: 16px;
+  color: var(--text);
+}
+
+.backLink {
+  align-self: flex-start;
+  max-width: 800px;
+  width: 100%;
+  margin-bottom: 16px;
+  color: var(--accent-blue-strong);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.backLink:hover {
+  color: var(--accent-violet);
+}
+
+@media (min-width: 600px) {
+  .pageRoot {
+    padding: 64px 32px;
+  }
+
+  .formCard {
+    padding: 32px;
+  }
+}

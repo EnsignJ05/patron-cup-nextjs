@@ -26,6 +26,41 @@
   color: var(--text);
 }
 
+.awardCalloutCard {
+  width: 100%;
+  max-width: 800px;
+  padding: 20px 24px;
+  border-radius: 24px !important;
+  margin-bottom: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+.awardCalloutAccent {
+  border: 1px solid var(--accent-amber);
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--accent-amber) 10%, var(--surface)) 0%,
+      var(--surface) 45%
+    );
+  background-color: var(--surface) !important;
+}
+
+.awardCalloutLink {
+  display: inline-block;
+  margin-top: 8px;
+  font-weight: 600;
+  color: var(--accent-blue-strong);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.awardCalloutLink:hover {
+  color: var(--accent-violet);
+}
+
 .profileCard {
   width: 100%;
   max-width: 800px;
@@ -157,6 +192,12 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.matchBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
 .matchItem {

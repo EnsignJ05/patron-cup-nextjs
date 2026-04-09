@@ -25,11 +25,21 @@
 
 .tableHeaderRow {
   background-color: var(--text);
+  color: #ffffff;
 }
 
-.tableHeaderCell {
+/* Beat globals `.MuiTableCell-root { color: var(--text) }` (same specificity as `.tableHeaderCell` alone). */
+.tableHeaderRow .tableHeaderCell {
   font-weight: 600;
-  color: var(--bg);
+  color: #ffffff;
+}
+
+:root[data-theme='dark'] .tableHeaderRow {
+  color: #000000;
+}
+
+:root[data-theme='dark'] .tableHeaderRow .tableHeaderCell {
+  color: #000000;
 }
 
 .playerRow {

@@ -29,11 +29,20 @@
 
 .tableHeaderRow {
   background-color: var(--text);
+  color: #ffffff;
 }
 
-.tableHeaderCell {
-  color: var(--bg);
+.tableHeaderRow .tableHeaderCell {
   font-weight: 600;
+  color: #ffffff;
+}
+
+:root[data-theme='dark'] .tableHeaderRow {
+  color: #000000;
+}
+
+:root[data-theme='dark'] .tableHeaderRow .tableHeaderCell {
+  color: #000000;
 }
 
 .dialogGrid {

@@ -129,13 +129,14 @@ body {
   border-color: var(--border);
 }
 
+/* Inherit so rows can set contrast (e.g. inverted headers with bg var(--text) and color var(--bg)). */
 .MuiTableCell-head,
 .MuiTableCell-head.MuiTableCell-root {
-  color: var(--text);
+  color: inherit;
 }
 
 .MuiTableHead-root .MuiTableCell-root {
-  color: var(--text);
+  color: inherit;
 }
 
 .MuiTableCell-body,

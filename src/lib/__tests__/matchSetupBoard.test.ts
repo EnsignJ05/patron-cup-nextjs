@@ -3,10 +3,12 @@ import {
   collectUniqueTeeTimeSlots,
   compareTeeTimeSlots,
   groupMatchesBySlotId,
+  mergeSlotSpecs,
   parseSlotId,
   slotIdFromMatch,
   slotIdFromSpec,
   withUnscheduledSlotIfMissing,
+  type TeeTimeSlotSpec,
 } from '../matchSetupBoard';
 
 function m(
@@ -133,8 +135,27 @@ describe('matchSetupBoard', () => {
 
   describe('withUnscheduledSlotIfMissing', () => {
     it('returns the same array when an unscheduled slot already exists', () => {
-      const slots = [{ match_time: null as const, group_number: null as const }];
+      const slots: TeeTimeSlotSpec[] = [{ match_time: null, group_number: null }];
       expect(withUnscheduledSlotIfMissing(slots)).toBe(slots);
+    });
+  });
+
+  describe('mergeSlotSpecs', () => {
+    it('unions slots by id and keeps sort order', () => {
+      const a: TeeTimeSlotSpec[] = [{ match_time: '09:00:00', group_number: 1 }];
+      const b: TeeTimeSlotSpec[] = [{ match_time: '09:10:00', group_number: 1 }];
+      const merged = mergeSlotSpecs(a, b);
+      expect(merged.map((s) => slotIdFromSpec(s))).toEqual(['slot:09:00:00|1', 'slot:09:10:00|1', 'slot:null|null']);
+    });
+
+    it('does not drop specs present only in existing when incoming is smaller', () => {
+      const existing: TeeTimeSlotSpec[] = [
+        { match_time: '09:00:00', group_number: 1 },
+        { match_time: '09:10:00', group_number: 1 },
+      ];
+      const incoming: TeeTimeSlotSpec[] = [{ match_time: '09:00:00', group_number: 1 }];
+      const merged = mergeSlotSpecs(existing, incoming);
+      expect(merged.map((s) => slotIdFromSpec(s))).toContain('slot:09:10:00|1');
     });
   });
 });

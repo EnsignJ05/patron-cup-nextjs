@@ -106,3 +106,22 @@ export function buildTeeTimeBoardModel<T extends MatchLikeForSlot>(matchesForCou
   const bySlotId = groupMatchesBySlotId(matchesForCourse);
   return { slots, bySlotId };
 }
+
+/** Union of slot specs by id; add-only merge so empty lanes stay in the list. */
+export function mergeSlotSpecs(existing: TeeTimeSlotSpec[], incoming: TeeTimeSlotSpec[]): TeeTimeSlotSpec[] {
+  const seen = new Set<string>();
+  const out: TeeTimeSlotSpec[] = [];
+  for (const s of existing) {
+    const id = slotIdFromSpec(s);
+    if (seen.has(id)) continue;
+    seen.add(id);
+    out.push({ match_time: s.match_time, group_number: s.group_number ?? null });
+  }
+  for (const s of incoming) {
+    const id = slotIdFromSpec(s);
+    if (seen.has(id)) continue;
+    seen.add(id);
+    out.push({ match_time: s.match_time, group_number: s.group_number ?? null });
+  }
+  return withUnscheduledSlotIfMissing(out.sort(compareTeeTimeSlots));
+}
