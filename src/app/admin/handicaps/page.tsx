@@ -22,7 +22,8 @@ import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
 import { buildEventHandicapsCsv, type HandicapCsvRow } from '@/lib/exportEventHandicapsCsv';
 import { sanitizeFilenameSegment } from '@/lib/exportEventMatchesCsv';
-import type { Event } from '@/types/database';
+import { calculateCourseHandicap } from '@/lib/courseHandicap';
+import type { Course, Event } from '@/types/database';
 
 type SortKey = 'firstName' | 'lastName' | 'team' | 'handicap' | 'ghinNumber' | 'ghinClub';
 type SortDir = 'asc' | 'desc';
@@ -48,6 +49,8 @@ type RosterWithJoins = {
   team: { name: string } | { name: string }[] | null;
 };
 
+type EventCourse = Pick<Course, 'id' | 'name' | 'par' | 'rating' | 'slope'>;
+
 function normalizeOne<T>(v: T | T[] | null | undefined): T | null {
   if (v == null) return null;
   return Array.isArray(v) ? v[0] ?? null : v;
@@ -58,6 +61,7 @@ export default function AdminHandicapsPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [selectedEventId, setSelectedEventId] = useState('');
   const [rosterRows, setRosterRows] = useState<RosterWithJoins[]>([]);
+  const [eventCourses, setEventCourses] = useState<EventCourse[]>([]);
   const [handicapDrafts, setHandicapDrafts] = useState<Record<string, string>>({});
   const [ghinDrafts, setGhinDrafts] = useState<Record<string, { ghinNumber: string; ghinClub: string }>>({});
   const [sortKey, setSortKey] = useState<SortKey>('lastName');
@@ -86,10 +90,21 @@ export default function AdminHandicapsPage() {
     setLoading(true);
     setError(null);
 
-    const { data: teamsData, error: teamsErr } = await supabase
-      .from('teams')
-      .select('id')
-      .eq('event_id', selectedEventId);
+    const [{ data: teamsData, error: teamsErr }, { data: coursesData, error: coursesErr }] = await Promise.all([
+      supabase.from('teams').select('id').eq('event_id', selectedEventId),
+      supabase
+        .from('courses')
+        .select('id, name, par, rating, slope')
+        .eq('event_id', selectedEventId)
+        .order('name', { ascending: true }),
+    ]);
+
+    if (coursesErr) {
+      setError(coursesErr.message);
+      setEventCourses([]);
+    } else {
+      setEventCourses((coursesData as EventCourse[]) ?? []);
+    }
 
     if (teamsErr) {
       setError(teamsErr.message);
@@ -148,6 +163,7 @@ export default function AdminHandicapsPage() {
   }, [selectedEventId, fetchRosters]);
 
   const selectedEvent = events.find((e) => e.id === selectedEventId) ?? null;
+  const totalColumns = 6 + eventCourses.length;
 
   const handleSort = useCallback((key: SortKey) => {
     setSortKey((prev) => {
@@ -301,7 +317,8 @@ export default function AdminHandicapsPage() {
 
       <Typography variant="body2" sx={{ color: 'var(--text-muted)', mb: 2 }}>
         Official handicaps are stored on team rosters for the selected event. GHIN number and club are stored on each
-        player&apos;s profile and can be edited here.
+        player&apos;s profile and can be edited here. Course handicaps are computed as round(HI * (slope/113) +
+        (rating - par)).
       </Typography>
 
       <FormControl sx={{ minWidth: 280, mb: 3 }} size="small">
@@ -396,16 +413,19 @@ export default function AdminHandicapsPage() {
                   GHIN club
                 </TableSortLabel>
               </TableCell>
+              {eventCourses.map((course) => (
+                <TableCell key={course.id}>{course.name}</TableCell>
+              ))}
             </TableRow>
           </TableHead>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6}>Loading…</TableCell>
+                <TableCell colSpan={totalColumns}>Loading…</TableCell>
               </TableRow>
             ) : rosterRows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6}>
+                <TableCell colSpan={totalColumns}>
                   No roster entries for this event. Add players to teams under Teams management.
                 </TableCell>
               </TableRow>
@@ -475,6 +495,15 @@ export default function AdminHandicapsPage() {
                         inputProps={{ maxLength: 80 }}
                       />
                     </TableCell>
+                    {eventCourses.map((course) => {
+                      const courseHandicap = calculateCourseHandicap({
+                        handicapIndex: row.handicap_at_event,
+                        slope: course.slope,
+                        rating: course.rating,
+                        par: course.par,
+                      });
+                      return <TableCell key={course.id}>{courseHandicap ?? '—'}</TableCell>;
+                    })}
                   </TableRow>
                 );
               })
