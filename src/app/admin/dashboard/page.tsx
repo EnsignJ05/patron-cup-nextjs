@@ -11,6 +11,7 @@ import SportsIcon from '@mui/icons-material/Sports';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import ScoreboardIcon from '@mui/icons-material/Scoreboard';
 import HotelIcon from '@mui/icons-material/Hotel';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import LockResetIcon from '@mui/icons-material/LockReset';
 import AlternateEmailIcon from '@mui/icons-material/AlternateEmail';
 import SportsGolfIcon from '@mui/icons-material/SportsGolf';
@@ -107,6 +108,13 @@ const adminSections = [
     href: '/admin/lodging',
     icon: HotelIcon,
     colorKey: 'teal',
+  },
+  {
+    title: 'Ceremony awards',
+    description: 'View player-submitted award nominations for the active event',
+    href: '/admin/award-nominations',
+    icon: EmojiEventsIcon,
+    colorKey: 'orange',
   },
 ];
 

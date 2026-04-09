@@ -1,6 +1,7 @@
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
+import Link from 'next/link';
 import Avatar from '@mui/material/Avatar';
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient, getCachedUser, getCachedPlayerProfile } from '@/lib/supabaseServer';
@@ -286,6 +287,20 @@ export default async function DashboardPage() {
       <Typography variant="h3" className={styles.pageTitle}>
         Player Dashboard
       </Typography>
+      <Paper
+        elevation={2}
+        className={`${styles.awardCalloutCard} ${styles.awardCalloutAccent}`}
+      >
+        <Typography variant="subtitle1" className={styles.sectionTitle}>
+          Ceremony awards
+        </Typography>
+        <Typography variant="body2" className={styles.detailTextWide}>
+          Nominate a fellow player for the end-of-trip dinner awards.
+        </Typography>
+        <Link href="/dashboard/award-nominations" className={styles.awardCalloutLink}>
+          Submit a nomination
+        </Link>
+      </Paper>
       <Paper
         elevation={2}
         className={`${styles.profileCard} ${styles.profileCardAccent}`}

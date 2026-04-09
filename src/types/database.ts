@@ -262,6 +262,19 @@ export interface LodgingAssignment {
   player?: Player;
 }
 
+/** Keys must match CHECK on ceremony_award_nominations.award_key */
+export type CeremonyAwardKey = 'davey_jones_locker' | 'matt_leinart';
+
+export interface CeremonyAwardNomination {
+  id: string;
+  event_id: string;
+  nominator_player_id: string;
+  nominated_player_id: string;
+  award_key: CeremonyAwardKey;
+  reason: string;
+  created_at: string;
+}
+
 export interface EventParticipant {
   id: string;
   event_id: string;
