@@ -22,7 +22,14 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
-import { buildTeeTimeBoardModel, slotIdFromSpec, type TeeTimeSlotSpec } from '@/lib/matchSetupBoard';
+import { isSlotWithinCapacity, matchTimesEqual } from '@/lib/matchFormatConfig';
+import {
+  buildTeeTimeBoardModel,
+  mergeSlotSpecs,
+  parseSlotId,
+  slotIdFromSpec,
+  type TeeTimeSlotSpec,
+} from '@/lib/matchSetupBoard';
 import styles from './TeeTimeBoard.module.css';
 
 export type MatchBoardRow = {
@@ -30,16 +37,20 @@ export type MatchBoardRow = {
   match_number: number;
   match_time: string | null;
   group_number: number | null;
+  match_type: string;
 };
 
 function findContainer(matchId: string, board: Record<string, string[]>): string | undefined {
   return Object.keys(board).find((slotId) => board[slotId].includes(matchId));
 }
 
-function buildItemsFromMatches(matches: MatchBoardRow[]): Record<string, string[]> {
-  const { slots, bySlotId } = buildTeeTimeBoardModel(matches);
+function buildItemsFromMatches(
+  matches: MatchBoardRow[],
+  slotSpecs: TeeTimeSlotSpec[],
+): Record<string, string[]> {
+  const { bySlotId } = buildTeeTimeBoardModel(matches);
   const out: Record<string, string[]> = {};
-  for (const s of slots) {
+  for (const s of slotSpecs) {
     const id = slotIdFromSpec(s);
     out[id] = (bySlotId.get(id) || []).map((m) => m.id);
   }
@@ -119,6 +130,7 @@ function SortableMatchCard({ id, children }: SortableMatchCardProps) {
 }
 
 export type TeeTimeBoardProps<T extends MatchBoardRow> = {
+  courseKey: string;
   matches: T[];
   formatSlotLabel: (spec: TeeTimeSlotSpec) => string;
   renderCard: (match: T) => ReactNode;
@@ -126,28 +138,38 @@ export type TeeTimeBoardProps<T extends MatchBoardRow> = {
 };
 
 export default function TeeTimeBoard<T extends MatchBoardRow>({
+  courseKey,
   matches,
   formatSlotLabel,
   renderCard,
   onPersist,
 }: TeeTimeBoardProps<T>) {
   const [items, setItems] = useState<Record<string, string[]>>({});
+  const [stableSlots, setStableSlots] = useState<TeeTimeSlotSpec[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const dragStartItems = useRef<Record<string, string[]>>({});
   const itemsRef = useRef(items);
   itemsRef.current = items;
+  const prevCourseKeyRef = useRef<string | null>(null);
 
-  const { slots, matchById } = useMemo(() => {
-    const { slots: slotList } = buildTeeTimeBoardModel(matches);
-    const map = new Map(matches.map((m) => [m.id, m]));
-    return { slots: slotList, matchById: map };
-  }, [matches]);
+  const matchById = useMemo(() => new Map(matches.map((m) => [m.id, m])), [matches]);
 
   useEffect(() => {
-    const next = buildItemsFromMatches(matches);
+    const courseChanged = prevCourseKeyRef.current !== courseKey;
+    prevCourseKeyRef.current = courseKey;
+    const { slots } = buildTeeTimeBoardModel(matches);
+    if (courseChanged) {
+      setStableSlots(mergeSlotSpecs([], slots));
+    } else {
+      setStableSlots((prev) => mergeSlotSpecs(prev, slots));
+    }
+  }, [matches, courseKey]);
+
+  useEffect(() => {
+    const next = buildItemsFromMatches(matches, stableSlots);
     itemsRef.current = next;
     setItems(next);
-  }, [matches]);
+  }, [matches, stableSlots]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -159,48 +181,59 @@ export default function TeeTimeBoard<T extends MatchBoardRow>({
     setActiveId(String(event.active.id));
   }, []);
 
-  const onDragOver = useCallback((event: DragOverEvent) => {
-    const { active, over } = event;
-    const overId = over?.id;
-    if (!overId || active.id === overId) return;
+  const onDragOver = useCallback(
+    (event: DragOverEvent) => {
+      const { active, over } = event;
+      const overId = over?.id;
+      if (!overId || active.id === overId) return;
 
-    setItems((prev) => {
-      const activeContainer = findContainer(String(active.id), prev);
-      const overContainer =
-        overId in prev ? String(overId) : findContainer(String(overId), prev);
-      if (!activeContainer || !overContainer) return prev;
-      if (activeContainer === overContainer) return prev;
+      setItems((prev) => {
+        const activeContainer = findContainer(String(active.id), prev);
+        const overContainer =
+          overId in prev ? String(overId) : findContainer(String(overId), prev);
+        if (!activeContainer || !overContainer) return prev;
+        if (activeContainer === overContainer) return prev;
 
-      const activeItems = [...prev[activeContainer]];
-      const overItems = [...prev[overContainer]];
-      const activeIndex = activeItems.indexOf(String(active.id));
-      if (activeIndex < 0) return prev;
+        const dragged = matchById.get(String(active.id));
+        const targetSpec = parseSlotId(overContainer);
+        if (!dragged || !targetSpec) return prev;
+        if (!matchTimesEqual(dragged.match_time, targetSpec.match_time)) return prev;
 
-      let newIndex: number;
-      if (overId in prev) {
-        newIndex = overItems.length;
-      } else {
-        const overIndex = overItems.indexOf(String(overId));
-        const isBelowOverItem =
-          over &&
-          active.rect.current.translated &&
-          active.rect.current.translated.top > over.rect.top + over.rect.height;
-        const modifier = isBelowOverItem ? 1 : 0;
-        newIndex = overIndex >= 0 ? overIndex + modifier : overItems.length;
-      }
+        const activeItems = [...prev[activeContainer]];
+        const overItems = [...prev[overContainer]];
+        const activeIndex = activeItems.indexOf(String(active.id));
+        if (activeIndex < 0) return prev;
 
-      const [removed] = activeItems.splice(activeIndex, 1);
-      overItems.splice(newIndex, 0, removed);
+        let newIndex: number;
+        if (overId in prev) {
+          newIndex = overItems.length;
+        } else {
+          const overIndex = overItems.indexOf(String(overId));
+          const isBelowOverItem =
+            over &&
+            active.rect.current.translated &&
+            active.rect.current.translated.top > over.rect.top + over.rect.height;
+          const modifier = isBelowOverItem ? 1 : 0;
+          newIndex = overIndex >= 0 ? overIndex + modifier : overItems.length;
+        }
 
-      const next = {
-        ...prev,
-        [activeContainer]: activeItems,
-        [overContainer]: overItems,
-      };
-      itemsRef.current = next;
-      return next;
-    });
-  }, []);
+        const [removed] = activeItems.splice(activeIndex, 1);
+        const candidateOver = [...overItems];
+        candidateOver.splice(newIndex, 0, removed);
+        const types = candidateOver.map((id) => matchById.get(id)?.match_type ?? '');
+        if (!isSlotWithinCapacity(types)) return prev;
+
+        const next = {
+          ...prev,
+          [activeContainer]: activeItems,
+          [overContainer]: candidateOver,
+        };
+        itemsRef.current = next;
+        return next;
+      });
+    },
+    [matchById],
+  );
 
   const onDragEnd = useCallback(
     async (event: DragEndEvent) => {
@@ -262,12 +295,12 @@ export default function TeeTimeBoard<T extends MatchBoardRow>({
       onDragCancel={onDragCancel}
     >
       <p className={styles.hint}>
-        Tee times are listed earliest at the top. Drag matches between lanes using the handle on each
-        card.
+        Tee times are fixed here. Drag by the handle to change group within the same tee time or to
+        reorder matches in a lane (max four players per lane for the formats in use).
       </p>
       <div className={styles.boardWrap}>
         <div className={styles.board}>
-          {slots.map((slot) => {
+          {stableSlots.map((slot) => {
             const slotId = slotIdFromSpec(slot);
             const ids = items[slotId] ?? [];
             return (

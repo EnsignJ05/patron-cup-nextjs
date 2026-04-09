@@ -1,16 +1,39 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { isSlotWithinCapacity, matchTimesEqual } from '@/lib/matchFormatConfig';
 import { parseSlotId, type TeeTimeSlotSpec } from '@/lib/matchSetupBoard';
 import type { Match } from '@/types/database';
 
-type MatchLite = Pick<Match, 'id' | 'match_number' | 'match_time' | 'group_number'>;
+type MatchLite = Pick<Match, 'id' | 'match_number' | 'match_time' | 'group_number' | 'match_type'>;
 
 function findSlotForMatch(matchId: string, board: Record<string, string[]>): string | undefined {
   return Object.keys(board).find((slotId) => board[slotId].includes(matchId));
 }
 
+function validateEndBoard(end: Record<string, string[]>, byId: Map<string, MatchLite>): void {
+  for (const [slotId, ids] of Object.entries(end)) {
+    if (!ids?.length) continue;
+    const spec = parseSlotId(slotId);
+    if (!spec) throw new Error(`Invalid slot: ${slotId}`);
+    const types: string[] = [];
+    for (const id of ids) {
+      const m = byId.get(id);
+      if (!m) throw new Error(`Unknown match: ${id}`);
+      if (!matchTimesEqual(m.match_time, spec.match_time)) {
+        throw new Error(
+          'Cannot assign a match to a different tee time from this page. Reload and try again.',
+        );
+      }
+      types.push(m.match_type);
+    }
+    if (!isSlotWithinCapacity(types)) {
+      throw new Error('A swim lane cannot exceed four players for the match formats in use.');
+    }
+  }
+}
+
 /**
- * Applies tee-time / group changes and renumbers `match_number` within each column
- * to preserve the multiset of numbers across the board.
+ * Applies group changes within a fixed tee time and renumbers `match_number` within each column.
+ * Does not change `match_time` (immutable on the match setup page).
  */
 export async function applyMatchBoardPersist(
   supabase: SupabaseClient,
@@ -19,6 +42,8 @@ export async function applyMatchBoardPersist(
   end: Record<string, string[]>,
 ): Promise<void> {
   const byId = new Map(matches.map((m) => [m.id, m]));
+
+  validateEndBoard(end, byId);
 
   const moves: { id: string; spec: TeeTimeSlotSpec }[] = [];
   for (const m of matches) {
@@ -31,10 +56,16 @@ export async function applyMatchBoardPersist(
   }
 
   for (const { id, spec } of moves) {
+    const row = byId.get(id);
+    if (!row) continue;
+    if (!matchTimesEqual(row.match_time, spec.match_time)) {
+      throw new Error(
+        'Cannot assign a match to a different tee time from this page. Reload and try again.',
+      );
+    }
     const { error } = await supabase
       .from('matches')
       .update({
-        match_time: spec.match_time,
         group_number: spec.group_number,
       })
       .eq('id', id);
@@ -50,10 +81,10 @@ export async function applyMatchBoardPersist(
     const endOrder = ids.join('\0');
     if (startOrder === endOrder) continue;
 
-    const nums = ids.map((id) => byId.get(id)?.match_number ?? 0).sort((a, b) => a - b);
+    const nums = ids.map((mid) => byId.get(mid)?.match_number ?? 0).sort((a, b) => a - b);
     await Promise.all(
-      ids.map((id, i) =>
-        supabase.from('matches').update({ match_number: nums[i] }).eq('id', id),
+      ids.map((mid, i) =>
+        supabase.from('matches').update({ match_number: nums[i] }).eq('id', mid),
       ),
     );
   }

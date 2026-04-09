@@ -23,26 +23,13 @@ import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
 import { applyMatchBoardPersist } from '@/lib/applyMatchBoardPersist';
 import { buildEventMatchesCsv, sanitizeFilenameSegment } from '@/lib/exportEventMatchesCsv';
 import type { TeeTimeSlotSpec } from '@/lib/matchSetupBoard';
+import { getFormatConfig } from '@/lib/matchFormatConfig';
 import type { Match, Event, Course, Team, Player, MatchPlayer, TeamRoster } from '@/types/database';
 import TeeTimeBoard from './TeeTimeBoard';
 
 type MatchWithJoins = Match & { course?: Course; winner_team?: Team };
 type MatchPlayerWithJoins = MatchPlayer & { player?: Player; match?: Pick<Match, 'id' | 'event_id' | 'match_date'> };
 type TeamRosterWithJoins = TeamRoster & { player?: Player; team?: Team };
-
-const normalizeMatchType = (matchType: string) =>
-  matchType.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
-
-const getFormatConfig = (matchType: string) => {
-  const normalized = normalizeMatchType(matchType);
-  if (normalized.includes('two man better ball') || normalized.includes('betterball')) {
-    return { playersPerTeam: 2, matchesPerGroup: 1, isUnknown: false };
-  }
-  if (normalized.includes('head to head') || normalized.includes('h2h') || normalized.includes('singles')) {
-    return { playersPerTeam: 1, matchesPerGroup: 2, isUnknown: false };
-  }
-  return { playersPerTeam: 2, matchesPerGroup: 1, isUnknown: true };
-};
 
 const formatTime = (timeStr: string | null) => {
   if (!timeStr) return '-';
@@ -429,6 +416,7 @@ export default function MatchSetupAdminPage() {
               <Typography>Loading match setup...</Typography>
             ) : (
               <TeeTimeBoard<MatchWithJoins>
+                courseKey={resolvedCourseId}
                 matches={courseMatches}
                 formatSlotLabel={formatSlotLabel}
                 onPersist={handleBoardPersist}
