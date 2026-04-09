@@ -6,6 +6,12 @@ export type HandicapCsvRow = {
   officialHandicap: number | null;
   ghinNumber: string | null;
   ghinClub: string | null;
+  courseHandicaps?: Record<string, number | null>;
+};
+
+export type HandicapCsvCourse = {
+  id: string;
+  name: string;
 };
 
 /**
@@ -14,6 +20,7 @@ export type HandicapCsvRow = {
 export function buildEventHandicapsCsv(
   event: { name: string; year: number } | null,
   rows: HandicapCsvRow[],
+  courses: HandicapCsvCourse[] = [],
 ): string {
   const headers = [
     'event_name',
@@ -23,6 +30,7 @@ export function buildEventHandicapsCsv(
     'Official Event Handicap',
     'GHIN Number',
     'GHIN Club',
+    ...courses.map((course) => `${course.name} Course Handicap`),
   ];
   const lines = [headers.map(escapeCsvCell).join(',')];
 
@@ -45,6 +53,7 @@ export function buildEventHandicapsCsv(
         row.officialHandicap,
         row.ghinNumber,
         row.ghinClub,
+        ...courses.map((course) => row.courseHandicaps?.[course.id] ?? null),
       ]
         .map(escapeCsvCell)
         .join(','),

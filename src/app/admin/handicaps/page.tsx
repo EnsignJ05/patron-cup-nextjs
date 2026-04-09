@@ -20,7 +20,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Alert from '@mui/material/Alert';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
-import { buildEventHandicapsCsv, type HandicapCsvRow } from '@/lib/exportEventHandicapsCsv';
+import { buildEventHandicapsCsv, type HandicapCsvCourse, type HandicapCsvRow } from '@/lib/exportEventHandicapsCsv';
 import { sanitizeFilenameSegment } from '@/lib/exportEventMatchesCsv';
 import { calculateCourseHandicap } from '@/lib/courseHandicap';
 import type { Course, Event } from '@/types/database';
@@ -223,19 +223,36 @@ export default function AdminHandicapsPage() {
       const p = normalizeOne(r.player);
       const t = normalizeOne(r.team);
       const name = p ? `${p.first_name} ${p.last_name}`.trim() : 'Unknown';
+      const courseHandicaps = Object.fromEntries(
+        eventCourses.map((course) => [
+          course.id,
+          calculateCourseHandicap({
+            handicapIndex: r.handicap_at_event,
+            slope: course.slope,
+            rating: course.rating,
+            par: course.par,
+          }),
+        ]),
+      );
       return {
         playerName: name,
         teamName: t?.name ?? '',
         officialHandicap: r.handicap_at_event,
         ghinNumber: p?.ghin_number ?? null,
         ghinClub: p?.ghin_club ?? null,
+        courseHandicaps,
       };
     });
-  }, [rosterRows]);
+  }, [eventCourses, rosterRows]);
+
+  const csvCourses: HandicapCsvCourse[] = useMemo(
+    () => eventCourses.map((course) => ({ id: course.id, name: course.name })),
+    [eventCourses],
+  );
 
   const handleExportCsv = useCallback(() => {
     if (!selectedEvent) return;
-    const csv = buildEventHandicapsCsv(selectedEvent, csvRows);
+    const csv = buildEventHandicapsCsv(selectedEvent, csvRows, csvCourses);
     const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
@@ -244,7 +261,7 @@ export default function AdminHandicapsPage() {
     anchor.download = `${base}.csv`;
     anchor.click();
     URL.revokeObjectURL(url);
-  }, [csvRows, selectedEvent]);
+  }, [csvCourses, csvRows, selectedEvent]);
 
   const saveHandicap = async (rosterId: string) => {
     setError(null);
