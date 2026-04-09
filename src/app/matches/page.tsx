@@ -15,6 +15,7 @@ import Divider from '@mui/material/Divider';
 import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
 import type { Match, Event, Course, Team, Player, MatchPlayer, TeamRoster } from '@/types/database';
 import { getTeamTotals } from '@/lib/matchScoring';
+import { calculateMatchHandicapMetrics } from '@/lib/matchHandicapMetrics';
 import OverallScoreBanner from '@/components/matches/OverallScoreBanner';
 import MatchCard from '@/components/matches/MatchCard';
 import styles from './page.module.css';
@@ -330,16 +331,40 @@ export default function MatchesPage() {
                             .map((mp) => {
                               const player = mp.player;
                               if (!player) return null;
-                              const handicap = handicapByPlayerId.get(player.id) ?? null;
+                              const officialEventHandicap = handicapByPlayerId.get(player.id) ?? null;
                               return {
                                 id: player.id,
                                 name: `${player.first_name} ${player.last_name}`.trim(),
-                                handicap,
+                                officialEventHandicap,
                                 profileImageUrl: player.profile_image_url || null,
                               };
                             })
                             .filter((player): player is NonNullable<typeof player> => Boolean(player))
                             .sort((a, b) => a.name.localeCompare(b.name));
+
+                        const teamAPlayerCards = buildPlayers(teamAPlayers);
+                        const teamBPlayerCards = buildPlayers(teamBPlayers);
+                        const matchPlayerCards = [...teamAPlayerCards, ...teamBPlayerCards];
+                        const handicapMetricsByPlayerId = calculateMatchHandicapMetrics(
+                          matchPlayerCards.map((player) => ({
+                            playerId: player.id,
+                            officialEventHandicap: player.officialEventHandicap,
+                          })),
+                          {
+                            slope: match.course?.slope ?? null,
+                            rating: match.course?.rating ?? null,
+                            par: match.course?.par ?? null,
+                          },
+                        );
+
+                        const withMetrics = <T extends { id: string; officialEventHandicap: number | null }>(player: T) => {
+                          const metrics = handicapMetricsByPlayerId.get(player.id);
+                          return {
+                            ...player,
+                            courseHandicap: metrics?.courseHandicap ?? null,
+                            strokesGiven: metrics?.strokesGiven ?? null,
+                          };
+                        };
 
                         return (
                           <MatchCard
@@ -354,7 +379,7 @@ export default function MatchesPage() {
                                     id: teamA.id,
                                     name: teamA.name,
                                     color: teamA.color,
-                                    players: buildPlayers(teamAPlayers),
+                                    players: teamAPlayerCards.map(withMetrics),
                                   }
                                 : null
                             }
@@ -364,7 +389,7 @@ export default function MatchesPage() {
                                     id: teamB.id,
                                     name: teamB.name,
                                     color: teamB.color,
-                                    players: buildPlayers(teamBPlayers),
+                                    players: teamBPlayerCards.map(withMetrics),
                                   }
                                 : null
                             }

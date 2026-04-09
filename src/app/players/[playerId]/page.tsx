@@ -3,6 +3,7 @@ import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
 import Avatar from '@mui/material/Avatar';
 import { createSupabaseServerClient } from '@/lib/supabaseServer';
+import { calculateMatchHandicapMetrics } from '@/lib/matchHandicapMetrics';
 import { notFound } from 'next/navigation';
 import DashboardProfileForm from '@/components/player/DashboardProfileForm';
 import MatchCard from '@/components/matches/MatchCard';
@@ -100,7 +101,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
       group_number: number | null;
       winner_team_id: string | null;
       is_halved: boolean;
-      course?: { name?: string | null } | null;
+      course?: { name?: string | null; slope?: number | null; rating?: number | null; par?: number | null } | null;
     };
     playersByTeam: Map<string, Array<{ id: string; name: string; profileImageUrl: string | null }>>;
   };
@@ -140,7 +141,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
       const { data: matchPlayers } = await supabase
         .from('match_players')
         .select(
-          'match_id, player:players(id, first_name, last_name, profile_image_url), team:teams(id, name, color), match:matches!inner(id, event_id, match_date, match_time, match_number, match_type, group_number, winner_team_id, is_halved, course:courses(name))'
+          'match_id, player:players(id, first_name, last_name, profile_image_url), team:teams(id, name, color), match:matches!inner(id, event_id, match_date, match_time, match_number, match_type, group_number, winner_team_id, is_halved, course:courses(name,slope,rating,par))'
         )
         .in('match_id', matchIds)
         .eq('match.event_id', activeEvent.id);
@@ -338,8 +339,32 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
               const buildPlayers = (playersForTeam: Array<{ id: string; name: string; profileImageUrl: string | null }>) =>
                 playersForTeam.map((matchPlayer) => ({
                   ...matchPlayer,
-                  handicap: handicapByPlayerId.get(matchPlayer.id) ?? null,
+                  officialEventHandicap: handicapByPlayerId.get(matchPlayer.id) ?? null,
                 }));
+
+              const teamAPlayerCards = buildPlayers(teamAPlayers);
+              const teamBPlayerCards = buildPlayers(teamBPlayers);
+              const matchPlayerCards = [...teamAPlayerCards, ...teamBPlayerCards];
+              const handicapMetricsByPlayerId = calculateMatchHandicapMetrics(
+                matchPlayerCards.map((matchPlayer) => ({
+                  playerId: matchPlayer.id,
+                  officialEventHandicap: matchPlayer.officialEventHandicap,
+                })),
+                {
+                  slope: match.course?.slope ?? null,
+                  rating: match.course?.rating ?? null,
+                  par: match.course?.par ?? null,
+                },
+              );
+
+              const withMetrics = <T extends { id: string; officialEventHandicap: number | null }>(matchPlayer: T) => {
+                const metrics = handicapMetricsByPlayerId.get(matchPlayer.id);
+                return {
+                  ...matchPlayer,
+                  courseHandicap: metrics?.courseHandicap ?? null,
+                  strokesGiven: metrics?.strokesGiven ?? null,
+                };
+              };
 
               return (
                 <MatchCard
@@ -355,7 +380,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
                           id: teamA.id,
                           name: teamA.name,
                           color: teamA.color,
-                          players: buildPlayers(teamAPlayers),
+                          players: teamAPlayerCards.map(withMetrics),
                         }
                       : null
                   }
@@ -365,7 +390,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
                           id: teamB.id,
                           name: teamB.name,
                           color: teamB.color,
-                          players: buildPlayers(teamBPlayers),
+                          players: teamBPlayerCards.map(withMetrics),
                         }
                       : null
                   }

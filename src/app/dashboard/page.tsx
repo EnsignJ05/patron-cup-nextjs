@@ -6,6 +6,7 @@ import Avatar from '@mui/material/Avatar';
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient, getCachedUser, getCachedPlayerProfile } from '@/lib/supabaseServer';
 import { canAccessDashboard } from '@/lib/authConfig';
+import { calculateMatchHandicapMetrics } from '@/lib/matchHandicapMetrics';
 import DashboardProfileForm from '@/components/player/DashboardProfileForm';
 import PlayerMatchResultActions from '@/components/player/PlayerMatchResultActions';
 import MatchCard from '@/components/matches/MatchCard';
@@ -72,7 +73,7 @@ export default async function DashboardPage() {
       winner_team_id: string | null;
       is_halved: boolean;
       result_set_by_official?: boolean;
-      course?: { name?: string | null } | null;
+      course?: { name?: string | null; slope?: number | null; rating?: number | null; par?: number | null } | null;
     };
     playersByTeam: Map<string, Array<{ id: string; name: string; profileImageUrl: string | null }>>;
     participantPlayerIds: string[];
@@ -114,7 +115,7 @@ export default async function DashboardPage() {
       const { data: matchPlayers } = await supabase
         .from('match_players')
         .select(
-          'match_id, player:players(id, first_name, last_name, profile_image_url), team:teams(id, name, color), match:matches!inner(id, event_id, match_date, match_time, match_number, match_type, group_number, winner_team_id, is_halved, result_set_by_official, course:courses(name))'
+          'match_id, player:players(id, first_name, last_name, profile_image_url), team:teams(id, name, color), match:matches!inner(id, event_id, match_date, match_time, match_number, match_type, group_number, winner_team_id, is_halved, result_set_by_official, course:courses(name,slope,rating,par))'
         )
         .in('match_id', matchIds)
         .eq('match.event_id', activeEvent.id);
@@ -376,8 +377,32 @@ export default async function DashboardPage() {
               const buildPlayers = (players: Array<{ id: string; name: string; profileImageUrl: string | null }>) =>
                 players.map((player) => ({
                   ...player,
-                  handicap: handicapByPlayerId.get(player.id) ?? null,
+                  officialEventHandicap: handicapByPlayerId.get(player.id) ?? null,
                 }));
+
+              const teamAPlayerCards = buildPlayers(teamAPlayers);
+              const teamBPlayerCards = buildPlayers(teamBPlayers);
+              const matchPlayerCards = [...teamAPlayerCards, ...teamBPlayerCards];
+              const handicapMetricsByPlayerId = calculateMatchHandicapMetrics(
+                matchPlayerCards.map((player) => ({
+                  playerId: player.id,
+                  officialEventHandicap: player.officialEventHandicap,
+                })),
+                {
+                  slope: match.course?.slope ?? null,
+                  rating: match.course?.rating ?? null,
+                  par: match.course?.par ?? null,
+                },
+              );
+
+              const withMetrics = <T extends { id: string; officialEventHandicap: number | null }>(player: T) => {
+                const metrics = handicapMetricsByPlayerId.get(player.id);
+                return {
+                  ...player,
+                  courseHandicap: metrics?.courseHandicap ?? null,
+                  strokesGiven: metrics?.strokesGiven ?? null,
+                };
+              };
 
               return (
                 <Box key={match.id} className={styles.matchBlock}>
@@ -393,7 +418,7 @@ export default async function DashboardPage() {
                             id: teamA.id,
                             name: teamA.name,
                             color: teamA.color,
-                            players: buildPlayers(teamAPlayers),
+                            players: teamAPlayerCards.map(withMetrics),
                           }
                         : null
                     }
@@ -403,7 +428,7 @@ export default async function DashboardPage() {
                             id: teamB.id,
                             name: teamB.name,
                             color: teamB.color,
-                            players: buildPlayers(teamBPlayers),
+                            players: teamBPlayerCards.map(withMetrics),
                           }
                         : null
                     }

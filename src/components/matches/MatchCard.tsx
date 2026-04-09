@@ -6,7 +6,9 @@ import styles from './MatchCard.module.css';
 type MatchPlayer = {
   id: string;
   name: string;
-  handicap: number | null;
+  courseHandicap?: number | null;
+  strokesGiven?: number | null;
+  handicap?: number | null;
   profileImageUrl: string | null;
 };
 
@@ -28,7 +30,7 @@ type MatchCardProps = {
   showCardOutline?: boolean;
 };
 
-const formatHandicap = (value: number | null) => (value === null ? '-' : value.toString());
+const formatHandicap = (value: number | null | undefined) => (value == null ? '-' : value.toString());
 
 export default function MatchCard({
   matchNumber,
@@ -150,7 +152,10 @@ export default function MatchCard({
                         {player.name}
                       </Typography>
                       <Typography variant="caption" className={styles.playerHandicap}>
-                        Handicap: {formatHandicap(player.handicap)}
+                        Course Handicap: {formatHandicap(player.courseHandicap)}
+                      </Typography>
+                      <Typography variant="caption" className={styles.playerHandicap}>
+                        Strokes Given: {formatHandicap(player.strokesGiven)}
                       </Typography>
                     </Box>
                   </Box>
