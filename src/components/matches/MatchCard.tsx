@@ -28,6 +28,10 @@ type MatchCardProps = {
   winnerTeamId: string | null;
   isHalved: boolean;
   showCardOutline?: boolean;
+  /** Formatted match date (e.g. from page-level `formatDate`). */
+  matchDateLabel?: string;
+  /** Course name or placeholder such as "Course TBD". */
+  courseLabel?: string;
 };
 
 const formatHandicap = (value: number | null | undefined) => (value == null ? '-' : value.toString());
@@ -41,6 +45,8 @@ export default function MatchCard({
   winnerTeamId,
   isHalved,
   showCardOutline = true,
+  matchDateLabel,
+  courseLabel,
 }: MatchCardProps) {
   const statusLabel = isHalved ? 'Halved' : winnerTeamId ? 'Final' : 'In progress';
   const outlineColor =
@@ -182,6 +188,16 @@ export default function MatchCard({
           <Typography variant="body2" className={styles.matchType}>
             {matchType}
           </Typography>
+          {matchDateLabel ? (
+            <Typography variant="body2" className={styles.matchMetaLine}>
+              {matchDateLabel}
+            </Typography>
+          ) : null}
+          {courseLabel ? (
+            <Typography variant="body2" className={styles.matchMetaLine}>
+              {courseLabel}
+            </Typography>
+          ) : null}
         </Box>
         <Box className={styles.headerMeta}>
           <Typography variant="body2" className={styles.matchStatus}>

@@ -372,6 +372,8 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
                   matchNumber={match.match_number}
                   matchType={match.match_type}
                   teeTime={formatTime(match.match_time)}
+                  matchDateLabel={formatDate(match.match_date)}
+                  courseLabel={match.course?.name ?? 'Course TBD'}
                   winnerTeamId={match.winner_team_id}
                   isHalved={match.is_halved}
                   teamA={

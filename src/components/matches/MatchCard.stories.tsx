@@ -75,3 +75,10 @@ export const Pending: Story = {
     showCardOutline: false,
   },
 };
+
+export const WithDateAndCourse: Story = {
+  args: {
+    matchDateLabel: 'Monday, April 13, 2026',
+    courseLabel: 'Bandon Dunes',
+  },
+};
