@@ -21,6 +21,14 @@
   padding-right: 16px;
 }
 
+.datesCard {
+  border: 1px solid var(--divider);
+  border-radius: 12px;
+  padding: 0 16px;
+  margin-bottom: 24px;
+  background: var(--bg);
+}
+
 .tabsBorder {
   border-bottom: 1px solid var(--divider);
 }
@@ -28,8 +36,15 @@
 .tabs :global(.MuiTab-root) {
   color: var(--text-muted);
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   text-transform: none;
+  min-width: 108px;
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+.tabs :global(.MuiTabs-flexContainer) {
+  gap: 4px;
 }
 
 .tabs :global(.MuiTab-root.Mui-selected) {
@@ -43,6 +58,7 @@
 .tabPanelBody {
   padding-top: 24px;
   padding-bottom: 24px;
+  min-height: 240px;
 }
 
 .dayTitle {
@@ -56,16 +72,23 @@
   color: var(--text);
 }
 
-.videoWrap {
-  width: 100%;
-  max-width: 500px;
-  margin: 0 auto 16px;
+.dayList {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--text);
 }
 
-.video {
-  width: 100%;
-  border-radius: 8px;
-  background: var(--brand-ink);
+.dayListItem {
+  margin-bottom: 12px;
+}
+
+.dayListItem:last-child {
+  margin-bottom: 0;
+}
+
+.notesWrap {
+  border-top: 1px solid var(--divider);
+  padding-top: 24px;
 }
 
 @media (min-width: 600px) {
@@ -78,7 +101,13 @@
     padding-right: 24px;
   }
 
+  .datesCard {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
   .tabs :global(.MuiTab-root) {
-    font-size: 1rem;
+    font-size: 0.95rem;
+    min-width: 124px;
   }
 }

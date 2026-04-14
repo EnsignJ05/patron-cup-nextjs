@@ -31,7 +31,7 @@ const navLinks = [
   { label: 'Home', href: '/' },
   { label: 'Teams', href: '/teams' },
   { label: 'Matches', href: '/matches' },
-  // { label: 'Itinerary', href: '/itinerary' },
+  { label: 'Itinerary', href: '/itinerary' },
   // { label: 'Tee Times', href: '/tee-times' },
   // { label: 'Scoreboard', href: '/scoreboard' },
   { label: 'FAQ', href: '/faq' },
