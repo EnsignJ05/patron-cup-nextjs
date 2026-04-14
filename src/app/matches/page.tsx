@@ -7,6 +7,7 @@ import Paper from '@mui/material/Paper';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import Alert from '@mui/material/Alert';
+import Button from '@mui/material/Button';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import Select from '@mui/material/Select';
@@ -16,6 +17,13 @@ import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
 import type { Match, Event, Course, Team, Player, MatchPlayer, TeamRoster } from '@/types/database';
 import { getTeamTotals } from '@/lib/matchScoring';
 import { calculateMatchHandicapMetrics } from '@/lib/matchHandicapMetrics';
+import { useAuth } from '@/context/AuthContext';
+import { isAdminRole } from '@/lib/authConfig';
+import {
+  buildEventMatchHandicapStrokesCsv,
+  type EventMatchHandicapStrokesCsvRow,
+} from '@/lib/exportEventMatchHandicapStrokesCsv';
+import { sanitizeFilenameSegment } from '@/lib/exportEventMatchesCsv';
 import OverallScoreBanner from '@/components/matches/OverallScoreBanner';
 import MatchCard from '@/components/matches/MatchCard';
 import styles from './page.module.css';
@@ -41,6 +49,7 @@ const getDefaultTeamColor = (index: number) =>
 
 export default function MatchesPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
+  const { role } = useAuth();
   const [events, setEvents] = useState<Event[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [matches, setMatches] = useState<MatchWithJoins[]>([]);
@@ -181,6 +190,12 @@ export default function MatchesPage() {
   const handicapByPlayerId = useMemo(() => {
     return new Map(teamRosters.map((roster) => [roster.player_id, roster.handicap_at_event]));
   }, [teamRosters]);
+  const teamById = useMemo(() => new Map(teams.map((team) => [team.id, team])), [teams]);
+  const currentEvent = useMemo(
+    () => events.find((event) => event.id === selectedEventId) ?? null,
+    [events, selectedEventId],
+  );
+  const canExportMatches = isAdminRole(role);
 
   const groupedMatches = useMemo(() => {
     const filtered = resolvedCourseId
@@ -223,6 +238,79 @@ export default function MatchesPage() {
     return getTeamTotals(matches, eventTeams.map((team) => team.id));
   }, [matches, eventTeams]);
 
+  const handleExportMatchHandicaps = useCallback(() => {
+    if (!canExportMatches) return;
+
+    const rows: EventMatchHandicapStrokesCsvRow[] = [];
+
+    for (const match of matches) {
+      const playersForMatch = matchPlayersByMatchId.get(match.id) || [];
+      if (!playersForMatch.length) continue;
+
+      const playersForMetrics = playersForMatch
+        .map((mp) => {
+          const player = mp.player;
+          if (!player) return null;
+          return {
+            playerId: player.id,
+            officialEventHandicap: handicapByPlayerId.get(player.id) ?? null,
+          };
+        })
+        .filter((player): player is NonNullable<typeof player> => Boolean(player));
+
+      const handicapMetricsByPlayerId = calculateMatchHandicapMetrics(playersForMetrics, {
+        slope: match.course?.slope ?? null,
+        rating: match.course?.rating ?? null,
+        par: match.course?.par ?? null,
+      });
+
+      const sortedRows = playersForMatch
+        .map((mp) => {
+          const player = mp.player;
+          if (!player) return null;
+          const officialEventHandicap = handicapByPlayerId.get(player.id) ?? null;
+          const handicapMetrics = handicapMetricsByPlayerId.get(player.id);
+          const teamName = teamById.get(mp.team_id)?.name ?? '';
+          return {
+            courseName: match.course?.name ?? 'Course TBD',
+            matchDate: match.match_date,
+            matchTime: match.match_time ?? null,
+            groupNumber: match.group_number ?? null,
+            matchNumber: match.match_number,
+            matchType: match.match_type,
+            teamName,
+            playerName: `${player.first_name} ${player.last_name}`.trim(),
+            officialEventHandicap,
+            courseHandicap: handicapMetrics?.courseHandicap ?? null,
+            strokesGiven: handicapMetrics?.strokesGiven ?? null,
+          };
+        })
+        .filter((row): row is EventMatchHandicapStrokesCsvRow => Boolean(row))
+        .sort((a, b) => {
+          const teamSort = a.teamName.localeCompare(b.teamName);
+          if (teamSort !== 0) return teamSort;
+          return a.playerName.localeCompare(b.playerName);
+        });
+
+      rows.push(...sortedRows);
+    }
+
+    const csv = buildEventMatchHandicapStrokesCsv(
+      currentEvent ? { name: currentEvent.name, year: currentEvent.year } : null,
+      rows,
+    );
+    const filename = `${sanitizeFilenameSegment(currentEvent?.name ?? 'event')}-${currentEvent?.year ?? 'matches'}-matches-handicaps.csv`;
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    URL.revokeObjectURL(url);
+  }, [canExportMatches, currentEvent, handicapByPlayerId, matchPlayersByMatchId, matches, teamById]);
+
   return (
     <Box className={styles.pageRoot}>
       <OverallScoreBanner teams={eventTeams} totals={teamTotals} />
@@ -248,6 +336,16 @@ export default function MatchesPage() {
             ))}
           </Select>
         </FormControl>
+        {canExportMatches && (
+          <Button
+            variant="outlined"
+            onClick={handleExportMatchHandicaps}
+            disabled={loading || matches.length === 0}
+            className={styles.exportButton}
+          >
+            Export Match Handicaps
+          </Button>
+        )}
       </Box>
 
       {eventTeams.length !== 2 && (
