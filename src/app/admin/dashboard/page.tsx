@@ -15,6 +15,7 @@ import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import LockResetIcon from '@mui/icons-material/LockReset';
 import AlternateEmailIcon from '@mui/icons-material/AlternateEmail';
 import SportsGolfIcon from '@mui/icons-material/SportsGolf';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import styles from './page.module.css';
 
 const adminSections = [
@@ -38,6 +39,13 @@ const adminSections = [
     href: '/admin/change-username',
     icon: AlternateEmailIcon,
     colorKey: 'slate',
+  },
+  {
+    title: 'Invite Player',
+    description: 'Invite a new player to join and complete their profile',
+    href: '/admin/invite',
+    icon: PersonAddIcon,
+    colorKey: 'mint',
   },
   {
     title: 'Events',

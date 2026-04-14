@@ -18,7 +18,6 @@ import DialogActions from '@mui/material/DialogActions';
 import IconButton from '@mui/material/IconButton';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import AddIcon from '@mui/icons-material/Add';
 import Alert from '@mui/material/Alert';
 import Chip from '@mui/material/Chip';
 import Select from '@mui/material/Select';
@@ -28,27 +27,6 @@ import InputLabel from '@mui/material/InputLabel';
 import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
 import type { Player, PlayerRole } from '@/types/database';
 import styles from './page.module.css';
-
-const emptyPlayer: Partial<Player> = {
-  first_name: '',
-  last_name: '',
-  email: '',
-  phone: '',
-  address_line1: '',
-  address_line2: '',
-  city: '',
-  state: '',
-  zip_code: '',
-  country: 'USA',
-  current_handicap: null,
-  shirt_size: '',
-  dietary_restrictions: '',
-  emergency_contact_name: '',
-  emergency_contact_phone: '',
-  bio: '',
-  role: 'player',
-  status: 'active',
-};
 
 export default function PlayersAdminPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
@@ -80,11 +58,6 @@ export default function PlayersAdminPage() {
   useEffect(() => {
     fetchPlayers();
   }, [fetchPlayers]);
-
-  const handleAdd = () => {
-    setEditingPlayer({ ...emptyPlayer });
-    setDialogOpen(true);
-  };
 
   const handleEdit = (player: Player) => {
     setEditingPlayer({ ...player });
@@ -139,30 +112,22 @@ export default function PlayersAdminPage() {
       status: editingPlayer.status || 'active',
     };
 
-    if (editingPlayer.id) {
-      // Update
-      const { error } = await supabase
-        .from('players')
-        .update(playerData)
-        .eq('id', editingPlayer.id);
-
-      if (error) {
-        setError(error.message);
-        return;
-      }
-      setSuccess('Player updated successfully');
-    } else {
-      // Insert
-      const { error } = await supabase
-        .from('players')
-        .insert([playerData]);
-
-      if (error) {
-        setError(error.message);
-        return;
-      }
-      setSuccess('Player added successfully');
+    if (!editingPlayer.id) {
+      setError('New players must be invited from the Invite Player page.');
+      return;
     }
+
+    const { error } = await supabase
+      .from('players')
+      .update(playerData)
+      .eq('id', editingPlayer.id);
+
+    if (error) {
+      setError(error.message);
+      return;
+    }
+
+    setSuccess('Player updated successfully');
 
     setDialogOpen(false);
     setEditingPlayer(null);
@@ -189,15 +154,10 @@ export default function PlayersAdminPage() {
         <Typography variant="h4" className={styles.pageTitle}>
           Players Management
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleAdd}
-          className={styles.addButton}
-        >
-          Add Player
-        </Button>
       </Box>
+      <Typography variant="body2" color="text.secondary" className={styles.pageSubtitle}>
+        To add a new player, use the Invite Player page at <strong>/admin/invite</strong>.
+      </Typography>
 
       {error && <Alert severity="error" className={styles.alert} onClose={() => setError('')}>{error}</Alert>}
       {success && <Alert severity="success" className={styles.alert} onClose={() => setSuccess('')}>{success}</Alert>}
@@ -266,9 +226,7 @@ export default function PlayersAdminPage() {
 
       {/* Edit/Add Dialog */}
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>
-          {editingPlayer?.id ? 'Edit Player' : 'Add Player'}
-        </DialogTitle>
+        <DialogTitle>Edit Player</DialogTitle>
         <DialogContent>
           <Box className={styles.dialogGrid}>
             <TextField
