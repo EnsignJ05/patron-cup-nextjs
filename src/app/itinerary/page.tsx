@@ -100,7 +100,7 @@ export default function ItineraryPage() {
               <li className={styles.dayListItem}>
                 1:45 PM - 4:30 PM: Cliffhangers (no official scoring).
               </li>
-              <li className={styles.dayListItem}>7:00 PM - 9:00 PM: Catered dinner by the cabins.</li>
+              <li className={styles.dayListItem}>7:00 PM - 9:00 PM: Catered dinner/drinks will be held at cabins 1080 and 1081 which are overlooking cliffhangers.  Bring your putter!</li>
             </Box>
           </TabPanel>
 
