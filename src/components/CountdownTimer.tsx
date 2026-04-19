@@ -33,7 +33,7 @@ export default function CountdownTimer() {
       }
 
       // April 22, 2026 at 9:00 am Central Standard Time (CST is UTC-6)
-      const teeOffDate = new Date('2026-04-22T09:00:00-06:00');
+      const teeOffDate = new Date('2026-04-23T07:15:00-06:00');
       const difference = teeOffDate.getTime() - new Date().getTime();
 
       if (difference > 0) {
