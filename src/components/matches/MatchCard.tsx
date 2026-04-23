@@ -81,7 +81,7 @@ export default function MatchCard({
       ['--team-color' as string]: team.color || undefined,
     };
     const chevronState = isHalved
-      ? styles.chevronMuted
+      ? styles.chevronHalved
       : winnerTeamId
         ? isWinner
           ? styles.chevronWinner
