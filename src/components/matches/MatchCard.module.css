@@ -164,6 +164,23 @@
   opacity: 0.85;
 }
 
+.chevronHalved {
+  --chevron-fill: repeating-linear-gradient(
+    -45deg,
+    #a7a7a7 0 16px,
+    #ffffff 16px 32px
+  );
+  --chevron-text: var(--text-muted);
+}
+
+:root[data-theme='dark'] .chevronHalved {
+  --chevron-fill: repeating-linear-gradient(
+    -45deg,
+    #a7a7a7 0 16px,
+    #000000 16px 32px
+  );
+}
+
 .playerList {
   display: flex;
   flex-direction: column;

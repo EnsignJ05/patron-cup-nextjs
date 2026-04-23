@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import MatchCard from '@/components/matches/MatchCard';
+import styles from '@/components/matches/MatchCard.module.css';
 
 const baseTeams = {
   teamA: {
@@ -49,5 +50,24 @@ describe('MatchCard', () => {
 
     expect(screen.queryByText('Monday, April 13, 2026')).not.toBeInTheDocument();
     expect(screen.queryByText('Bandon Dunes')).not.toBeInTheDocument();
+  });
+
+  it('applies striped chevrons for halved matches', () => {
+    render(
+      <MatchCard
+        matchNumber={3}
+        matchType="Four-ball"
+        teeTime="11:10 AM"
+        {...baseTeams}
+        winnerTeamId={null}
+        isHalved
+      />,
+    );
+
+    const teamAChevron = screen.getByText('Team A').closest(`.${styles.chevronContent}`);
+    const teamBChevron = screen.getByText('Team B').closest(`.${styles.chevronContent}`);
+
+    expect(teamAChevron).toHaveClass(styles.chevronHalved);
+    expect(teamBChevron).toHaveClass(styles.chevronHalved);
   });
 });
