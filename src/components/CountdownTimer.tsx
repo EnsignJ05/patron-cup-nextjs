@@ -14,6 +14,12 @@ interface TimeLeft {
   seconds: number;
 }
 
+type ScoreboardTeam = {
+  id: string;
+  name: string;
+  color: string | null;
+};
+
 // Test flag - set to true to test expired state
 const TEST_EXPIRED = false;
 
@@ -21,7 +27,7 @@ export default function CountdownTimer() {
   const [timeLeft, setTimeLeft] = useState<TimeLeft>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [isExpired, setIsExpired] = useState(TEST_EXPIRED);
   const [teamScores, setTeamScores] = useState<Record<string, number>>({});
-  const [teams, setTeams] = useState<Array<{ id: string; name: string }>>([]);
+  const [teams, setTeams] = useState<ScoreboardTeam[]>([]);
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
   useEffect(() => {
@@ -74,7 +80,7 @@ export default function CountdownTimer() {
       if (!activeEvent) return;
 
       const [teamsRes, matchesRes] = await Promise.all([
-        supabase.from('teams').select('id, name').eq('event_id', activeEvent.id).order('name'),
+        supabase.from('teams').select('id, name, color').eq('event_id', activeEvent.id).order('name'),
         supabase
           .from('matches')
           .select('winner_team_id, is_halved')
@@ -146,11 +152,14 @@ export default function CountdownTimer() {
           <Box
             className={styles.scoreboardRow}
           >
-            <Box className={styles.scoreColumn}>
-              <Typography variant="h2" className={styles.scoreValueThompson}>
+            <Box
+              className={styles.scoreColumn}
+              style={{ ['--team-color' as string]: teams[0]?.color || 'var(--accent-blue)' }}
+            >
+              <Typography variant="h2" className={styles.scoreValue}>
                 {teamScores[teams[0]?.id || ''] ?? 0}
               </Typography>
-              <Typography className={styles.scoreLabelThompson}>
+              <Typography className={styles.scoreLabel}>
                 {teams[0]?.name || 'Team A'}
               </Typography>
             </Box>
@@ -158,11 +167,14 @@ export default function CountdownTimer() {
             {/* Vertical divider */}
             <Box className={styles.scoreDivider} />
 
-            <Box className={styles.scoreColumn}>
-              <Typography variant="h2" className={styles.scoreValueBurgess}>
+            <Box
+              className={styles.scoreColumn}
+              style={{ ['--team-color' as string]: teams[1]?.color || 'var(--accent-red)' }}
+            >
+              <Typography variant="h2" className={styles.scoreValue}>
                 {teamScores[teams[1]?.id || ''] ?? 0}
               </Typography>
-              <Typography className={styles.scoreLabelBurgess}>
+              <Typography className={styles.scoreLabel}>
                 {teams[1]?.name || 'Team B'}
               </Typography>
             </Box>
