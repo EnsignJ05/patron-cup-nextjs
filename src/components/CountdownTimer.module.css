@@ -69,40 +69,24 @@
 }
 
 .scoreColumn {
+  --team-color: var(--text);
   text-align: center;
 }
 
-.scoreValueThompson {
-  color: var(--accent-blue);
+.scoreValue {
+  color: var(--team-color);
   font-weight: 700;
   font-size: 4rem;
   line-height: 1;
   margin-bottom: 8px;
 }
 
-.scoreValueBurgess {
-  color: var(--accent-red);
-  font-weight: 700;
-  font-size: 4rem;
-  line-height: 1;
-  margin-bottom: 8px;
-}
-
-.scoreLabelThompson {
-  color: var(--accent-blue);
+.scoreLabel {
+  color: var(--team-color);
   font-weight: 500;
   font-size: 0.75rem;
   text-transform: uppercase;
-  border-bottom: 2px solid var(--accent-blue);
-  letter-spacing: 0.05em;
-}
-
-.scoreLabelBurgess {
-  color: var(--accent-red);
-  font-weight: 500;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  border-bottom: 2px solid var(--accent-red);
+  border-bottom: 2px solid var(--team-color);
   letter-spacing: 0.05em;
 }
 
@@ -158,13 +142,11 @@
     gap: 64px;
   }
 
-  .scoreValueThompson,
-  .scoreValueBurgess {
+  .scoreValue {
     font-size: 5rem;
   }
 
-  .scoreLabelThompson,
-  .scoreLabelBurgess {
+  .scoreLabel {
     font-size: 1rem;
   }
 
