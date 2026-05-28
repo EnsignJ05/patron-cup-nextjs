@@ -1,3 +1,23 @@
+/* ── Shell layout ──────────────────────────────────────────────────────────── */
+.shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.mainArea {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Desktop sidebar (hidden on mobile) ────────────────────────────────────── */
+.sidebar {
+  display: none;
+}
+
+/* ── Mobile AppBar ─────────────────────────────────────────────────────────── */
 .appBar {
   box-shadow: none;
   background: var(--bg);
@@ -31,44 +51,7 @@
   object-fit: contain;
 }
 
-.desktopNav {
-  display: none;
-  align-items: center;
-  gap: 24px;
-}
-
-.navButton {
-  color: var(--text);
-  font-weight: 600;
-  font-size: 18px;
-  text-transform: none;
-  font-family: inherit;
-  background: none;
-  box-shadow: none;
-  padding-left: 12px;
-  padding-right: 12px;
-}
-
-.navButton:hover {
-  background: var(--surface-tint);
-}
-
-.navButtonDanger {
-  color: var(--accent-red);
-  font-weight: 600;
-  font-size: 18px;
-  text-transform: none;
-  font-family: inherit;
-  background: none;
-  box-shadow: none;
-  padding-left: 12px;
-  padding-right: 12px;
-}
-
-.navButtonDanger:hover {
-  background: rgba(231, 76, 60, 0.12);
-}
-
+/* Mobile — sun/moon icon on the right of AppBar */
 .mobileNav {
   display: flex;
   margin-left: auto;
@@ -78,63 +61,54 @@
   color: var(--text);
 }
 
-.menuIcon {
-  font-size: 32px;
+/* ── Mobile bottom tab bar ─────────────────────────────────────────────────── */
+.tabBar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  background: var(--pc-card);
+  border-top: 1px solid var(--pc-rule);
+  padding: 8px 4px env(safe-area-inset-bottom, 4px);
+  z-index: 100;
 }
 
-.drawerPaper {
-  background-color: var(--bg);
-  color: var(--text);
-  min-width: 220px;
-}
-
-.drawerItem {
-  font-weight: 600;
-  font-size: 18px;
-  font-family: inherit;
-  color: var(--text);
-  padding-top: 16px;
-  padding-bottom: 16px;
-}
-
-.drawerItem:hover {
-  background: var(--surface-tint);
-}
-
-.drawerItemDanger {
-  color: var(--accent-red);
-}
-
-.drawerItemDanger:hover {
-  background: rgba(231, 76, 60, 0.12);
-}
-
-.themeToggle {
+.tab {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
-  color: var(--text);
+  gap: 3px;
+  padding: 6px 0;
+  text-decoration: none;
+  color: var(--pc-ink-3);
+  transition: color 0.1s;
+}
+
+.tab:hover {
+  color: var(--pc-ink-2);
+}
+
+.tabActive {
+  color: var(--pc-ink);
+}
+
+.tabIcon {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+}
+
+.tabLabel {
+  font-family: var(--pc-font-sans);
+  font-size: 10px;
   font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
-.themeToggleLabel {
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.drawerToggleItem {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-}
-
-.drawerToggleLabel {
-  font-weight: 600;
-  font-size: 18px;
-  color: var(--text);
-}
-
+/* ── Breakpoints ───────────────────────────────────────────────────────────── */
 @media (min-width: 600px) {
   .toolbar {
     padding-left: 16px;
@@ -143,21 +117,182 @@
 }
 
 @media (min-width: 900px) {
-  .toolbar {
-    gap: 32px;
-    padding-left: 24px;
-    padding-right: 24px;
+  /* Switch to horizontal sidebar layout */
+  .shell {
+    flex-direction: row;
   }
 
-  .logoLink {
-    margin-right: 32px;
-  }
-
-  .desktopNav {
+  /* Show sidebar, hide mobile chrome */
+  .sidebar {
     display: flex;
+    flex-direction: column;
+    width: 232px;
+    flex-shrink: 0;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    overflow-y: auto;
+    background: var(--pc-card);
+    border-right: 1px solid var(--pc-rule);
+    padding: 20px 12px 24px;
+    gap: 4px;
+  }
+
+  .appBar {
+    display: none !important;
   }
 
   .mobileNav {
     display: none;
   }
+
+  .tabBar {
+    display: none;
+  }
+}
+
+/* ── Sidebar contents ──────────────────────────────────────────────────────── */
+.sidebarLogo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px 20px;
+  text-decoration: none;
+  border-bottom: 1px solid var(--pc-rule);
+  margin-bottom: 8px;
+}
+
+.sidebarLogo:hover {
+  opacity: 0.8;
+}
+
+.sidebarLogoImg {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+
+.sidebarWordmark {
+  font-family: var(--pc-font-serif);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--pc-ink);
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+}
+
+.sidebarNav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.sidebarLink {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: var(--pc-radius-sm);
+  text-decoration: none;
+  color: var(--pc-ink-2);
+  font-family: var(--pc-font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.1s, color 0.1s;
+  border-left: 3px solid transparent;
+}
+
+.sidebarLink:hover {
+  background: var(--pc-fill);
+  color: var(--pc-ink);
+}
+
+.sidebarLinkActive {
+  background: var(--pc-fill);
+  color: var(--pc-ink);
+  border-left-color: var(--pc-ink);
+}
+
+.sidebarLinkIcon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sidebarFooter {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 12px;
+  border-top: 1px solid var(--pc-rule);
+  margin-top: 8px;
+}
+
+.sidebarThemeBtn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: var(--pc-radius-sm);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--pc-ink-2);
+  font-family: var(--pc-font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  width: 100%;
+  text-align: left;
+  transition: background 0.1s, color 0.1s;
+}
+
+.sidebarThemeBtn:hover {
+  background: var(--pc-fill);
+  color: var(--pc-ink);
+}
+
+.sidebarLogoutBtn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: var(--pc-radius-sm);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--accent-red);
+  font-family: var(--pc-font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  width: 100%;
+  text-align: left;
+  transition: background 0.1s;
+}
+
+.sidebarLogoutBtn:hover {
+  background: rgba(231, 76, 60, 0.08);
+}
+
+.sidebarLoginLink {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: var(--pc-radius-sm);
+  text-decoration: none;
+  color: var(--pc-ink-2);
+  font-family: var(--pc-font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.1s, color 0.1s;
+}
+
+.sidebarLoginLink:hover {
+  background: var(--pc-fill);
+  color: var(--pc-ink);
 }
