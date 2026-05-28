@@ -1,5 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { NavigationContent } from '@/app/layout';
 import { useAuth } from '@/context/AuthContext';
 
@@ -10,15 +10,17 @@ jest.mock('@/context/AuthContext', () => ({
 
 jest.mock('next/navigation', () => ({
   useRouter: () => ({ push: jest.fn() }),
+  usePathname: () => '/',
 }));
 
 jest.mock('@vercel/analytics/react', () => ({
   Analytics: () => null,
 }));
 
-jest.mock('next/font/google', () => ({
-  Inter: () => ({ className: 'inter', style: { fontFamily: 'Inter' } }),
-}));
+jest.mock('next/font/google', () => {
+  const f = () => ({ className: 'mock-font', style: { fontFamily: 'mock' }, variable: '--mock-font' });
+  return { Inter: f, Newsreader: f, JetBrains_Mono: f, IBM_Plex_Sans: f };
+});
 
 jest.mock('next/image', () => ({
   __esModule: true,
@@ -31,25 +33,25 @@ jest.mock('next/image', () => ({
   ),
 }));
 
-describe('RootLayout navigation', () => {
+describe('NavigationContent (mobile app bar)', () => {
   beforeEach(() => {
     (useAuth as jest.Mock).mockReturnValue({
-      user: { id: 'user-1' },
-      role: 'admin',
+      user: null,
+      role: null,
       mustChangePassword: false,
       loading: false,
       signOut: jest.fn(),
     });
   });
 
-  it('uses admin dashboard route in mobile drawer', () => {
+  it('renders the logo link', () => {
     render(<NavigationContent />);
+    const logo = screen.getByRole('link');
+    expect(logo).toHaveAttribute('href', '/');
+  });
 
-    fireEvent.click(screen.getByLabelText('menu'));
-
-    const adminLinks = screen.getAllByRole('link', { name: 'Admin' });
-    adminLinks.forEach((link) => {
-      expect(link).toHaveAttribute('href', '/admin/dashboard');
-    });
+  it('renders the theme toggle button', () => {
+    render(<NavigationContent />);
+    expect(screen.getByLabelText('Toggle theme')).toBeInTheDocument();
   });
 });

@@ -13,8 +13,8 @@ const FAQ_TRIP = {
 const COURSES = [
   { day: 'Thu AM', name: 'Bone Valley',     par: 72, isNew: false, photo: '/gallery/StreamsongPhotos/BoneValley.webp'      },
   { day: 'Thu PM', name: 'The Chain',        par: 56, isNew: true,  photo: '/gallery/StreamsongPhotos/TheChain.webp'         },
-  { day: 'Fri',    name: 'Streamsong Red',   par: 72, isNew: false, photo: '/gallery/StreamsongPhotos/StreamsongRed.webp'   },
-  { day: 'Sat',    name: 'Streamsong Blue',  par: 72, isNew: false, photo: '/gallery/StreamsongPhotos/StreamsongBlue.webp'  },
+  { day: 'Fri',    name: 'Streamsong Blue',  par: 72, isNew: false, photo: '/gallery/StreamsongPhotos/StreamsongBlue.webp'  },
+  { day: 'Sat',    name: 'Streamsong Red',   par: 72, isNew: false, photo: '/gallery/StreamsongPhotos/StreamsongRed.webp'   },
 ];
 
 // ── Q&A (final state from design iteration) ───────────────────────────────
@@ -46,6 +46,10 @@ const FAQS = [
   {
     q: "What's included in the price?",
     a: 'Golf (all 4 rounds), 4 nights of lodging, gear, the Welcome Dinner, and the Awards Dinner.',
+  },
+  {
+    q: 'Will caddies be required?',
+    a: 'Yes, you will have the option of walking caddies if you want to walk, or a forecaddy if you want to ride in a cart.',
   },
 ];
 
