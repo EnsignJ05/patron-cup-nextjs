@@ -1,77 +1,445 @@
 .pageRoot {
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+  background: var(--pc-bg);
+  color: var(--pc-ink);
+  min-height: 100%;
+  padding-bottom: 24px;
 }
 
-.controlsRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
+/* ── Cup score card ──────────────────────────────────────────────────────────── */
+.cupWrap {
+  padding: 16px 16px 0;
 }
 
-.exportButton {
-  align-self: center;
-}
-
-.emptyState {
-  padding: 24px;
-}
-
-.matchesCard {
+.cupCard {
+  background: var(--pc-card);
+  border: 1px solid var(--pc-rule);
+  border-radius: var(--pc-radius);
   overflow: hidden;
 }
 
-.tabs {
-  background-color: var(--surface-muted);
-  padding: 0 12px;
-}
-
-.matchesBody {
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.groupCard {
-  padding: 20px;
-}
-
-.groupHeader {
-  display: flex;
-  justify-content: space-between;
+.cupInner {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  margin-bottom: 16px;
-  gap: 12px;
+  gap: 8px;
+  padding: 18px 18px 10px;
 }
 
-.groupTitle {
-  font-weight: 700;
-  color: var(--text);
-}
-
-.groupMatches {
+.cupTeam {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 4px;
 }
 
-@media (max-width: 720px) {
-  .pageRoot {
-    padding: 16px;
+.cupTeamRight {
+  align-items: flex-end;
+}
+
+.cupTeamRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cupTeamName {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--pc-ink);
+}
+
+.teamChip {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15) inset;
+}
+
+.cupScore {
+  font-family: var(--pc-font-mono);
+  font-size: 52px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-feature-settings: 'tnum' 1;
+  color: var(--pc-ink);
+  margin-top: 4px;
+}
+
+.cupVs {
+  font-family: var(--pc-font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--pc-ink-3);
+  padding: 0 10px;
+}
+
+.cupProgress {
+  padding: 0 18px 14px;
+}
+
+.cupTrack {
+  height: 8px;
+  border-radius: 99px;
+  overflow: hidden;
+  display: flex;
+  background: var(--pc-fill);
+  border: 1px solid var(--pc-rule);
+}
+
+/* ── Controls row ────────────────────────────────────────────────────────────── */
+.controlsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 16px 0;
+  align-items: center;
+}
+
+/* ── Round navigation ────────────────────────────────────────────────────────── */
+.roundNav {
+  padding: 16px 0 0;
+}
+
+.roundNavLabel {
+  display: block;
+  font-family: var(--pc-font-sans);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--pc-ink-3);
+  padding: 0 16px 8px;
+}
+
+.roundChips {
+  display: flex;
+  gap: 8px;
+  padding: 0 16px 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.roundChips::-webkit-scrollbar {
+  display: none;
+}
+
+.roundChip {
+  flex: 0 0 auto;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  background: var(--pc-card);
+  color: var(--pc-ink);
+  border: 1px solid var(--pc-rule);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 110px;
+  text-align: left;
+  font-family: inherit;
+  transition: border-color 0.1s;
+}
+
+.roundChip:hover {
+  border-color: var(--pc-rule-2);
+}
+
+.roundChipActive {
+  background: var(--pc-ink);
+  color: var(--pc-bg);
+  border-color: var(--pc-ink);
+}
+
+.roundChipTop {
+  font-family: var(--pc-font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  opacity: 0.7;
+  text-transform: uppercase;
+}
+
+.roundChipCourse {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+
+/* ── Round header ────────────────────────────────────────────────────────────── */
+.roundHeader {
+  padding: 14px 16px 4px;
+}
+
+.roundHeaderTitle {
+  font-family: var(--pc-font-serif);
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: var(--pc-ink);
+}
+
+.roundHeaderSub {
+  font-family: var(--pc-font-serif);
+  font-style: italic;
+  font-size: 13px;
+  color: var(--pc-ink-3);
+  margin-top: 2px;
+}
+
+/* ── Match list ──────────────────────────────────────────────────────────────── */
+.matchList {
+  padding: 12px 16px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.emptyState {
+  padding: 32px 16px;
+  text-align: center;
+  font-family: var(--pc-font-sans);
+  font-size: 14px;
+  color: var(--pc-ink-3);
+}
+
+/* ── Match card ──────────────────────────────────────────────────────────────── */
+.matchCard {
+  background: var(--pc-card);
+  border: 1px solid var(--pc-rule);
+  border-radius: var(--pc-radius);
+  overflow: hidden;
+}
+
+.matchCardHeader {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--pc-rule);
+  background: var(--pc-card-2);
+}
+
+.matchTime {
+  font-family: var(--pc-font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--pc-ink);
+}
+
+.matchLabel {
+  font-family: var(--pc-font-sans);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--pc-ink-2);
+}
+
+.statusFinal {
+  font-family: var(--pc-font-sans);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--pc-ink-3);
+}
+
+.statusUpcoming {
+  font-family: var(--pc-font-sans);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--pc-ink-3);
+  opacity: 0.6;
+}
+
+/* ── Chevron pair ────────────────────────────────────────────────────────────── */
+.chevPair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: stretch;
+}
+
+.chev {
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  position: relative;
+  min-height: 72px;
+  color: var(--pc-ink);
+  background: var(--pc-card);
+  border: 1.5px solid var(--pc-rule-2);
+  z-index: 1;
+}
+
+.chevL {
+  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 50%, calc(100% - 16px) 100%, 0 100%);
+  margin-right: -14px;
+}
+
+.chevR {
+  clip-path: polygon(16px 0, 100% 0, 100% 100%, 16px 100%, 0 50%);
+  margin-left: -14px;
+}
+
+/* Win — filled with team color via inline style */
+.chevState_win {
+  z-index: 3;
+}
+
+/* Lose — muted, recessed */
+.chevState_lose {
+  background: var(--pc-fill);
+  color: var(--pc-ink-3);
+  border-color: var(--pc-rule);
+  z-index: 1;
+}
+
+/* Halved — diagonal stripes */
+.chevState_halved {
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(0, 0, 0, 0.12) 0 12px,
+    transparent 12px 24px
+  );
+  color: var(--pc-ink-2);
+  border-color: var(--pc-rule);
+  z-index: 2;
+}
+
+:root[data-theme='dark'] .chevState_halved {
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(255, 255, 255, 0.1) 0 12px,
+    transparent 12px 24px
+  );
+}
+
+/* Pending — outlined with team color via inline style */
+.chevState_pending {
+  background: transparent;
+  z-index: 1;
+}
+
+/* ── Team side ───────────────────────────────────────────────────────────────── */
+.teamSide {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.teamSideRight {
+  align-items: flex-end;
+}
+
+.playerRow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.playerRowRight {
+  flex-direction: row-reverse;
+}
+
+.playerName {
+  font-size: 12px;
+  font-weight: 600;
+  color: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 130px;
+}
+
+.playerNameWin {
+  font-weight: 700;
+}
+
+/* ── Avatar ──────────────────────────────────────────────────────────────────── */
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--pc-fill);
+  color: var(--pc-ink-2);
+  font-family: var(--pc-font-sans);
+  font-weight: 700;
+  border: 1px solid var(--pc-rule-2);
+}
+
+/* ── Desktop (≥900px) ────────────────────────────────────────────────────────── */
+@media (min-width: 900px) {
+  .cupWrap {
+    padding: 24px 24px 0;
   }
 
-  .matchesBody {
-    padding: 16px;
+  .cupCard {
+    border-radius: var(--pc-radius-lg);
   }
 
-  .exportButton {
-    width: 100%;
+  .cupScore {
+    font-size: 64px;
   }
 
-  .groupCard {
-    padding: 16px;
+  .controlsRow {
+    padding: 16px 24px 0;
+  }
+
+  .roundNav {
+    padding: 20px 0 0;
+  }
+
+  .roundNavLabel {
+    padding: 0 24px 8px;
+  }
+
+  .roundChips {
+    padding: 0 24px 4px;
+    gap: 10px;
+  }
+
+  .roundChip {
+    min-width: 130px;
+  }
+
+  .roundHeader {
+    padding: 16px 24px 4px;
+  }
+
+  .roundHeaderTitle {
+    font-size: 28px;
+  }
+
+  .matchList {
+    padding: 14px 24px 12px;
+    gap: 12px;
+  }
+
+  .playerName {
+    max-width: 160px;
+  }
+
+  .chev {
+    padding: 16px 22px;
+    min-height: 80px;
+  }
+
+  .emptyState {
+    padding: 48px 24px;
   }
 }
