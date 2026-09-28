@@ -1962,11 +1962,18 @@ data reconciliation is needed before dropping — every row is `true` today by c
 there is nothing to backfill (H0 query 8 becomes optional for this column specifically, though
 still worth running to be certain no row was ever hand-edited to `false`).
 
-#### 20.5.2 [VERIFY] Nine admin delete buttons have no DELETE policy
+#### 20.5.2 [FIX, confirmed] Nine admin delete buttons have no DELETE policy — they silently no-op
 
-Twelve tables receive `.delete()` from admin pages. Per the pasted policy list, only three of
-those twelve have a DELETE policy (`team_rosters`, `match_players`, `lodging_assignments`).
-The other nine:
+**Confirmed 2026-09-28** via a real `pg_dump` of production (task 3.2): all 26 tables have
+`ENABLE ROW LEVEL SECURITY`, and there are exactly 6 `FOR DELETE` policies in the entire
+schema (`team_rosters`, `match_players`, `lodging_assignments`, `team_captains`,
+`reround_signups`, plus `match_results_pending`'s explicit `USING (false)` block). This
+resolves the "which of two possibilities" framing below in favor of the first one, with
+certainty: RLS is on and no policy exists, so every one of the nine deletes below matches
+zero rows and returns success. **These buttons have always done nothing.**
+
+Twelve tables receive `.delete()` from admin pages. Only three of those twelve have a DELETE
+policy (`team_rosters`, `match_players`, `lodging_assignments`). The other nine:
 
 | Table | Delete call site | DELETE policy in paste? |
 |---|---|---|
@@ -1980,18 +1987,11 @@ The other nine:
 | `rerounds` | `src/app/admin/rerounds/page.tsx:172` | none |
 | `event_participants` | `src/app/admin/participants/page.tsx:173` | none |
 
-These all run through the **browser** client (anon key + the user's JWT), so RLS applies.
-There are exactly two possibilities, and they have opposite fixes:
-
-- **RLS is enabled on these tables** → all nine deletes silently fail (PostgREST returns
-  success with zero rows affected for a filtered delete that matches nothing visible).
-  Someone has been clicking delete buttons that do nothing. Fix: add
-  `DELETE … USING is_committee_or_admin()` policies.
-- **RLS is disabled on these tables** → the deletes work, but the tables are also fully
-  readable and writable by anyone with the public anon key. That is a far more serious
-  finding than the Part II exposure, and the fix is to enable RLS *and* add the policies.
-
-Task H0 must determine which, per table, before anything else. Either way the schema is wrong.
+These all run through the **browser** client (anon key + the user's JWT), so RLS applies, and
+RLS is confirmed enabled with no matching policy. Fix: add
+`CREATE POLICY … FOR DELETE TO authenticated USING (public.is_committee_or_admin())` for each
+of the nine tables, matching the pattern already used by the six tables that have one. Task
+H0's "which of two branches" framing is no longer needed — go straight to task H2.
 
 #### 20.5.3 [FIX] `anon` can UPDATE two legacy tables
 
@@ -2459,25 +2459,35 @@ Small, mechanical, so Part I reads correctly on its own:
 
 ## 24. Part IV values to record (from task H0)
 
-On 2026-09-28 the user supplied a hand-copied `CREATE TABLE ...` export from the Supabase
-dashboard (full table/column/FK/CHECK definitions, no RLS/functions/indexes/enums). It
-resolved several items below without needing H0's SQL access — marked **(export)**. It is not
-authoritative for anything it doesn't contain (RLS policy state, function bodies, actual
-indexes) — those rows still need H0 run against the live database.
+Two sources filled this in ahead of schedule, during Part I execution rather than a
+dedicated Part IV pass:
+
+1. On 2026-09-28 the user supplied a hand-copied `CREATE TABLE ...` export from the Supabase
+   dashboard (table/column/FK/CHECK definitions only) — marked **(export)** below.
+2. Also on 2026-09-28, Part I task 3.2 ran a real `pg_dump --schema-only --no-owner --schema=public`
+   against production to build the baseline migration
+   (`supabase/migrations/00000000000000_baseline_schema.sql`). That dump is authoritative for
+   everything it contains — tables, RLS enable state, all 77 policies, all 12 functions
+   (bodies included), all indexes, all triggers, both enums — marked **(pg_dump)** below. It
+   does not cover the `auth`/`storage` schemas; the one `auth.users` trigger needed was found
+   via a direct `pg_trigger` query and is noted separately.
 
 | Item | Value |
 |---|---|
-| Tables with RLS **disabled** (H0 q1) | _TBD_ — not visible in the export |
-| Does `tee_times` exist? (H0 q2) | Very likely no **(export)** — absent from the export, and `round_scores` shows FKs for `player_id`/`event_id`/`course_id` but pointedly none for `tee_time_id`. Treat as strong evidence pending H0 confirmation, since migration `20260201` still creates policies on it |
-| Full FK list, including delete rules | Captured **(export)** — see every `CREATE TABLE` in section 20 for the authoritative FK set; H0 q3 now only needs to check which of these lack a leading index |
-| `players.is_active` default | `DEFAULT true` **(export)** — corrected finding 20.5.1; the bug is stale-player-stays-pickable, not new-player-invisible |
-| `players.country` default | `DEFAULT 'USA'` **(export)** — downgraded 20.6.2 to a minor tightening, not a live gap |
-| `match_results_pending.status` CHECK values | `pending, confirmed, rejected, superseded, cancelled` **(export)** — corrected finding 20.6.4; the `match_pending_status` enum is missing `cancelled`, not the reverse |
-| Composite uniqueness on join tables | Confirmed absent **(export)** — every join table in the export has only a single-column PK, no composite unique constraint. Confirms 20.7.1 as written |
-| `updated_at` triggers present? (H0 q6) | _TBD_ — not visible in the export |
-| `is_admin()` / `is_committee_or_admin()` definitions captured (H0 q7) | _TBD_ — functions aren't in the export; still needs a real query or `pg_dump` |
-| `status` × `is_active` row distribution (H0 q8) | Lower priority now — every row defaults `is_active = true` at insert and nothing ever sets it `false`, so this is expected to be uniformly `true` regardless of `status`. Still worth one query to rule out a hand-edit |
+| Tables with RLS **disabled** (H0 q1) | **None — all 26 tables have RLS enabled** (pg_dump) |
+| Does `tee_times` exist? (H0 q2) | **Confirmed no** (pg_dump) — absent from the 26-table dump. Migration `20260201`'s policies on it were skipped when the baseline was applied to test (nothing to attach them to); no error resulted since that migration file itself was never replayed, only its net effect via the dump |
+| Full FK list, including delete rules | Captured (export, cross-verified by pg_dump) |
+| `players.is_active` default | `DEFAULT true` (export, pg_dump) — corrected finding 20.5.1; the bug is stale-player-stays-pickable, not new-player-invisible |
+| `players.country` default | `DEFAULT 'USA'` (export, pg_dump) — downgraded 20.6.2 to a minor tightening, not a live gap |
+| `match_results_pending.status` CHECK values | `pending, confirmed, rejected, superseded, cancelled` (export, pg_dump) — corrected finding 20.6.4; the `match_pending_status` **enum** has only 4 values and is missing `cancelled`, confirmed by pg_dump's `CREATE TYPE` |
+| Composite uniqueness on join tables | Confirmed absent (export, pg_dump) — confirms 20.7.1 as written |
+| `updated_at` triggers present? (H0 q6) | **Yes, on 10 tables** (pg_dump) — `courses, event_participants, events, lodging, matches, players, rerounds, round_scores, teams, travel_info`, all via one shared `public.update_updated_at()` function. Corrects 20.7.5's assumption of "probably none." `match_results_pending` has `updated_at` but no generic trigger — plausible, since all its writes are gated through `SECURITY DEFINER` RPCs (`propose_match_result` etc.) that very likely set it explicitly; not re-verified line-by-line, low priority to chase |
+| `is_admin()` / `is_committee_or_admin()` definitions captured (H0 q7) | **Captured in full** (pg_dump). Both are `LANGUAGE sql SECURITY DEFINER`, matching `current_player_id()`'s security model, but **neither has `STABLE` nor `SET search_path`** — `current_player_id()` (the one tracked migration's function) has both. New finding, folded into task H1: add both when recreating them, same as planned, now with real bodies instead of a guess. Search-path-hijack risk is low regardless, since every reference inside both bodies is already schema-qualified (`public.players`, `auth.uid()`) |
+| `status` × `is_active` row distribution (H0 q8) | Lower priority — every row defaults `is_active = true` at insert and nothing ever sets it `false` |
 | Row counts for drop candidates (H0 q9) | _TBD_ |
+| Extra functions found beyond what any prior source mentioned | `finalize_match_result_from_pending`, `get_current_player_id`, `get_current_role`, `handle_new_user`, `propose_match_result`, `reject_match_result_pending`, `set_official_match_result`, `withdraw_match_result_pending`, `update_updated_at` — all captured verbatim in the baseline migration. `handle_new_user` is wired to `auth.users` via trigger `on_auth_user_created` (not in the `--schema=public` dump; created manually, confirmed matching on both projects) |
+| Indexes (H0 q3/q4) | 17 non-PK indexes exist on production already (not "assume none" as originally written) — covers `players` (auth_user_id, email, name, role), `events` (is_active, year), `matches` (date, event_id), `round_scores` (event_id, player_id), `team_rosters` (player_id, team_id), `travel_info` (event_id), `ceremony_award_nominations` (event_id), `match_results_pending` (match_id, status, + the partial unique index). Section 20.8.1's list still stands for what's *missing* — most FK columns on `teams, courses, team_captains, match_players, course_holes, hole_scores, lodging*, event_participants, rerounds, reround_signups, match_results_pending`'s other player-FKs, and `ceremony_award_nominations`'s player-FKs remain unindexed |
+| Baseline migration applied to test | **Done 2026-09-28** — `supabase/migrations/00000000000000_baseline_schema.sql` applied via direct `pg_dump`/`psql` (Docker/`supabase db dump` was unavailable; native `pg_dump` from `libpq` used instead, see task 2.1's updated instructions). Verified identical to production: 26 tables (exact name match), 12 functions, 77 policies, 10 triggers, 57 indexes, 2 enums, plus the `auth.users` trigger. One quirk recorded in the migration file itself: 8 trailing `ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin` statements fail as the `postgres` user (platform-locked role, already correct by default on every fresh project) — commented out in place with an explanation; the 8 equivalent `FOR ROLE postgres` statements did apply |
 | 21.1 Retire the 2025 Bandon archive? | _TBD_ |
 | 21.2 `status` chosen over `is_active`? | _TBD_ |
 | 21.3 Tables approved for dropping | _TBD_ |
