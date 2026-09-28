@@ -42,7 +42,10 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-/supabase
+# supabase local CLI state (keep migrations tracked)
+/supabase/.branches
+/supabase/.temp
+/supabase/config.toml
 
 /.vscode/
 
