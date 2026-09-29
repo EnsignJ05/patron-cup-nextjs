@@ -302,27 +302,37 @@ where table_schema = 'public' order by table_name;
 ```
 returns the same list as the identical query run against production.
 
-### Task 3.4 (Human) Recreate the `avatars` storage bucket
-Test project → Storage → New bucket:
-- Name exactly `avatars` (the name is hardcoded in
-  `src/app/api/player/profile-image/route.ts`).
-- **Public** bucket (the route calls `getPublicUrl()` and stores the result in
-  `players.profile_image_url`).
+### Task 3.4 (done 2026-09-28) Recreate the `avatars` storage bucket
 
-Then copy the bucket's RLS policies from production. Compare prod vs test with, in each
-project's SQL editor:
+**Done via direct SQL instead of the dashboard**, once direct Postgres access was available
+(same `~/.pgpass` connection used for task 3.2): `storage.buckets` is a normal table and
+`storage.objects` RLS policies are normal `pg_policies` rows, so both can be read from
+production and replayed on test exactly, with no manual dashboard clicking or risk of
+fat-fingering a policy condition.
+
+Queried production directly:
 ```sql
-select name, definition, action from storage.policies where bucket_id = 'avatars';
--- (older projects: inspect pg_policies on storage.objects instead)
-select policyname, cmd, qual, with_check from pg_policies
+select id, name, public, avif_autodetection, file_size_limit, allowed_mime_types from storage.buckets;
+select policyname, cmd, roles, qual, with_check from pg_policies
 where schemaname = 'storage' and tablename = 'objects';
 ```
-The functional requirement: an authenticated user may insert/update objects whose first
-path segment equals their `auth.uid()`, and anyone may read.
+Found: bucket `avatars`, public, `file_size_limit = 512000` (matches the app's own 500KB
+check in `src/app/api/player/profile-image/route.ts`), no MIME restriction at the bucket
+level. Four policies scoped to `bucket_id = 'avatars'`: public `SELECT`, and
+`authenticated`-only `INSERT`/`UPDATE`/`DELETE` each requiring
+`auth.uid()::text = (storage.foldername(name))[1]` — i.e. a user may only touch objects
+under their own `auth_user_id` folder prefix, matching the upload path the route already
+constructs (`${user.id}/${fileName}`).
 
-**Acceptance:** after task 6, uploading an avatar as a test user succeeds and the
-returned public URL renders. (Note `next.config.ts` already allows remote images from
-`**.supabase.co`, so the test project's URLs need no config change.)
+Replayed verbatim against test, then verified identical via the same two queries against
+both projects. Captured as a migration for the same reason task 2.2 exists — this bucket
+was originally created by hand on production and had never been versioned:
+`supabase/migrations/20260928000000_avatars_storage_bucket.sql`.
+
+**Acceptance (met):** bucket config and all 4 policies byte-identical between prod and test
+per direct comparison. Functional upload test (an actual authenticated request) still
+pending task 6.3's seeded test accounts. (Note `next.config.ts` already allows remote images
+from `**.supabase.co`, so the test project's URLs need no config change.)
 
 ### Task 3.5 (Human) Confirm the test project's API keys
 Project Settings → API. Supabase now surfaces new-format keys (`sb_publishable_…` /
