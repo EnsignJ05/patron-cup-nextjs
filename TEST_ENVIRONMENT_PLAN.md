@@ -996,9 +996,16 @@ service-role client. Narrowing them is out of scope and risks breaking admin flo
 
 **Acceptance:** `grep -rn "players(\*)\|from('players')[^)]*select('\*')" src/app/roster src/app/players src/app/teams src/app/matches` returns nothing; `npx tsc --noEmit` clean; `npm test` green.
 
-### Task S3 (Agent) Put `/players/**` behind auth
+### Task S3 (done 2026-10-01) Put `/players/**` behind auth
 F3 renders phone, GHIN number, and room assignment to anonymous visitors in HTML. Fixing the
 query alone is not enough; the route should not be anonymous at all.
+
+**`getAuthRedirectDecision` needed no code change** — confirmed by tracing it and by the new
+tests in 13.1d: a `/players/...` pathname doesn't match `isAdminPath` or `isDashboardPath`, so
+it already falls through to `null` (allow) for any authenticated role, and to a `login`
+decision when unauthenticated. The only actual change was the one-line matcher edit below.
+Also wrote the full Tier A suite (13.1a–e) at the same time, since S2 had shipped without its
+guard tests — see that section for what was added and the revert-to-prove-it-works check.
 
 Edit `src/middleware.ts:78`:
 ```ts
@@ -1192,13 +1199,24 @@ must never run against production.
 Per `AGENTS.md`, write these **before** the S2/S4 changes where practical; a test that fails
 first and passes after is the only kind that proves anything.
 
-### 13.1 Tier A — Jest, no database
+### 13.1 Tier A — Jest, no database (done 2026-10-01)
 
 Existing conventions to follow: tests live in `__tests__/` beside their subject, jsdom
 environment, `@/` maps to `src/` (`jest.config.ts:10-12`). Note `collectCoverage` is on with
 an 80% global threshold (`jest.config.ts:30-37`) and `collectCoverageFrom` includes
 `src/lib/**` — so `src/lib/playerColumns.ts` will count toward coverage; test 13.1a covers it
 fully, so this is fine.
+
+**All of 13.1a–e implemented as written**, with one deliberate deviation: 13.1c's code sample
+uses `fs.globSync`, which is new enough (Node 22+) that this project's actual Node pin was
+worth double-checking first — `package.json` engines excludes Node 23 specifically
+(`>=18.14.0 <23 || >=24.0.0`) and Vercel deployments run 22.x. Rather than trust `globSync`'s
+behavior on exactly that version, used a small dependency-free recursive directory walk
+instead (the plan's own fallback suggestion), same effect. **Proved the guard tests actually
+guard**, per this section's own acceptance criterion: temporarily reverted
+`roster/page.tsx`'s S2 change back to `select('*')`, confirmed both the targeted test
+(13.1b) and the repo-wide static guard (13.1c) failed with clear messages, then restored the
+file and confirmed `git diff` showed zero drift from the committed version.
 
 **13.1a — the column list contains no PII.** `src/lib/__tests__/playerColumns.test.ts`.
 This is the guard that fails if someone "fixes" a missing field by widening the public list.
