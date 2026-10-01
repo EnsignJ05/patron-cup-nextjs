@@ -4,11 +4,12 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Link from 'next/link';
 import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
-import type { Team, Player, TeamRoster } from '@/types/database';
+import type { Team, TeamRoster } from '@/types/database';
+import { PUBLIC_PLAYER_EMBED, type PublicPlayer } from '@/lib/playerColumns';
 import styles from './page.module.css';
 
 interface TeamWithPlayers extends Team {
-  players: (TeamRoster & { player: Player })[];
+  players: (TeamRoster & { player: PublicPlayer })[];
 }
 
 export default function TeamsPage() {
@@ -54,7 +55,7 @@ export default function TeamsPage() {
         (teamsData || []).map(async (team) => {
           const { data: rosterData } = await supabase
             .from('team_rosters')
-            .select('*, player:players(*)')
+            .select(`*, player:players(${PUBLIC_PLAYER_EMBED})`)
             .eq('team_id', team.id)
             .order('player(last_name)');
 

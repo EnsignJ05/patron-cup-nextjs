@@ -12,11 +12,11 @@ import Paper from '@mui/material/Paper';
 import TextField from '@mui/material/TextField';
 import Chip from '@mui/material/Chip';
 import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
-import type { Player } from '@/types/database';
+import { PUBLIC_PLAYER_SELECT, type PublicPlayer } from '@/lib/playerColumns';
 import styles from './page.module.css';
 
 export default function RosterPage() {
-  const [players, setPlayers] = useState<Player[]>([]);
+  const [players, setPlayers] = useState<PublicPlayer[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -26,7 +26,7 @@ export default function RosterPage() {
     setLoading(true);
     const { data, error } = await supabase
       .from('players')
-      .select('*')
+      .select<string, PublicPlayer>(PUBLIC_PLAYER_SELECT)
       .eq('status', 'active')
       .order('last_name', { ascending: true });
 
