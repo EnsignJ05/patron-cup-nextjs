@@ -2106,29 +2106,40 @@ and interacts with 16.1 and 16.4 in ways worth being explicit about. Read 16.6 b
 starting any R-series task — it's new, added to capture what these answers actually require
 that the original plan didn't account for.
 
-### 16.1 MUI: target or waypoint? — **Tiered removal as first written; revised by the admin audit, see 15.11**
-User: agnostic on MUI itself, wants "the best path forward" and consistency, open to removing
-it if that's right. Given 16.2 now puts `/admin` in scope too (including `@mui/x-data-grid`
-and `@mui/x-date-pickers`, genuinely complex widgets — sorting, filtering, pagination,
-accessible date picking), a full from-scratch rebuild of those two specifically is real
-engineering risk for committee-only screens, for a cost disproportionate to the benefit.
+### 16.1 MUI: target or waypoint? — **Finally decided 2026-10-01: MUI stays, used pragmatically**
+Went through two intermediate positions before landing here — tiered removal (first pass,
+assuming `@mui/x-data-grid`/`@mui/x-date-pickers` were in heavy complex use), then reopened
+once the admin audit (15.11) found that assumption false (one consumer each, both tied to
+code already being deleted). **Final answer from the user, superseding both:** "keep MUI in
+the project. It is just another tool available to us if needed. Use it where their pre-made
+components make sense."
 
-**Superseded by 15.11's findings, once the admin audit actually ran:** `@mui/x-data-grid` has
-exactly one consumer in the whole codebase (`src/app/tee-times/page.tsx`, part of the Bandon
-archive already being deleted) and `@mui/x-date-pickers` has exactly one (`admin/rerounds`'s
-single `DatePicker`). The "genuinely complex, actively used" justification for this tiered
-carve-out doesn't hold once the archive is gone. **Open question for the user, not yet
-re-decided:** keep the tiered plan below, or go with 15.11's revised recommendation (full MUI
-removal, no `ThemeProvider` needed)? Record the answer in section 19 once given.
-
-**Decision: remove MUI everywhere it has a reasonable hand-built equivalent** (buttons,
-dialogs, text fields, simple tables, chips, menus) **— keep only `@mui/x-data-grid` and
-`@mui/x-date-pickers`, re-themed to the `--pc-*` token palette** via a `ThemeProvider` rather
-than left in MUI's default look. **No `ThemeProvider` exists in the codebase today**
-(confirmed by grep) — setting one up, mapping `--pc-*` tokens to a MUI theme object, is new
-setup work this decision requires, not something to discover mid-task. If full MUI removal
-(including those two) is preferred instead, say so before R-series work starts on any page
-that uses them — it changes the admin task list materially.
+**What this actually means, so it doesn't get re-litigated per-page:**
+- **No mandate to remove MUI from anywhere it currently works.** A page already using
+  `TextField`/`Select`/`Dialog`/etc. does not need those ripped out during its redesign pass
+  just for the sake of it.
+- **No mandate to add a `ThemeProvider` either.** That was specifically to re-theme
+  `DataGrid`/date-pickers under the tiered plan; since there's no tiered carve-out anymore,
+  there's no forcing function requiring one. Fine to add one later if/when enough MUI
+  components in active use would benefit from centralized theming — not a prerequisite for
+  starting any R-series task.
+- **Visual consistency comes from the tokens, not from which library renders the pixels.**
+  Whether a given piece of UI ends up as a custom component styled with `--pc-*` CSS modules,
+  or an MUI component with `--pc-*` values passed through its `sx` prop (the same technique
+  already used for legacy vars, e.g. `sx={{ color: 'var(--text)' }}` in several admin pages
+  today) — either is correct. Choose per-component based on what's pragmatic, same spirit as
+  the existing home/FAQ (no MUI) vs. matches (MUI for inputs) split that prompted this
+  decision in the first place.
+- **15.11's factual findings still stand and still matter for cleanup, independent of this
+  decision:** `@mui/x-data-grid` has exactly one consumer in the entire codebase
+  (`src/app/tee-times/page.tsx`, part of the Bandon archive being deleted per Task R0) — once
+  that ships, remove the now-dead `@mui/x-data-grid` dependency from `package.json` entirely;
+  this is just dead-dependency hygiene (consistent with 16.4/16.5's "clean and pragmatic
+  code" standing instruction), not a MUI-policy question. `@mui/x-date-pickers` has one
+  consumer (`admin/rerounds`'s `DatePicker`) — keep it there if that's still the pragmatic
+  choice when that page gets redesigned, or replace it with something simpler if that turns
+  out nicer; either is fine under this decision, it's a normal per-component call now, not a
+  policy one.
 
 ### 16.2 Is `/admin` in scope? — **Yes, everything is in scope**
 User: "Everything is now in scope for redesign, but if we need a design for something let's
@@ -2241,18 +2252,25 @@ new estimate given, since the exact file list above is authoritative. Consider t
 (original dead-code set, then the Bandon archive) rather than one, since they have different
 "why" explanations even though both land in the same task.
 
-### Task R1 (Agent) Write down the conventions before copying them
+### Task R1 (Agent) Write down the conventions before copying them — updated 2026-10-01
 Extract the pattern already established in `page.module.css`, `faq/page.module.css` and
 `matches/page.module.css` into a short "Design system" section in `AGENTS.md` (10–20 lines,
-matching that file's existing terse tone). It must state:
-- The `--pc-*` token list and what each is for; that legacy vars are admin-only (per 16.4).
+matching that file's existing terse tone). It must state, per the finalized decisions in
+section 16 (all superseding what was originally drafted here):
+- The `--pc-*` token list and what each is for. **Not** "legacy vars are admin-only" — 16.4's
+  final answer is a full sunset once every page (including admin) migrates; say that instead.
 - The font trio and which element types use which.
-- The ratified MUI boundary from 16.1.
-- That hardcoded hex values are not acceptable in public-page CSS modules (15.9).
+- **MUI policy per 16.1's final decision:** no removal mandate and no boundary to enforce —
+  MUI is available wherever its components are the pragmatic choice, custom `--pc-*`-styled
+  components elsewhere. Consistency comes from using the tokens (via CSS module or via an
+  MUI component's `sx` prop) regardless of which renders a given piece of UI.
+- That hardcoded hex values are not acceptable in **any** page's CSS/`sx` styling, including
+  admin now that it's in scope (15.9's rule, no longer scoped to "public-page" only).
 
-This exists so that nine subsequent page migrations do not each re-derive the conventions
-and drift. **Acceptance:** a reviewer who has never seen the handoff can migrate a page
-using only `AGENTS.md` plus one existing redesigned page as reference.
+This exists so that many subsequent page migrations (now including all 17 real admin pages,
+not just the original 9) do not each re-derive the conventions and drift. **Acceptance:** a
+reviewer who has never seen the handoff can migrate a page using only `AGENTS.md` plus one
+existing redesigned page as reference.
 
 ### Task R2 (Agent) `/roster` — first tab-bar seam
 `src/app/roster/page.tsx` (117 lines) is mostly a MUI `Table` with a `TextField` search and
@@ -2325,17 +2343,22 @@ Form-heavy page plus the smallest page (29 lines, uses `GalleryImage`). Migrate
 `gallery/GalleryImage.tsx` with the latter. `/gallery` also consumes the legacy
 `--gallery-bg` variable — replace with a `--pc-*` equivalent or retire the variable.
 
-### Task R11 (Agent) Legacy variable sunset
-Per 16.4 this is a scoped cleanup, not a big-bang. For each of the ~48 legacy variables,
-count references outside `src/app/admin/`:
+### Task R11 (Agent) Legacy variable sunset — updated 2026-10-01: full sunset, not scoped
+16.4's final answer is a full sunset now that `/admin` is also migrating to `--pc-*` tokens —
+nothing permanently depends on the legacy set anymore, so there's no "admin-only" carve-out
+to preserve. This task runs **last**, after every page (public and admin) has migrated,
+since it's only safe once nothing references a given legacy variable anywhere:
 ```bash
 for v in text text-muted surface border divider gallery-bg progress-track; do
-  echo "--$v: $(grep -rn "var(--$v)" src --include="*.css" --include="*.tsx" | grep -vc "/admin/")"
+  echo "--$v: $(grep -rn "var(--$v)" src --include="*.css" --include="*.tsx" | wc -l)"
 done
 ```
-Delete any that reach zero outside admin; add the "admin-only" comment block to `globals.css`
-for the rest. **Acceptance:** no public-page CSS module references a legacy variable, and
-`globals.css` states clearly which set is which.
+Delete any variable that reaches zero references anywhere (not "outside admin" — everywhere).
+Expect this to fully empty out the legacy set by the time Task R12 runs, assuming every page
+has actually migrated by then; if a handful of variables still have a real admin-page
+reference at this point, that's a sign R2–R10 didn't finish migrating something, not a reason
+to keep a legacy variable around on purpose. **Acceptance:** zero legacy variables remain
+with any reference anywhere in `src/`; `globals.css` contains only `--pc-*` tokens.
 
 ### Task R12 (Agent) Final verification
 Walk every public route in both themes at 375px and at desktop width:
@@ -2387,7 +2410,7 @@ All decided by the user 2026-10-01 — see section 16 for full reasoning on each
 | `src/app/scoreboard/` — deleted, or reserved for live scoring? | Still reserved for [[project-live-scoring]] — the Bandon decision doesn't touch this, it's a different empty directory for a different future feature |
 | Admin audit (16.6, half of it) | **Done 2026-10-01 — see section 15.11.** Found 17 real pages (not 19 — 2 are redirect stubs), 10 of which have no CSS module at all (pure inline `sx`), zero `--pc-*` usage anywhere, and critically: `@mui/x-data-grid` has one consumer total (the Bandon archive being deleted) and `@mui/x-date-pickers` has one (`admin/rerounds`). This reopens 16.1 — see that entry |
 | Admin design request (16.6, other half) | _TBD_ — not started; new design direction for admin (likely the `design` skill) still needed before any admin R-series task can be written, independent of the MUI question |
-| 16.1 re-decision: tiered MUI removal, or full removal per 15.11? | _TBD_ — open question for the user, raised by the admin audit |
+| 16.1 final decision | **MUI stays, used pragmatically** — no removal mandate, no `ThemeProvider` requirement; consistency comes from `--pc-*` tokens regardless of which library renders a given component. `@mui/x-data-grid` still gets removed from `package.json` once Task R0 deletes its one consumer — dead-dependency cleanup, not a MUI-policy matter |
 
 ---
 
