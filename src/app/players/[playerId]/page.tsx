@@ -32,9 +32,13 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
   const { playerId } = await params;
   
   // Get the player info
+  // Explicit columns, not '*': this route is gated behind auth (see S3 in
+  // TEST_ENVIRONMENT_PLAN.md Part II), so it may read private fields the public-safe
+  // list (src/lib/playerColumns.ts) excludes -- but every column read here must still be
+  // deliberate, not a blanket '*'.
   const { data: player, error } = await supabase
     .from('players')
-    .select('*')
+    .select('id, first_name, last_name, phone, current_handicap, ghin_number, ghin_club, profile_image_url')
     .eq('id', playerId)
     .single();
 

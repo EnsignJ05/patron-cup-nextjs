@@ -33,6 +33,23 @@
 - Components live close to their usage; prefer colocated CSS modules.
 - Shared utilities and types should live in clearly named shared locations (e.g. `src/lib`, `src/components/common`), not copied into multiple routes.
 
+## Route access posture
+
+Enforced by `src/middleware.ts`'s matcher + `src/lib/authConfig.ts`'s `getAuthRedirectDecision`.
+When adding a route that touches `players` data, decide explicitly which side of this line it
+falls on — don't assume public.
+
+- **Public (no login required):** `/`, `/faq`, `/roster`, `/matches`, `/scoreboard`,
+  `/itinerary`, `/teams`, `/tee-times`. These may only ever request the anon-safe player
+  columns in `src/lib/playerColumns.ts` (`PUBLIC_PLAYER_SELECT`/`PUBLIC_PLAYER_EMBED`) —
+  never `select('*')` or `player:players(*)` on `public.players`. Guarded by
+  `src/__tests__/publicQuerySafety.test.ts`.
+- **Members only (any authenticated role):** `/players/**`, `/dashboard/**`, `/change-password`.
+- **Committee/admin only:** `/admin/**`.
+
+`/players` and `/roster` intentionally overlap in purpose (both list players) — left as
+duplication rather than consolidated, so each change stays small and reviewable.
+
 ## Notes for Agents
 - Before large refactors, prefer incremental changes and preserve existing behavior.
 - If unsure about behavior, favor minimal change and consistency with nearby code.
