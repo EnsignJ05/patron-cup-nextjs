@@ -412,12 +412,22 @@ public is usually acceptable and much easier for trip participants to test with.
 `dig test.patron-cup.com` resolves.
 
 ### Task 5.2 (Human) Configure Supabase Auth for the test site
-Test project → Authentication → URL Configuration:
+Test project → **Authentication** (its own top-level item in the dashboard's left sidebar,
+the same level as Settings — not nested under it) → URL Configuration:
 - **Site URL:** `https://test.patron-cup.com`
 - **Redirect allow list:** add `https://test.patron-cup.com/**` and, for local dev against
   the test backend, `http://localhost:3000/**`.
 
-Without this, auth redirects bounce to the wrong origin or are rejected.
+**Verified 2026-09-30: this app currently has no code path that uses Site URL or the redirect
+allow-list at all** — grepped for `resetPasswordForEmail`, `signInWithOAuth`, `signInWithOtp`,
+`verifyOtp`, and any `redirectTo` usage across `src/`; none exist. Password resets go through
+`src/app/api/admin/reset-password/route.ts`, which sets a temp password directly via the
+admin API — no email link, no browser redirect. Invites similarly bypass email via
+`email_confirm: true`. So configuring this correctly has no visible effect today on either
+project (which is also why production getting away with its default, likely-unconfigured
+value has never caused a problem) — it only matters if a future feature adds an email-link
+or OAuth flow. Doing it correctly now costs nothing and avoids that flow silently pointing at
+`localhost:3000` later.
 
 Also review Authentication → Providers/Settings to match production (email provider
 enabled, signups likely disabled since the app is invite-only via
