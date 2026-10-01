@@ -386,13 +386,35 @@ instead of a branch-scoped Preview). Prefer branch-scoped Preview unless the acc
 already uses Custom Environments; fewer moving parts.
 
 ### Task 4.3 (Human) Deployment protection
-Preview deployments may sit behind Vercel Authentication (SSO), which would block
-non-Vercel testers. Settings → Deployment Protection: either disable protection for this
-environment, or add `test.patron-cup.com` as a protection bypass. Decide whether the test
-site should be publicly reachable — it will contain fake data but mirrors the real UI, so
-public is usually acceptable and much easier for trip participants to test with.
 
-**Acceptance:** pushing a commit to `test` produces a successful Vercel deployment.
+**Reordered 2026-09-30, do this LAST, not here.** Originally written as a Phase 4 task, but
+an incident moved it: while verifying task 5.1's DNS setup, a direct check of the deployed JS
+bundle (`grep` for the `*.supabase.co` ref baked into `NEXT_PUBLIC_SUPABASE_URL` at build
+time) showed `test.patron-cup.com` was serving a build wired to the **production** Supabase
+project, not test — almost certainly because the branch-scoped env vars from task 4.2 were
+added after the live deployment's last build, and Vercel only applies env var changes to new
+builds. The user's response was to turn Vercel Authentication (SSO) **on**, immediately
+cutting off everyone but themselves until the backend wiring is confirmed fixed — leaving it
+public the whole time this was broken would have let anyone poke at it. That is the correct
+instinct in general, not just for this incident: **keep deployment protection ON by default
+through the rest of Part I, and only disable it as the final action, once task 6.1's
+isolation check has passed.**
+
+So: do not treat "decide public vs protected" as a one-time Phase-4 choice. Leave Vercel
+Authentication **on** now. Revisit this task only after task 6.1 (prove isolation) passes
+against a fresh deployment — at that point, Settings → Deployment Protection → either disable
+protection for this environment, or add `test.patron-cup.com` as a protection bypass, per the
+public-reachability decision already recorded in section 9.
+
+One side effect worth planning for: with protection on, automated checks (including the
+`curl`/JS-bundle check that caught this incident) get blocked by the SSO wall along with
+everyone else. Either verify manually (log into the site in a browser, check the Network tab
+for which Supabase host is called) or set up Vercel's **Protection Bypass for Automation** (a
+secret token sent as the `x-vercel-protection-bypass` header) so automated verification can
+continue without actually opening the site to the public.
+
+**Acceptance:** pushing a commit to `test` produces a successful Vercel deployment, AND (new)
+task 6.1 passes against that deployment before protection is ever turned off.
 
 ---
 
@@ -446,8 +468,25 @@ emails, and GHIN numbers.
 
 ### Task 6.1 (Agent) Prove isolation before writing anything
 Open `https://test.patron-cup.com`, and in the browser devtools network tab confirm
-Supabase requests go to `<TEST_REF>.supabase.co`, not the prod ref. Do not proceed to
-seeding until this is confirmed — this is the guard against the 4.2 failure mode.
+Supabase requests go to `uffvcocmlqoxakawnbaq.supabase.co` (test), not
+`gqsfaxasmodlykeqvhuu.supabase.co` (prod). Do not proceed to seeding until this is confirmed —
+this is the guard against the 4.2 failure mode.
+
+**This exact failure mode occurred 2026-09-30**, caught by grepping the deployed JS bundle for
+a `*.supabase.co` ref instead of using the browser: `curl` the page, extract `/_next/static/`
+script paths, download them, and search for the pattern — faster than opening devtools, and
+scriptable:
+```bash
+curl -s https://test.patron-cup.com -o /tmp/test_home.html
+grep -oE '/_next/static/[^"]+\.js' /tmp/test_home.html | sort -u
+# download each path found above, then:
+grep -ohE "[a-z]{20}\.supabase\.co" /tmp/chunk_*.js | sort -u
+```
+This only works while Deployment Protection is off/bypassed (task 4.3) — with it on, use the
+browser devtools method instead, or Vercel's Protection Bypass header. Root cause that time:
+the live deployment predated the task 4.2 env var changes, since Vercel only applies variable
+changes to new builds, not retroactively. The fix is always the same — confirm the variable
+scoping is correct, then trigger a fresh deployment, then re-run this check before trusting it.
 
 ### Task 6.2 (Agent) Write a seed script
 Create `supabase/seed/seed-test.sql` (or a `scripts/seed-test.ts` using
@@ -555,12 +594,20 @@ at the test project is the recommended default for local development.
 | Part IV hardening timing | Second pass — clone prod schema as-is to test first, harden against test afterward |
 | Prod/migration drift found (task 2.3) | _TBD_ |
 | Baseline dump edits made (task 3.2) | _TBD_ |
-| Test site public or SSO-protected (task 4.3) | Public — no Deployment Protection, so trip participants can test on their own devices |
+| Test site public or SSO-protected (task 4.3) | **Temporarily SSO-protected as of 2026-09-30** (see risk #1 below) — target end state is still public, deferred until task 6.1 passes |
 
 ## 10. Known risks
 
 1. **Test site writing to production data** — mitigated by task 4.2's unscoped-variable
-   check and task 6.1's pre-seed verification. Highest-severity risk in this plan.
+   check and task 6.1's pre-seed verification. Highest-severity risk in this plan, and
+   **it actually occurred on 2026-09-30**: the live `test.patron-cup.com` deployment was
+   found serving a build wired to the production Supabase ref, not test, because the live
+   deployment predated the task 4.2 env var changes (Vercel doesn't rebuild automatically
+   when variables change). Caught before any seeding or test-account activity touched it, by
+   checking the deployed JS bundle directly rather than trusting the dashboard config alone.
+   Response: Deployment Protection turned back on immediately to cut off access while the
+   wiring gets fixed and re-verified — see the updated task 4.3 and 6.1 for the corrected
+   procedure (protection stays on until isolation is proven, not a one-time Phase 4 choice).
 2. **Schema drift between projects over time** — mitigated by the task 7.2 promotion rule.
    Re-dump and diff periodically if drift is suspected.
 3. **Incomplete baseline dump** — RLS policies, triggers, or storage policies that don't
