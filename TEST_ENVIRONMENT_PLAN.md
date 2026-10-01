@@ -617,7 +617,7 @@ at the test project is the recommended default for local development.
 | Real `players` column list (11.5 q3) | Matches section 11.7's planned safe-list exactly, no drift — confirmed 2026-10-01 via direct query |
 | Tables found with RLS disabled (11.4 / old S5) | **None — RLS enabled on all 26 tables**, confirmed 2026-10-01. Task S5 rescoped accordingly |
 | Existing anon column grants on `players` (11.5 q4) | `anon` holds SELECT/INSERT/UPDATE/REFERENCES on every column, no exceptions — confirms section 11.2's "Supabase default grants" theory as fact, not inference |
-| S4 migration applied to test / prod (dates) | Test: 2026-10-01, verified via seeded fake rows, all acceptance checks pass. Prod: blocked — S2/S3 must reach production first (merging via PR, per user direction) |
+| S4 migration applied to test / prod (dates) | **Both done 2026-10-01.** Test: verified via seeded fake rows. Prod: PR #24 merged and deployed; independently verified S2/S3 were actually live (307 redirect on `/players/<id>`, exact `PUBLIC_PLAYER_COLUMNS` array present in the deployed bundle, no `select('*')` remaining) before applying the migration. All three acceptance checks pass on production; `/roster`, `/teams`, `/matches` confirmed still returning HTTP 200 |
 | S5 public-vs-member classification approved by | _TBD_ — open committee question on `travel_info`/`lodging_assignments` only; everything else in that task needs no decision |
 | Committee notified (S7) | _TBD_ |
 
@@ -1034,7 +1034,7 @@ Confirm `src/lib/authConfig.ts`'s `getAuthRedirectDecision` returns a sane decis
 **Acceptance:** anonymous `curl -sI https://<host>/players/<known-id>` returns 307 to
 `/login?next=/players/<known-id>`; a logged-in player-role account still loads the page.
 
-### Task S4 — applied and verified on test 2026-10-01; production blocked on a real finding
+### Task S4 — done. Applied and verified on test 2026-10-01, then production the same day
 
 **The migration shipped to `test` exactly as written below and passed every acceptance check.**
 Seeded two fake player rows (full PII populated) directly in the test project to prove it
@@ -1059,9 +1059,26 @@ those requests fail with `42501` — breaking `/roster`, `/players`, `/teams` li
 visitors, immediately. This is section 12's ordering rule actually mattering, not a
 theoretical "don't reverse the steps" warning.
 
-**Path to production, per user direction:** merge to `main` via a pull request (not a direct
-merge), then push, then confirm the production deployment reflects S2/S3 before applying this
-migration there. Only after that is verified does this task's production half proceed.
+**Path to production, per user direction:** merged via PR #24 (`test` → `main`), pushed, and
+deployed. **Before applying anything to production's database, independently verified S2/S3
+were actually live** rather than trusting the merge/deploy alone:
+- `curl -sI https://patroncup.com/players/<real-id>` → `307` to `/login?next=...` (S3 live)
+- Downloaded the deployed `/roster` page's JS chunk and found the literal
+  `["id","first_name","last_name","current_handicap","ghin_club","city","state","profile_image_url","status"]`
+  array baked in, and zero occurrences of `select('*')` anywhere in it (S2 live)
+
+Only then applied the migration to production. Same three acceptance checks, same result as
+test:
+```
+select=*              -> HTTP 401, {"code":"42501",...,"message":"permission denied for table players"}
+select=email           -> HTTP 401
+select=first_name,last_name,current_handicap -> HTTP 200, real names (already-public roster
+                                                  data), no PII fields
+```
+`/roster`, `/teams`, `/matches` all independently confirmed still returning HTTP 200
+afterward. **The exposure is closed on both environments.** Remaining Part II work is S5 (the
+much-reduced Bandon/branson_roster fix, shareable with Part IV task H2), S6 (optional,
+moving never-public columns out of `players`), and S7 (telling the committee).
 
 ### Task S4 — the migration itself
 Write `supabase/migrations/20260927120000_players_pii_column_grants.sql`. Adjust the column
