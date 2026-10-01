@@ -28,6 +28,29 @@
 - Maintain consistent spacing, typography, and interaction patterns with existing UI.
 - Reuse existing layout patterns, components, and utility classes where possible.
 
+## Design system (Hi-Fi redesign)
+The Hi-Fi redesign (`TEST_ENVIRONMENT_PLAN.md` Part III) migrates pages to `--pc-*` tokens
+defined in `src/app/globals.css`, keyed on `[data-theme='light'|'dark']`. Reference
+implementations: `page.module.css`, `faq/page.module.css`, `matches/page.module.css`.
+
+- **Tokens:** `--pc-bg/card/card-2` (surfaces), `--pc-ink/ink-2/ink-3` (text, high→low
+  emphasis), `--pc-rule/rule-2` (borders), `--pc-fill/fill-2` (subtle backgrounds),
+  `--pc-team-a/team-b` (team colors), `--pc-live-bg/live-fg/live-dot` (live/in-progress
+  state), `--pc-radius/radius-sm/radius-lg`, `--pc-shadow`.
+- **Fonts:** `--pc-font-serif` (Newsreader) for display headings; `--pc-font-sans` (IBM Plex
+  Sans) for body text and UI chrome; `--pc-font-mono` (JetBrains Mono) for numbers, stats,
+  dates, and uppercase eyebrow/kicker labels.
+- **Legacy CSS variables** (the un-prefixed vars elsewhere in `globals.css`) are being fully
+  sunset, not kept as a permanent second system — delete each one once its last referencing
+  page (including `/admin`) migrates. Don't add new usages.
+- **MUI has no removal mandate.** Use MUI components wherever they're the pragmatic choice
+  (forms, data-dense admin UI); use custom `--pc-*`-styled markup elsewhere. Consistency comes
+  from the tokens, not from which library renders a piece of UI — reference them via a CSS
+  module or an MUI component's `sx` prop (e.g. `sx={{ color: 'var(--pc-ink)' }}`), never a
+  hardcoded value because the component happens to be MUI.
+- **No hardcoded hex values** in any page's CSS or `sx` styling — public or admin. If a color
+  isn't a token yet, add one; don't inline a hex value to work around it.
+
 ## File/Folder Conventions
 - App routes live in `src/app/**/page.tsx`.
 - Components live close to their usage; prefer colocated CSS modules.
