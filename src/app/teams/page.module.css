@@ -1,111 +1,192 @@
-.pageRoot {
-  min-height: 100vh;
-  width: 100vw;
-  background: var(--bg);
+/* ── Root ───────────────────────────────────────────────────────────────── */
+.root {
+  min-height: calc(100vh - 64px);
+  background: var(--pc-bg);
+  color: var(--pc-ink);
+}
+
+.container {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 20px 16px 48px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: 32px 16px;
 }
 
-.pageTitle {
-  color: var(--text);
-  margin-bottom: 32px;
-  font-size: 1.75rem;
+/* ── Type helpers ─────────────────────────────────────────────────────────── */
+.label {
+  font-family: var(--pc-font-sans);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--pc-ink-3);
+}
+
+.error {
+  font-family: var(--pc-font-sans);
+  font-size: 13px;
+  color: var(--pc-live-fg);
+  background: var(--pc-live-bg);
+  padding: 8px 12px;
+  border-radius: var(--pc-radius-sm);
+  margin-bottom: 12px;
+}
+
+.emptyState {
+  font-family: var(--pc-font-sans);
+  font-size: 13px;
+  color: var(--pc-ink-3);
   text-align: center;
+  padding: 24px 0;
 }
 
-.pageSubtitle {
-  color: var(--text);
-  margin-bottom: 32px;
-  text-align: center;
-  font-weight: 700;
-  font-style: italic;
-  max-width: 600px;
+/* ── Hero ─────────────────────────────────────────────────────────────────── */
+.hero {
+  padding-bottom: 6px;
 }
 
+.displayHeading {
+  font-family: var(--pc-font-serif);
+  font-size: 36px;
+  font-weight: 500;
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  color: var(--pc-ink);
+  margin: 8px 0 14px;
+}
+
+/* ── Team cards ───────────────────────────────────────────────────────────── */
 .teamGrid {
   display: flex;
   flex-direction: column;
-  gap: 32px;
-  width: 100%;
-  max-width: 900px;
+  gap: 16px;
 }
 
 .teamCard {
-  flex: 1;
-  background-color: var(--surface);
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: var(--shadow-sm);
+  background: var(--pc-card);
+  border: 1px solid var(--pc-rule);
+  border-radius: var(--pc-radius);
+  border-top-width: 3px;
+  border-top-style: solid;
+  padding: 14px;
+}
+
+.teamHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 10px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--pc-rule);
+}
+
+.teamChip {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .teamName {
-  margin-bottom: 24px;
-  font-size: 1.5rem;
-  font-weight: 700;
+  flex: 1;
+  font-family: var(--pc-font-serif);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--pc-ink);
 }
 
-.teamThompson {
-  color: var(--accent-blue);
+.teamCount {
+  font-family: var(--pc-font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--pc-ink-3);
 }
 
-.teamBurgess {
-  color: var(--accent-red);
-}
-
+/* ── Player list ──────────────────────────────────────────────────────────── */
 .playerList {
   display: flex;
   flex-direction: column;
-  gap: 8px;
 }
 
-.playerItem {
-  padding-top: 4px;
-  padding-bottom: 4px;
-}
-
-.playerLink {
-  text-decoration: none;
-  color: var(--accent-blue-strong);
-  font-size: 1.1rem;
-  display: inline-flex;
+.playerRow {
+  display: grid;
+  grid-template-columns: 32px 1fr auto;
+  gap: 10px;
   align-items: center;
+  padding: 8px 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--pc-fill);
+  color: var(--pc-ink-2);
+  font-family: var(--pc-font-sans);
+  font-weight: 700;
+}
+
+.avatarImgWrap {
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.playerInfo {
+  min-width: 0;
 }
 
 .playerName {
-  color: var(--accent-blue-strong);
-  font-size: 1rem;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.playerName:hover {
-  text-decoration: underline;
+.captBadge {
+  margin-left: 6px;
+  font-family: var(--pc-font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
 }
 
-.playerHandicap {
-  color: var(--text-muted);
-  font-size: 14px;
-  margin-left: 8px;
+.handicapChip {
+  font-family: var(--pc-font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 7px;
+  border-radius: 6px;
+  background: var(--pc-fill);
+  min-width: 36px;
+  text-align: center;
 }
 
-@media (min-width: 600px) {
-  .pageRoot {
-    padding: 64px 32px;
+/* ── Desktop (≥1024px) ────────────────────────────────────────────────────── */
+@media (min-width: 1024px) {
+  .container {
+    max-width: 900px;
+    padding: 40px 24px 72px;
   }
 
-  .pageTitle {
-    font-size: 2.5rem;
+  .displayHeading {
+    font-size: 56px;
+    margin-bottom: 18px;
+    letter-spacing: -0.035em;
   }
 
   .teamGrid {
     flex-direction: row;
+    align-items: flex-start;
   }
 
-  .teamName {
-    font-size: 1.75rem;
-  }
-
-  .playerName {
-    font-size: 1.1rem;
+  .teamCard {
+    flex: 1;
   }
 }

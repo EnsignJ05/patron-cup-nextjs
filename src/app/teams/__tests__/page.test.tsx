@@ -62,6 +62,13 @@ jest.mock('@/lib/supabaseBrowser', () => ({
           },
         };
       }
+      if (table === 'team_captains') {
+        return {
+          select: () => ({
+            in: () => Promise.resolve({ data: [], error: null }),
+          }),
+        };
+      }
       throw new Error(`unexpected table in test mock: ${table}`);
     },
   }),
