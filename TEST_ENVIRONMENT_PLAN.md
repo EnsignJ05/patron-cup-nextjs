@@ -728,6 +728,7 @@ at the test project is the recommended default for local development.
 | S4 migration applied to test / prod (dates) | **Both done 2026-10-01.** Test: verified via seeded fake rows. Prod: PR #24 merged and deployed; independently verified S2/S3 were actually live (307 redirect on `/players/<id>`, exact `PUBLIC_PLAYER_COLUMNS` array present in the deployed bundle, no `select('*')` remaining) before applying the migration. All three acceptance checks pass on production; `/roster`, `/teams`, `/matches` confirmed still returning HTTP 200 |
 | S5 migration applied to test / prod (dates) | **Both done 2026-10-01.** Verified with real rows on both (temporary rows inserted and cleaned up on test; existing historical rows checked-not-modified on production) — see Task S5 for the full verification writeup. Also satisfies Part IV task H2 items 1-2 |
 | S5 public-vs-member classification approved by | _TBD_ — open committee question on `travel_info`/`lodging_assignments` only; everything else in that task needs no decision |
+| S6 (`player_private`) applied to test / prod (dates) | **Both done 2026-10-01**, via PR #25. One unrelated production build failure along the way (`next/font/google` CDN flake, not a code issue — fixed by redeploying the identical commit, not by changing anything); verified the redeploy was genuinely running the new code before touching the database. All of Part II (S1-S7) is now live on both environments |
 | Committee notified (S7) | Done — confirmed by user 2026-10-01 |
 
 ## 10. Known risks
@@ -1334,7 +1335,7 @@ this was this section's own original recommendation and the live state already m
 `branson_roster` all fail; nothing else in this task requires a code or schema change unless
 the committee asks for the tighter `travel_info` posture above.
 
-### Task S6 (done on test 2026-10-01; production pending the same test→main PR flow as S2-S4)
+### Task S6 (done 2026-10-01 on test and production)
 `address_line1`, `address_line2`, `zip_code`, `shirt_size`, `dietary_restrictions`,
 `emergency_contact_name`, `emergency_contact_phone` are (per the original report) **empty
 today**. They are also the fields that should never be readable by the whole membership.
@@ -1387,12 +1388,29 @@ fires. Re-ran Task 6.2's seed script after the column drop to confirm no conflic
 referenced these columns). `npx tsc --noEmit` clean (2 pre-existing unrelated failures);
 `npm test` 40/40 suites, 177/177 tests.
 
-**Production:** not yet applied — needs the same flow as S2-S4 (PR from `test` to `main`,
-merge, deploy, independently verify the new code is actually live before running either
-migration there, migration A then migration B in order). This is the one Part II task that
-changes schema shape, so doing it on test first — exactly as this task originally
-recommended — caught the wrong-file guess and the anon-default-grant gap before either could
-reach production.
+**Production: done 2026-10-01**, via PR #25 (`test` → `main`). One incident along the way,
+unrelated to this change: the first production build after merging **failed** —
+`next/font/google`'s loader crashed in `src/app/layout.tsx` fetching Google Fonts metadata at
+build time (`TypeError: Cannot read properties of null`). Diagnosed before assuming anything
+was wrong with this PR: `layout.tsx` hadn't been touched since a commit from before this
+entire session, and `npm run build` succeeded cleanly locally on the same source. Conclusion:
+a transient CDN/build-infra flake, not a code regression — confirmed correct when a plain
+**redeploy of the identical commit** (`vercel redeploy`, which rebuilds the exact same source
+snapshot rather than re-fetching from git) succeeded. Worth remembering: a failed Vercel build
+immediately after a merge is not automatically this PR's fault — check whether the failing
+file was even touched before debugging the wrong thing.
+
+Verified the redeployed build was genuinely running the new code before touching the database
+at all — same discipline as S4: confirmed via `vercel inspect` that the successful deployment
+is aliased to `patroncup.com`, and relied on the logical guarantee that `vercel redeploy`
+never changes source (the original failed build's log already showed the exact commit hash,
+matching `origin/main`'s PR #25 merge commit). Then applied migration A, re-verified anon is
+blocked on production using a temporary row on a **real player id** (cleaned up immediately
+after — no production PII was ever at risk, since all 7 columns were already confirmed
+empty), then migration B. Confirmed the columns are gone and `/roster`, `/teams`, `/matches`
+all still return `200`.
+
+**All of Part II (S1-S7) is now fully live on both test and production.**
 
 ### Task S7 (done) Disclosure
 The emails and phone numbers of 54 people were readable by unauthenticated callers for some
