@@ -1,12 +1,10 @@
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import Paper from '@mui/material/Paper';
 import Link from 'next/link';
-import Avatar from '@mui/material/Avatar';
+import Image from 'next/image';
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient, getCachedUser, getCachedPlayerProfile } from '@/lib/supabaseServer';
 import { canAccessDashboard } from '@/lib/authConfig';
 import { calculateMatchHandicapMetrics } from '@/lib/matchHandicapMetrics';
+import { getViewerRoleForPendingProposal, isPastScheduledStart } from '@/lib/matchResultEntry';
 import DashboardProfileForm from '@/components/player/DashboardProfileForm';
 import PlayerMatchResultActions from '@/components/player/PlayerMatchResultActions';
 import MatchCard from '@/components/matches/MatchCard';
@@ -31,6 +29,35 @@ const formatTime = (timeStr: string | null) => {
   if (Number.isNaN(date.getTime())) return 'TBD';
   return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 };
+
+const getInitials = (first: string, last: string) =>
+  `${first[0] ?? ''}${last[0] ?? ''}`.toUpperCase();
+
+function ProfileAvatar({
+  firstName,
+  lastName,
+  imageUrl,
+  size = 56,
+}: {
+  firstName: string;
+  lastName: string;
+  imageUrl?: string | null;
+  size?: number;
+}) {
+  const name = `${firstName} ${lastName}`;
+  if (imageUrl) {
+    return (
+      <div className={styles.avatarImgWrap} style={{ width: size, height: size }}>
+        <Image src={imageUrl} alt={name} width={size} height={size} style={{ objectFit: 'cover' }} />
+      </div>
+    );
+  }
+  return (
+    <div className={styles.avatar} style={{ width: size, height: size, fontSize: Math.round(size * 0.32) }}>
+      {getInitials(firstName, lastName)}
+    </div>
+  );
+}
 
 export default async function DashboardPage() {
   const user = await getCachedUser();
@@ -83,6 +110,8 @@ export default async function DashboardPage() {
   let pendingByMatchId = new Map<string, MatchResultsPending>();
   let eventTeams: Array<{ id: string; name: string; color: string | null }> = [];
   let handicapByPlayerId = new Map<string, number | null>();
+  let myTeamId: string | null = null;
+  let isCaptain = false;
 
   if (playerRecord?.id && activeEvent?.id) {
     const { data: teamsData } = await supabase
@@ -96,12 +125,19 @@ export default async function DashboardPage() {
     if (eventTeams.length > 0) {
       const { data: rosterData } = await supabase
         .from('team_rosters')
-        .select('player_id, handicap_at_event')
+        .select('player_id, team_id, handicap_at_event')
         .in('team_id', eventTeams.map((team) => team.id));
 
       handicapByPlayerId = new Map(
         (rosterData || []).map((roster) => [roster.player_id, roster.handicap_at_event ?? null]),
       );
+      myTeamId = (rosterData || []).find((roster) => roster.player_id === playerRecord.id)?.team_id ?? null;
+
+      const { data: captainsData } = await supabase
+        .from('team_captains')
+        .select('player_id')
+        .in('team_id', eventTeams.map((team) => team.id));
+      isCaptain = (captainsData || []).some((c: { player_id: string }) => c.player_id === playerRecord.id);
     }
 
     const { data: playerMatchIds } = await supabase
@@ -171,6 +207,67 @@ export default async function DashboardPage() {
         const timeB = b.match.match_time || '99:99';
         return timeA.localeCompare(timeB);
       });
+    }
+  }
+
+  // "This Trip" record, derived from this event's matches already fetched above -- the
+  // same approach as /players/[playerId], not the match_players.is_winner-based aggregate
+  // found disabled there (not a safe foundation to build on).
+  let thisTripRecord: { w: number; l: number; t: number } | null = null;
+  if (myTeamId) {
+    let w = 0;
+    let l = 0;
+    let t = 0;
+    for (const { match } of matchesList) {
+      if (match.is_halved) t++;
+      else if (match.winner_team_id === myTeamId) w++;
+      else if (match.winner_team_id) l++;
+    }
+    if (w + l + t > 0) thisTripRecord = { w, l, t };
+  }
+
+  const myTeam = eventTeams.find((team) => team.id === myTeamId) ?? null;
+  const teamColor = myTeam ? myTeam.color || (eventTeams[0]?.id === myTeam.id ? 'var(--pc-team-a)' : 'var(--pc-team-b)') : null;
+  const [teamA, teamB] = eventTeams;
+
+  // "Needs Your Attention" -- reuses the same viewer-role/scheduling utilities
+  // PlayerMatchResultActions already uses internally, so a match classified here as
+  // needing the player's confirmation is guaranteed to match what that component renders
+  // further down the page -- no duplicated business logic, just a page-level summary.
+  type AttentionItem =
+    | { kind: 'confirm'; matchId: string; matchNumber: number; proposedLabel: string }
+    | { kind: 'report'; matchId: string; matchNumber: number; matchDateLabel: string };
+
+  const attentionItems: AttentionItem[] = [];
+  if (playerRecord?.id) {
+    for (const { match, participantPlayerIds } of matchesList) {
+      const pending = pendingByMatchId.get(match.id) ?? null;
+      const hasRecordedResult = Boolean(match.winner_team_id) || match.is_halved;
+      if (match.result_set_by_official || hasRecordedResult) continue;
+
+      const viewerRole = getViewerRoleForPendingProposal(pending, playerRecord.id, participantPlayerIds);
+      if (viewerRole === 'confirmer' && pending) {
+        const proposedLabel = pending.is_halved
+          ? 'Halved'
+          : teamA?.id === pending.winner_team_id
+            ? teamA.name
+            : teamB?.id === pending.winner_team_id
+              ? teamB.name
+              : 'Selected team';
+        attentionItems.push({
+          kind: 'confirm',
+          matchId: match.id,
+          matchNumber: match.match_number,
+          proposedLabel,
+        });
+      } else if (!pending && isPastScheduledStart(match.match_date, match.match_time)) {
+        attentionItems.push({
+          kind: 'report',
+          matchId: match.id,
+          matchNumber: match.match_number,
+          matchDateLabel: formatDate(match.match_date),
+        });
+      }
     }
   }
 
@@ -270,243 +367,246 @@ export default async function DashboardPage() {
   }
 
   return (
-    <Box className={styles.pageRoot}>
-      {playerRecord && (
-        <Avatar
-          src={playerRecord.profile_image_url || undefined}
-          alt={`${playerRecord.first_name} ${playerRecord.last_name}`}
-          className={styles.avatar}
-          sx={{
-            width: 'min(320px, calc(100vw - 32px))',
-            height: 'min(320px, calc(100vw - 32px))',
-          }}
-        >
-          {!playerRecord.profile_image_url && `${playerRecord.first_name[0]}${playerRecord.last_name[0]}`}
-        </Avatar>
-      )}
-      
-      <Typography variant="h3" className={styles.pageTitle}>
-        Player Dashboard
-      </Typography>
-      <Paper
-        elevation={2}
-        className={`${styles.awardCalloutCard} ${styles.awardCalloutAccent}`}
-      >
-        <Typography variant="subtitle1" className={styles.sectionTitle}>
-          Ceremony awards
-        </Typography>
-        <Typography variant="body2" className={styles.detailTextWide}>
-          Nominate a fellow player for the end-of-trip dinner awards.
-        </Typography>
-        <Link href="/dashboard/award-nominations" className={styles.awardCalloutLink}>
-          Submit a nomination
-        </Link>
-      </Paper>
-      <Paper
-        elevation={2}
-        className={`${styles.profileCard} ${styles.profileCardAccent}`}
-      >
-        <Typography variant="h6" className={styles.sectionTitle}>
-          Account details
-        </Typography>
-        <Typography variant="body2" className={styles.sectionSubtitle}>
-          Signed in as {user.email}
-        </Typography>
+    <div className={styles.root}>
+      <div className={styles.container}>
         {playerRecord && (
-          <>
-            <Typography variant="body2" className={styles.detailText}>
-              Name: {playerRecord.first_name} {playerRecord.last_name}
-            </Typography>
-            <Typography variant="body2" className={styles.detailText}>
-              Role: {playerRecord.role}
-            </Typography>
-            <Typography variant="body2" className={styles.detailTextWide}>
-              GHIN Handicap: {playerRecord.current_handicap ?? 'Not set'}
-            </Typography>
-            <Typography variant="body2" className={styles.detailTextWide}>
-              Official Event Handicap:{' '}
-              {handicapByPlayerId.get(playerRecord.id) ?? 'Not set'}
-            </Typography>
-          </>
+          <div className={styles.hero} style={teamColor ? { borderBottomColor: teamColor } : undefined}>
+            {teamColor && (
+              <div
+                className={styles.heroGlow}
+                style={{ background: `linear-gradient(135deg, transparent 30%, ${teamColor} 130%)` }}
+              />
+            )}
+            <div className={styles.heroRow}>
+              <div className={styles.avatarWrap}>
+                <ProfileAvatar
+                  firstName={playerRecord.first_name}
+                  lastName={playerRecord.last_name}
+                  imageUrl={playerRecord.profile_image_url}
+                />
+                {teamColor && <span className={styles.teamChip} style={{ background: teamColor }} />}
+              </div>
+              <div className={styles.heroInfo}>
+                <div className={styles.heroBadges}>
+                  {myTeam && (
+                    <span className={styles.teamLabel} style={{ color: teamColor ?? undefined }}>
+                      Team {myTeam.name}
+                    </span>
+                  )}
+                  {isCaptain && (
+                    <span className={styles.captBadge} style={{ background: teamColor ?? undefined }}>
+                      ★ Captain
+                    </span>
+                  )}
+                </div>
+                <h1 className={styles.displayName}>
+                  {playerRecord.first_name} {playerRecord.last_name}
+                </h1>
+              </div>
+            </div>
+
+            <div className={styles.statStrip}>
+              <div className={styles.statCell}>
+                <div className={styles.statValue}>
+                  {playerRecord.current_handicap !== null ? playerRecord.current_handicap : '—'}
+                </div>
+                <div className={styles.statLabel}>GHIN</div>
+              </div>
+              <div className={styles.statCell}>
+                <div className={styles.statValue}>{handicapByPlayerId.get(playerRecord.id) ?? '—'}</div>
+                <div className={styles.statLabel}>Event HCP</div>
+              </div>
+              {thisTripRecord && (
+                <div className={styles.statCell}>
+                  <div className={styles.statValue}>
+                    {thisTripRecord.w}-{thisTripRecord.l}-{thisTripRecord.t}
+                  </div>
+                  <div className={styles.statLabel}>Event Record</div>
+                </div>
+              )}
+            </div>
+          </div>
         )}
-        {!playerRecord && (
-          <Typography variant="body2" className={styles.detailTextWide}>
-            Player record: Not linked yet.
-          </Typography>
-        )}
-        <Typography variant="subtitle1" className={styles.sectionSubtitleStrong}>
-          Update your profile
-        </Typography>
-        <DashboardProfileForm
-          playerId={playerRecord?.id ?? ''}
-          firstName={playerRecord?.first_name ?? ''}
-          lastName={playerRecord?.last_name ?? ''}
-          phone={playerRecord?.phone ?? ''}
-          handicap={playerRecord?.current_handicap?.toString() ?? ''}
-          ghinNumber={playerRecord?.ghin_number ?? ''}
-          ghinClub={playerRecord?.ghin_club ?? ''}
-          officialEventHandicap={
-            playerRecord?.id ? handicapByPlayerId.get(playerRecord.id) ?? null : null
-          }
-          profileImageUrl={playerRecord?.profile_image_url ?? ''}
-        />
-      </Paper>
 
-      <Paper
-        elevation={2}
-        className={`${styles.matchesCard} ${styles.matchesCardAccent}`}
-      >
-        <Typography variant="h5" className={styles.sectionHeading}>
-          {activeEvent ? `${activeEvent.name} ${activeEvent.year}` : 'Current Event'}
-        </Typography>
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>Needs Your Attention</h2>
+          <div className={styles.attentionList}>
+            {attentionItems.map((item) => (
+              <a key={item.matchId} href={`#match-${item.matchId}`} className={styles.attentionRow}>
+                <div className={styles.attentionInfo}>
+                  <div className={styles.attentionTitle}>
+                    {item.kind === 'confirm' ? 'Confirm result' : 'Report result'} · Match #{item.matchNumber}
+                  </div>
+                  <div className={styles.attentionMeta}>
+                    {item.kind === 'confirm' ? `Proposed: ${item.proposedLabel}` : item.matchDateLabel}
+                  </div>
+                </div>
+                <span className={styles.attentionChevron}>→</span>
+              </a>
+            ))}
+            <Link href="/dashboard/award-nominations" className={styles.attentionRow}>
+              <div className={styles.attentionInfo}>
+                <div className={styles.attentionTitle}>Ceremony Awards</div>
+                <div className={styles.attentionMeta}>Nominate a fellow player for the end-of-trip dinner awards.</div>
+              </div>
+              <span className={styles.attentionChevron}>→</span>
+            </Link>
+          </div>
+        </section>
 
-        <Typography variant="h6" className={styles.sectionTitle}>
-          Matches
-        </Typography>
-        {matchesList.length === 0 ? (
-          <Typography variant="body2" className={styles.detailTextWide}>
-            No matches scheduled for you yet.
-          </Typography>
-        ) : (
-          <Box className={styles.matchList}>
-            {matchesList.map(({ match, playersByTeam, participantPlayerIds }) => {
-              const [teamA, teamB] = eventTeams;
-              const teamAPlayers = teamA ? playersByTeam.get(teamA.id) || [] : [];
-              const teamBPlayers = teamB ? playersByTeam.get(teamB.id) || [] : [];
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>Profile Information</h2>
+          <p className={styles.sectionSubtitle}>Signed in as {user.email}</p>
+          <DashboardProfileForm
+            playerId={playerRecord?.id ?? ''}
+            firstName={playerRecord?.first_name ?? ''}
+            lastName={playerRecord?.last_name ?? ''}
+            phone={playerRecord?.phone ?? ''}
+            handicap={playerRecord?.current_handicap?.toString() ?? ''}
+            ghinNumber={playerRecord?.ghin_number ?? ''}
+            ghinClub={playerRecord?.ghin_club ?? ''}
+            officialEventHandicap={
+              playerRecord?.id ? handicapByPlayerId.get(playerRecord.id) ?? null : null
+            }
+            profileImageUrl={playerRecord?.profile_image_url ?? ''}
+          />
+        </section>
 
-              const buildPlayers = (players: Array<{ id: string; name: string; profileImageUrl: string | null }>) =>
-                players.map((player) => ({
-                  ...player,
-                  officialEventHandicap: handicapByPlayerId.get(player.id) ?? null,
-                }));
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>
+            Matches {activeEvent ? `· ${activeEvent.name} ${activeEvent.year}` : ''}
+          </h2>
+          {matchesList.length === 0 ? (
+            <p className={styles.emptyText}>No matches scheduled for you yet.</p>
+          ) : (
+            <div className={styles.matchList}>
+              {matchesList.map(({ match, playersByTeam, participantPlayerIds }) => {
+                const teamAPlayers = teamA ? playersByTeam.get(teamA.id) || [] : [];
+                const teamBPlayers = teamB ? playersByTeam.get(teamB.id) || [] : [];
 
-              const teamAPlayerCards = buildPlayers(teamAPlayers);
-              const teamBPlayerCards = buildPlayers(teamBPlayers);
-              const matchPlayerCards = [...teamAPlayerCards, ...teamBPlayerCards];
-              const handicapMetricsByPlayerId = calculateMatchHandicapMetrics(
-                matchPlayerCards.map((player) => ({
-                  playerId: player.id,
-                  officialEventHandicap: player.officialEventHandicap,
-                })),
-                {
-                  slope: match.course?.slope ?? null,
-                  rating: match.course?.rating ?? null,
-                  par: match.course?.par ?? null,
-                },
-              );
+                const buildPlayers = (players: Array<{ id: string; name: string; profileImageUrl: string | null }>) =>
+                  players.map((player) => ({
+                    ...player,
+                    officialEventHandicap: handicapByPlayerId.get(player.id) ?? null,
+                  }));
 
-              const withMetrics = <T extends { id: string; officialEventHandicap: number | null }>(player: T) => {
-                const metrics = handicapMetricsByPlayerId.get(player.id);
-                return {
-                  ...player,
-                  courseHandicap: metrics?.courseHandicap ?? null,
-                  strokesGiven: metrics?.strokesGiven ?? null,
+                const teamAPlayerCards = buildPlayers(teamAPlayers);
+                const teamBPlayerCards = buildPlayers(teamBPlayers);
+                const matchPlayerCards = [...teamAPlayerCards, ...teamBPlayerCards];
+                const handicapMetricsByPlayerId = calculateMatchHandicapMetrics(
+                  matchPlayerCards.map((player) => ({
+                    playerId: player.id,
+                    officialEventHandicap: player.officialEventHandicap,
+                  })),
+                  {
+                    slope: match.course?.slope ?? null,
+                    rating: match.course?.rating ?? null,
+                    par: match.course?.par ?? null,
+                  },
+                );
+
+                const withMetrics = <T extends { id: string; officialEventHandicap: number | null }>(player: T) => {
+                  const metrics = handicapMetricsByPlayerId.get(player.id);
+                  return {
+                    ...player,
+                    courseHandicap: metrics?.courseHandicap ?? null,
+                    strokesGiven: metrics?.strokesGiven ?? null,
+                  };
                 };
-              };
 
-              return (
-                <Box key={match.id} className={styles.matchBlock}>
-                  <MatchCard
-                    matchNumber={match.match_number}
-                    matchType={match.match_type}
-                    teeTime={formatTime(match.match_time)}
-                    matchDateLabel={formatDate(match.match_date)}
-                    courseLabel={match.course?.name ?? 'Course TBD'}
-                    winnerTeamId={match.winner_team_id}
-                    isHalved={match.is_halved}
-                    teamA={
-                      teamA
-                        ? {
-                            id: teamA.id,
-                            name: teamA.name,
-                            color: teamA.color,
-                            players: teamAPlayerCards.map(withMetrics),
-                          }
-                        : null
-                    }
-                    teamB={
-                      teamB
-                        ? {
-                            id: teamB.id,
-                            name: teamB.name,
-                            color: teamB.color,
-                            players: teamBPlayerCards.map(withMetrics),
-                          }
-                        : null
-                    }
-                  />
-                  {playerRecord?.id ? (
-                    <PlayerMatchResultActions
-                      matchId={match.id}
-                      matchDate={match.match_date}
-                      matchTime={match.match_time}
-                      teamA={teamA ? { id: teamA.id, name: teamA.name } : null}
-                      teamB={teamB ? { id: teamB.id, name: teamB.name } : null}
+                return (
+                  <div key={match.id} id={`match-${match.id}`} className={styles.matchBlock}>
+                    <MatchCard
+                      matchNumber={match.match_number}
+                      matchType={match.match_type}
+                      teeTime={formatTime(match.match_time)}
+                      matchDateLabel={formatDate(match.match_date)}
+                      courseLabel={match.course?.name ?? 'Course TBD'}
                       winnerTeamId={match.winner_team_id}
                       isHalved={match.is_halved}
-                      resultSetByOfficial={match.result_set_by_official === true}
-                      pending={pendingByMatchId.get(match.id) ?? null}
-                      currentPlayerId={playerRecord.id}
-                      participantPlayerIds={participantPlayerIds}
+                      teamA={
+                        teamA
+                          ? {
+                              id: teamA.id,
+                              name: teamA.name,
+                              color: teamA.color,
+                              players: teamAPlayerCards.map(withMetrics),
+                            }
+                          : null
+                      }
+                      teamB={
+                        teamB
+                          ? {
+                              id: teamB.id,
+                              name: teamB.name,
+                              color: teamB.color,
+                              players: teamBPlayerCards.map(withMetrics),
+                            }
+                          : null
+                      }
                     />
-                  ) : null}
-                </Box>
-              );
-            })}
-          </Box>
-        )}
+                    {playerRecord?.id ? (
+                      <PlayerMatchResultActions
+                        matchId={match.id}
+                        matchDate={match.match_date}
+                        matchTime={match.match_time}
+                        teamA={teamA ? { id: teamA.id, name: teamA.name } : null}
+                        teamB={teamB ? { id: teamB.id, name: teamB.name } : null}
+                        winnerTeamId={match.winner_team_id}
+                        isHalved={match.is_halved}
+                        resultSetByOfficial={match.result_set_by_official === true}
+                        pending={pendingByMatchId.get(match.id) ?? null}
+                        currentPlayerId={playerRecord.id}
+                        participantPlayerIds={participantPlayerIds}
+                      />
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
 
-      </Paper>
+        <LodgingInfoCard
+          lodgingInfo={lodgingInfo}
+          showConfirmationNumber
+          emptyMessage="No room assignment found for you yet."
+        />
 
-      <LodgingInfoCard
-        lodgingInfo={lodgingInfo}
-        showConfirmationNumber
-        cardClassName={styles.lodgingCard}
-        emptyMessage="No room assignment found for you yet."
-      />
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>Re-rounds</h2>
+          {reroundsList.length === 0 ? (
+            <p className={styles.emptyText}>No re-rounds scheduled for you yet.</p>
+          ) : (
+            <div className={styles.reroundList}>
+              {reroundsList.map((reround) => {
+                const playerNames = [
+                  reround.player1_id,
+                  reround.player2_id,
+                  reround.player3_id,
+                  reround.player4_id,
+                ]
+                  .map((playerId) => {
+                    if (!playerId) return 'TBD';
+                    const player = reroundPlayersById.get(playerId);
+                    return player ? `${player.first_name} ${player.last_name}` : 'TBD';
+                  })
+                  .join(', ');
 
-      <Paper
-        elevation={2}
-        className={`${styles.reroundsCard} ${styles.reroundsCardAccent}`}
-      >
-        <Typography variant="h6" className={styles.sectionTitle}>
-          Re-rounds
-        </Typography>
-        {reroundsList.length === 0 ? (
-          <Typography variant="body2" className={styles.detailText}>
-            No re-rounds scheduled for you yet.
-          </Typography>
-        ) : (
-          <Box className={styles.reroundList}>
-            {reroundsList.map((reround) => {
-              const playerNames = [
-                reround.player1_id,
-                reround.player2_id,
-                reround.player3_id,
-                reround.player4_id,
-              ]
-                .map((playerId) => {
-                  if (!playerId) return 'TBD';
-                  const player = reroundPlayersById.get(playerId);
-                  return player ? `${player.first_name} ${player.last_name}` : 'TBD';
-                })
-                .join(', ');
-
-              return (
-                <Box key={reround.id} className={styles.reroundItem}>
-                  <Typography variant="subtitle1" className={styles.matchTitle}>
-                    {formatDate(reround.reround_date)} · {formatTime(reround.reround_time)} ·{' '}
-                    {reround.course?.name || 'Course TBD'}
-                  </Typography>
-                  <Typography variant="body2" className={styles.matchPlayers}>
-                    {playerNames}
-                  </Typography>
-                </Box>
-              );
-            })}
-          </Box>
-        )}
-      </Paper>
-    </Box>
+                return (
+                  <div key={reround.id} className={styles.reroundItem}>
+                    <div className={styles.reroundTitle}>
+                      {formatDate(reround.reround_date)} · {formatTime(reround.reround_time)} ·{' '}
+                      {reround.course?.name || 'Course TBD'}
+                    </div>
+                    <div className={styles.reroundPlayers}>{playerNames}</div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      </div>
+    </div>
   );
 }
