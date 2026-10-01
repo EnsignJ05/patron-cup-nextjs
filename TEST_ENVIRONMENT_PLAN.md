@@ -609,9 +609,9 @@ at the test project is the recommended default for local development.
 | Test project ref | `uffvcocmlqoxakawnbaq` |
 | Repo visibility | Public — schema migrations tracked anyway; no secrets in DDL, real security is RLS not obscurity |
 | Part IV hardening timing | Second pass — clone prod schema as-is to test first, harden against test afterward |
-| Prod/migration drift found (task 2.3) | _TBD_ |
-| Baseline dump edits made (task 3.2) | _TBD_ |
-| Test site public or SSO-protected (task 4.3) | **Temporarily SSO-protected as of 2026-09-30** (see risk #1 below) — target end state is still public, deferred until task 6.1 passes |
+| Prod/migration drift found (task 2.3) | None — superseded by task 3.2's full `pg_dump`, which is stronger evidence than the originally-planned spot-check queries. All 4 previously-untracked migrations' effects (ghin columns, `match_results_pending`, `ceremony_award_nominations`, `event_participants` trip-planning columns) are present in the live schema |
+| Baseline dump edits made (task 3.2) | 3: (1) removed `CREATE SCHEMA public` — always pre-exists; (2) commented out 8 trailing `ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin` statements — platform-locked role, fails as `postgres` user, already correct by default; (3) manually appended the `auth.users` → `handle_new_user()` trigger, which a `--schema=public` dump can't capture |
+| Test site public or SSO-protected (task 4.3) | SSO-protected as of 2026-09-30; **isolation now proven (task 6.1 passed 2026-10-01)** — ready to flip to public whenever desired, just not done yet |
 
 ## 10. Known risks
 
