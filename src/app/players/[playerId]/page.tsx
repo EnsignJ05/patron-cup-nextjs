@@ -9,8 +9,6 @@ import DashboardProfileForm from '@/components/player/DashboardProfileForm';
 import MatchCard from '@/components/matches/MatchCard';
 import LodgingInfoCard from '@/components/player/LodgingInfoCard';
 import styles from './page.module.css';
-// import PlayerRerounds from '@/components/player/PlayerRerounds';
-// import PlayerStats from '@/components/player/PlayerStats';
 
 const formatDate = (dateStr: string) =>
   new Date(`${dateStr}T00:00:00`).toLocaleDateString('en-US', {
