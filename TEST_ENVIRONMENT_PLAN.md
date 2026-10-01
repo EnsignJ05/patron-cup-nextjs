@@ -1992,6 +1992,110 @@ agent might copy.
 while `src/components/scoreboard/*` exists is actively confusing, and `LIVE_SCORING_PLAN.md`
 plans a scoreboard route — coordinate before deleting that one.
 
+### 15.11 Admin audit (added 2026-10-01, per section 16.6 — `/admin` now in scope)
+
+Same depth as 15.6/15.7 did for public pages. **One finding here changes the 16.1 MUI
+decision** — see the callout after the inventory table.
+
+**19 nominal routes, but only 17 are real pages.** `src/app/admin/page.tsx` (4 lines) and
+`src/app/admin/tee-times/page.tsx` (5 lines) are both pure `redirect()` stubs with no UI —
+`/admin` → `/admin/dashboard`, `/admin/tee-times` → `/admin/matches/setup`. Nothing to design
+or migrate for either. `src/app/admin/layout.tsx` (19 lines) is the auth gate
+(`isAdminRole` check, redirect to `/login` or `/unauthorized`) — also no UI, not a page.
+
+**Route inventory** (LOC / MUI import count / CSS module? / dark-mode refs / hardcoded
+colors — the last two checked in the `.module.css` where one exists, or directly in the
+`.tsx`'s `sx` props where it doesn't, since several admin pages have no CSS module at all and
+style entirely inline):
+
+| Route | LOC | MUI imports | CSS module? | Dark-mode refs | Hardcoded colors |
+|---|---|---|---|---|---|
+| `/admin/dashboard` | 171 | 16 | yes | 0 | 0 |
+| `/admin/players` | 412 | 24 | yes | 2 | 4 |
+| `/admin/events` | 339 | 23 | yes | 2 | 4 |
+| `/admin/teams` | 448 | 26 | none | — | 0 (3 unique `var(--x)` refs) |
+| `/admin/courses` | 341 | 24 | none | — | 0 (2 unique `var(--x)` refs) |
+| `/admin/matches` | 452 | 26 | none | — | 0 (2 unique `var(--x)` refs) |
+| `/admin/matches/setup` | 526 + 331 (`TeeTimeBoard.tsx`) | 17 + 1 | yes (page only) | 1 | 6 |
+| `/admin/scores` | 493 | 19 | none | — | 0 (8 unique `var(--x)` refs) |
+| `/admin/handicaps` | 533 | 18 | none | — | 0 (4 unique `var(--x)` refs) |
+| `/admin/participants` | 426 | 28 | none | — | 1 (3 unique `var(--x)` refs) |
+| `/admin/rerounds` | 400 | 27 | none | — | 1 (3 unique `var(--x)` refs) |
+| `/admin/lodging` | 656 | 27 | none | — | 0 (2 unique `var(--x)` refs) |
+| `/admin/travel` | 478 | 27 | none | — | 3 (2 unique `var(--x)` refs) |
+| `/admin/award-nominations` | 117 | 9 | none | — | not checked, small page |
+| `/admin/invite` | 138 | 1 (uses shared `FormPage`) | yes | 0 | 0 |
+| `/admin/change-username` | 88 | 1 (uses shared `FormPage`) | yes | 0 | 0 |
+| `/admin/reset-password` | 99 | 1 (uses shared `FormPage`) | yes | 0 | 0 |
+
+**10 of the 17 real pages have no CSS module at all** — they style entirely via MUI's `sx`
+prop, inline in the JSX. This is a *third* styling pattern alongside the two already found in
+public pages (CSS modules + `--pc-*` tokens on redesigned pages; CSS modules + legacy vars on
+old public pages) — inline `sx` referencing legacy vars as raw strings (e.g.
+`sx={{ color: 'var(--text)' }}`), with no stylesheet at all. These pages likely render
+correctly in dark mode today by the same accident as the legacy public pages (the vars they
+reference are theme-keyed), not by design.
+
+**Zero `--pc-*` token usage anywhere in `/admin`** (confirmed by grep) — expected, since this
+is exactly the gap section 16.6 exists to close.
+
+**Shared component usage:** `src/components/shared/FormPage.tsx` is used by exactly the three
+small account-management pages (`invite`, `change-username`, `reset-password`) — these are
+already simple and consistent with each other, likely the cheapest admin pages to migrate.
+`src/components/shared/Card.tsx` is used by `scores` and `matches/setup` (shared with public
+pages too — Part III's existing component-coupling caution applies here as well). No admin
+page uses `ComingSoon`, `AddToCalendar`, or `PageContainer` — consistent with Part III 15.10
+already marking those three dead.
+
+**`admin/handicaps/page.tsx` already hand-rolls table sorting** (`useState`-driven sort state,
+no `TableSortLabel`/DataGrid) — useful precedent: this codebase already proves hand-built
+sortable tables are a well-trodden path here, not a new risk being introduced.
+
+#### The MUI finding that changes 16.1: `@mui/x-data-grid` is not used in `/admin` at all
+
+Section 16.1's tiered-removal recommendation specifically carved out `@mui/x-data-grid` as
+"genuinely complex, not worth rebuilding" — written assuming it was in active use somewhere
+in admin. **A fresh grep across the entire codebase finds exactly one consumer:
+`src/app/tee-times/page.tsx`** — the public tee-times page, which is part of the **Bandon
+archive already decided for retirement** (section 16, "Bandon archive retirement"). Once that
+route is deleted (Task R0), `@mui/x-data-grid` has **zero remaining consumers anywhere in the
+app** and can simply be removed as a dependency — no rebuild needed, because nothing left
+uses it.
+
+`@mui/x-date-pickers` fares similarly, though not as starkly: **exactly one consumer**,
+`src/app/admin/rerounds/page.tsx` — a single `<DatePicker>` instance wrapped in
+`LocalizationProvider`/`AdapterDateFns`. Not zero, but a single component instance in one
+file is a small, bounded replacement (a native `<input type="date">` or a small custom
+component), not the kind of "rebuild a sortable/filterable/paginated grid from scratch" risk
+that originally motivated keeping it.
+
+**Aggregate MUI component usage across all 17 real admin pages** (import counts, components
+used by more than one file): `Typography`/`Paper`/`Box` (14 files each), `Button`/`Alert` (12),
+plain `Table`/`TableRow`/`TableHead`/`TableCell`/`TableBody`/`TableContainer` (11 — note:
+*plain* MUI tables, not `DataGrid`), `Select`/`MenuItem`/`InputLabel`/`FormControl` (11),
+`TextField` (10), `Dialog` + its four sub-components (10), `IconButton` (9), `Chip` (8), plus
+single-digit usage of `Tabs`, `Switch`, `Divider`, `Card`, `Checkbox`, and (once each)
+`TableSortLabel`, `InputAdornment`, `FormHelperText`. **Every one of these has a reasonable
+hand-built equivalent** — this is squarely the "simple/common" category 16.1 already said to
+remove, not the exception case.
+
+**Revised recommendation for 16.1, given this audit: reconsider full MUI removal.** The
+specific justification for the tiered carve-out — a complex, high-engineering-cost widget in
+real use — turns out not to hold once the Bandon archive is gone. What remains needing a
+decision is narrow: one `DatePicker` instance. If a small hand-built date input is acceptable
+there, **MUI can be removed from the project entirely**, which is more consistent than the
+tiered approach and avoids standing up a `ThemeProvider` + re-theming work for marginal
+benefit. The original tiered decision isn't wrong, just no longer necessary — this is worth
+a quick confirm-or-revise from the user before any admin page's CSS gets migrated, since it
+changes the target end-state for all 17 pages, not just one.
+
+**Separate from the MUI decision entirely: `admin/matches/setup/TeeTimeBoard.tsx`'s
+drag-and-drop is real, working complexity** (`@dnd-kit`'s `DndContext`/`useSortable`/
+`DragOverlay`) that should be **re-skinned, not rebuilt** — restyle its visual output to the
+design system, leave the drag-and-drop logic untouched regardless of what's decided about MUI
+elsewhere, since `@dnd-kit` is an unrelated library or this is not a MUI dependency to begin
+with.
+
 ---
 
 ## 16. Decisions — finalized by the user 2026-10-01, superseding the recommendations below
@@ -2002,12 +2106,20 @@ and interacts with 16.1 and 16.4 in ways worth being explicit about. Read 16.6 b
 starting any R-series task — it's new, added to capture what these answers actually require
 that the original plan didn't account for.
 
-### 16.1 MUI: target or waypoint? — **Tiered removal, not all-or-nothing**
+### 16.1 MUI: target or waypoint? — **Tiered removal as first written; revised by the admin audit, see 15.11**
 User: agnostic on MUI itself, wants "the best path forward" and consistency, open to removing
 it if that's right. Given 16.2 now puts `/admin` in scope too (including `@mui/x-data-grid`
 and `@mui/x-date-pickers`, genuinely complex widgets — sorting, filtering, pagination,
 accessible date picking), a full from-scratch rebuild of those two specifically is real
 engineering risk for committee-only screens, for a cost disproportionate to the benefit.
+
+**Superseded by 15.11's findings, once the admin audit actually ran:** `@mui/x-data-grid` has
+exactly one consumer in the whole codebase (`src/app/tee-times/page.tsx`, part of the Bandon
+archive already being deleted) and `@mui/x-date-pickers` has exactly one (`admin/rerounds`'s
+single `DatePicker`). The "genuinely complex, actively used" justification for this tiered
+carve-out doesn't hold once the archive is gone. **Open question for the user, not yet
+re-decided:** keep the tiered plan below, or go with 15.11's revised recommendation (full MUI
+removal, no `ThemeProvider` needed)? Record the answer in section 19 once given.
 
 **Decision: remove MUI everywhere it has a reasonable hand-built equivalent** (buttons,
 dialogs, text fields, simple tables, chips, menus) **— keep only `@mui/x-data-grid` and
@@ -2273,7 +2385,9 @@ All decided by the user 2026-10-01 — see section 16 for full reasoning on each
 | R0 dead-code deletion shipped (commit) | _TBD_ — not started; scope now also includes the Bandon archive files (below) |
 | Bandon archive retirement (= Part IV 21.1/21.3) | **Decided: retire.** `/tee-times`, `/tee-times/2025/[playerSlug]`, `repositories/bandon.ts`, `getAllPlayersAndMatches.ts`, `getPlayerRecord.ts`, `getMatchesWithPlayers.ts`, `PlayerMatches.tsx`, `scoreboard/CourseScoreCard.tsx`, `scoreboard/MatchRow.tsx` all confirmed deletable, folded into Task R0 |
 | `src/app/scoreboard/` — deleted, or reserved for live scoring? | Still reserved for [[project-live-scoring]] — the Bandon decision doesn't touch this, it's a different empty directory for a different future feature |
-| Admin audit + design request (16.6) | _TBD_ — not started; this is the next concrete piece of work before any admin R-series task can be written |
+| Admin audit (16.6, half of it) | **Done 2026-10-01 — see section 15.11.** Found 17 real pages (not 19 — 2 are redirect stubs), 10 of which have no CSS module at all (pure inline `sx`), zero `--pc-*` usage anywhere, and critically: `@mui/x-data-grid` has one consumer total (the Bandon archive being deleted) and `@mui/x-date-pickers` has one (`admin/rerounds`). This reopens 16.1 — see that entry |
+| Admin design request (16.6, other half) | _TBD_ — not started; new design direction for admin (likely the `design` skill) still needed before any admin R-series task can be written, independent of the MUI question |
+| 16.1 re-decision: tiered MUI removal, or full removal per 15.11? | _TBD_ — open question for the user, raised by the admin audit |
 
 ---
 
