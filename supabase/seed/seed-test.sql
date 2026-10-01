@@ -176,11 +176,18 @@ where u.email = public.players.email
   and public.players.email in ('test-admin@example.com', 'test-committee@example.com', 'test-player@example.com');
 
 -- profiles row for any player now linked to an auth user (mirrors handle_new_user()'s
--- effect for ones created before this reseed ran).
+-- effect for ones created before this reseed ran; a no-op once the auth user already
+-- exists, since the trigger already created it at auth.users insert time).
 insert into public.profiles (id, must_change_password)
 select auth_user_id, false from public.players
 where auth_user_id is not null
 on conflict (id) do nothing;
+
+-- Task 6.3 acceptance requires one of the three reserved accounts to still be mid
+-- forced-password-change, to exercise that flow -- handle_new_user() always creates new
+-- profiles with must_change_password=false, so this must be set explicitly, every reseed.
+update public.profiles set must_change_password = true
+where id = (select auth_user_id from public.players where email = 'test-player@example.com');
 
 -- ---------------------------------------------------------------------------
 -- Team rosters

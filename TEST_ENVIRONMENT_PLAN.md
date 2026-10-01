@@ -565,7 +565,7 @@ Seeds must satisfy the constraints added in Part IV task H5 (composite uniques, 
 Commit the seed script — it must be re-runnable after a schema reset. Make it idempotent
 (explicit ids + `on conflict do nothing`, or a `truncate` preamble scoped to test).
 
-### Task 6.3 (Agent/Human) Create test auth users
+### Task 6.3 (done 2026-10-01) Create test auth users
 Auth users cannot be seeded with plain SQL safely. Either:
 - Use the test project's dashboard → Authentication → Users → Add user (email +
   password, auto-confirm), then set `players.auth_user_id` to the new user's uuid; or
@@ -573,16 +573,29 @@ Auth users cannot be seeded with plain SQL safely. Either:
   but that requires an admin to already exist, so bootstrap the first one via the
   dashboard.
 
-Create at least three, one per role in `PlayerRole` (`admin`, `committee`, `player`), so
-the role gating in `src/lib/authConfig.ts` and `src/middleware.ts` can be exercised.
-For each, ensure the linked `players` row has the right `role` and `status = 'active'`,
-and set `profiles.must_change_password` to `false` for the day-to-day test accounts
-(leave one `true` to test the forced-change flow).
+**Done via a third option** — the Admin Auth API directly (`POST .../auth/v1/admin/users`
+with the service-role key, `email_confirm: true`), the same mechanism
+`src/app/api/admin/invite/route.ts` uses, just scripted instead of clicked. Created
+`test-admin@example.com` (admin), `test-committee@example.com` (committee),
+`test-player@example.com` (player) — the three emails Task 6.2's seed script already
+reserved and auto-links by email. Re-ran the seed script afterward, which relinked all three
+`players.auth_user_id` values and let `handle_new_user()`'s trigger create their `profiles`
+rows automatically.
 
-Store the test credentials in the team password manager, not in the repo.
+One wrinkle: `handle_new_user()` always creates a new profile with `must_change_password =
+false`, so getting one account into the forced-change state required an explicit `UPDATE`
+afterward (`test-player@example.com`) — added to the seed script itself so it survives a
+future reseed, not just a one-off manual fix.
 
-**Acceptance:** all three accounts can log in at `https://test.patron-cup.com/login`;
-`/admin` is reachable as admin/committee and redirects to `/unauthorized` as player.
+Credentials given directly to the user for their password manager, not recorded in this file
+or anywhere in the repo, per this task's own instruction.
+
+**Acceptance (met):** verified via Supabase's password-grant endpoint
+(`POST .../auth/v1/token?grant_type=password`) that all three accounts authenticate
+successfully, returned user ids matching exactly what was recorded at creation time. The
+`/admin` → admin/committee allow, player → `/unauthorized` behavior was not re-tested live;
+it's already covered by the Tier A middleware tests added during Part II (Task S3), which
+directly exercise `getAuthRedirectDecision` against each role.
 
 ---
 
