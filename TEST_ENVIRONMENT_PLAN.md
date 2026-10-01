@@ -505,10 +505,42 @@ deployment automatically) → re-run the JS-bundle-ref check via `vercel curl` �
 correct ref appears. All of this is doable without disabling Deployment Protection at any
 point.
 
-### Task 6.2 (Agent) Write a seed script
+### Task 6.2 (done 2026-10-01) Write a seed script
 Create `supabase/seed/seed-test.sql` (or a `scripts/seed-test.ts` using
 `createSupabaseAdminClient` against test env vars — pick whichever the executing engineer
 can run more reliably; SQL run from the dashboard editor has fewer moving parts).
+
+**Done as a SQL script, applied directly via the `~/.pgpass` psql connection from Part I.**
+Not written after H5 as originally specified — Part IV's hardening migrations haven't shipped
+yet (still the deliberate second pass per section 9's decision), so there are no composite
+unique constraints to satisfy yet. If H5 ships later, re-check this script against the new
+constraints before relying on it again.
+
+One genuine Postgres syntax trap hit repeatedly while writing this, worth remembering: a
+`WITH` clause containing a data-modifying statement (`INSERT ... RETURNING`) must lead the
+**entire** statement — `INSERT INTO tmp (...) WITH ins AS (INSERT ... RETURNING id) SELECT ...`
+is invalid; it must be `WITH ins AS (INSERT ... RETURNING id) INSERT INTO tmp (...) SELECT ...
+FROM ins`. Also, a bare `INSERT ... RETURNING` cannot appear inline as a `FROM (...)`
+subquery at all — only as a CTE. Both mistakes were made and fixed while building this script.
+
+Final shape: idempotent via `TRUNCATE ... RESTART IDENTITY CASCADE` on `events`, `courses`,
+`players` (truncating these three cascades through virtually every other seeded table via FK,
+since they're all downstream of one of the three). One active event (19th Annual Patron Cup,
+the real 2027 Streamsong trip per `src/app/page.tsx`'s `NEXT_TRIP`), the four real Streamsong
+courses with hole data, 2 teams of 12, 24 players (21 clearly-fictional golf-pun names, plus 3
+reserved accounts — `test-admin@example.com`, `test-committee@example.com`,
+`test-player@example.com` — for Task 6.3), one player deliberately `status = 'inactive'` to
+exercise the admin-picker bug from Part IV section 20.5.1, lodging + travel info for a subset,
+9 matches across 2 of the 4 rounds (the other 2 rounds intentionally left empty, to also
+exercise the "no matches yet" UI state), and `match_results_pending` rows covering all 5
+`MatchResultsPendingStatus` values (confirmed this explicitly — an earlier pass only produced
+4 distinct statuses, because a row inserted as `'cancelled'` was immediately overwritten to
+`'superseded'` by the very next statement, silently losing that example; added a 9th,
+untouched match specifically to carry a durable `'cancelled'` row).
+
+The script also re-links the 3 reserved accounts' `auth_user_id` by email if those auth users
+already exist, so re-running this seed after Task 6.3 has created them doesn't require
+redoing that step.
 
 Seed, in dependency order, referencing `src/types/database.ts` for column shapes:
 1. `courses` (+ hole data) — at least the current trip's courses.
@@ -619,7 +651,7 @@ at the test project is the recommended default for local development.
 | Existing anon column grants on `players` (11.5 q4) | `anon` holds SELECT/INSERT/UPDATE/REFERENCES on every column, no exceptions — confirms section 11.2's "Supabase default grants" theory as fact, not inference |
 | S4 migration applied to test / prod (dates) | **Both done 2026-10-01.** Test: verified via seeded fake rows. Prod: PR #24 merged and deployed; independently verified S2/S3 were actually live (307 redirect on `/players/<id>`, exact `PUBLIC_PLAYER_COLUMNS` array present in the deployed bundle, no `select('*')` remaining) before applying the migration. All three acceptance checks pass on production; `/roster`, `/teams`, `/matches` confirmed still returning HTTP 200 |
 | S5 public-vs-member classification approved by | _TBD_ — open committee question on `travel_info`/`lodging_assignments` only; everything else in that task needs no decision |
-| Committee notified (S7) | _TBD_ |
+| Committee notified (S7) | Done — confirmed by user 2026-10-01 |
 
 ## 10. Known risks
 
@@ -1223,7 +1255,7 @@ update `src/types/database.ts`.
 This is the only task here that changes the schema shape, so it is the one that most wants
 the test environment first. Not a blocker for S1–S5.
 
-### Task S7 (Human) Disclosure
+### Task S7 (done) Disclosure
 The emails and phone numbers of 54 people were readable by unauthenticated callers for some
 period; treat them as already disclosed. Proportionate response for a private golf-trip site:
 - Tell the committee what was exposed and that it is fixed. No need to alarm all 54.
