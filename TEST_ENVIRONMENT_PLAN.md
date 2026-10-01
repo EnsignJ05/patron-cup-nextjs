@@ -617,7 +617,7 @@ at the test project is the recommended default for local development.
 | Real `players` column list (11.5 q3) | Matches section 11.7's planned safe-list exactly, no drift — confirmed 2026-10-01 via direct query |
 | Tables found with RLS disabled (11.4 / old S5) | **None — RLS enabled on all 26 tables**, confirmed 2026-10-01. Task S5 rescoped accordingly |
 | Existing anon column grants on `players` (11.5 q4) | `anon` holds SELECT/INSERT/UPDATE/REFERENCES on every column, no exceptions — confirms section 11.2's "Supabase default grants" theory as fact, not inference |
-| S4 migration applied to test / prod (dates) | _TBD_ — not yet written as a migration file |
+| S4 migration applied to test / prod (dates) | Test: 2026-10-01, verified via seeded fake rows, all acceptance checks pass. Prod: blocked — S2/S3 must reach production first (merging via PR, per user direction) |
 | S5 public-vs-member classification approved by | _TBD_ — open committee question on `travel_info`/`lodging_assignments` only; everything else in that task needs no decision |
 | Committee notified (S7) | _TBD_ |
 
@@ -1034,7 +1034,36 @@ Confirm `src/lib/authConfig.ts`'s `getAuthRedirectDecision` returns a sane decis
 **Acceptance:** anonymous `curl -sI https://<host>/players/<known-id>` returns 307 to
 `/login?next=/players/<known-id>`; a logged-in player-role account still loads the page.
 
-### Task S4 (Agent + Human) The migration
+### Task S4 — applied and verified on test 2026-10-01; production blocked on a real finding
+
+**The migration shipped to `test` exactly as written below and passed every acceptance check.**
+Seeded two fake player rows (full PII populated) directly in the test project to prove it
+against real rows, not an empty table:
+
+```bash
+# select=* and select=email
+{"code":"42501","details":null,"hint":"Grant the required privileges to the current role with: GRANT SELECT ON public.players TO anon;","message":"permission denied for table players"}
+# HTTP status: 401 (not 403 -- resolves the open question in section 11.6/14)
+
+# select=first_name,last_name,current_handicap
+[{"first_name":"Test","last_name":"Golfer","current_handicap":8.4},
+ {"first_name":"Fake","last_name":"Player","current_handicap":12.1}]
+# HTTP status: 200, no PII fields present
+```
+
+**Production is correctly NOT done yet — a real blocker, not just ordering caution.** Checked
+`git log origin/main..test` before touching anything: **S2 and S3 have never been pushed to
+`origin`, let alone merged into `main`.** Production's deployed code still sends `select('*')`
+on every request. Applying this migration to production *right now* would make every one of
+those requests fail with `42501` — breaking `/roster`, `/players`, `/teams` live, for real
+visitors, immediately. This is section 12's ordering rule actually mattering, not a
+theoretical "don't reverse the steps" warning.
+
+**Path to production, per user direction:** merge to `main` via a pull request (not a direct
+merge), then push, then confirm the production deployment reflects S2/S3 before applying this
+migration there. Only after that is verified does this task's production half proceed.
+
+### Task S4 — the migration itself
 Write `supabase/migrations/20260927120000_players_pii_column_grants.sql`. Adjust the column
 list only if section 11.5 query 3 found different names.
 
@@ -1539,7 +1568,7 @@ One item from the original list is still genuinely open, not yet testable:
 
 | Item | Value |
 |---|---|
-| Does PostgREST 403 on anon `select=*`? (11.6) | _TBD_ — can't test until the Task S4 migration exists and is applied somewhere (test or prod); this is the first assertion in section 13.2's test suite |
+| Does PostgREST 403 on anon `select=*`? (11.6) | **Resolved 2026-10-01: HTTP 401**, not 403, with Postgres error code `42501` in the body. Verified on test against seeded fake rows |
 
 ---
 
