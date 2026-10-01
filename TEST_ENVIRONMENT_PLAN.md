@@ -2285,7 +2285,7 @@ status`, plus whatever the UI shows), never `email`/`phone`/`ghin`.
 **Acceptance:** `/roster` visually consistent with `/matches` when navigating via the tab
 bar; correct in both themes at 375px wide; no `email` or `phone` in the network response.
 
-### Task R3 (Agent) Shared components for the dashboard unit
+### Task R3 (done 2026-10-01, commit `1161d3a`) Shared components for the dashboard unit
 Migrate `matches/MatchCard.tsx` (resolving its 5 hardcoded colors), `player/LodgingInfoCard.tsx`,
 and `player/DashboardProfileForm.tsx` to `--pc-*`. `MatchCard` has an existing test
 (`src/components/matches/__tests__/MatchCard.test.tsx`) and a story — keep both passing;
@@ -2294,7 +2294,7 @@ update the story if class names change.
 Do this **before** R4 so the two pages that consume these components are migrated against
 already-final components.
 
-### Task R4 (Agent) `/dashboard` + `/players/[playerId]` — one unit
+### Task R4 (done 2026-10-01, commits `4eeac62`+`21da1b9`) `/dashboard` + `/players/[playerId]` — one unit
 The largest remaining piece (512 + 457 lines of TSX, 281 + 164 of CSS). They share the three
 components from R3 plus `PlayerStats` and `PlayerRerounds` (migrate those here). Per 15.7
 these two pages cannot be split without leaving a component styled for the other.
