@@ -620,18 +620,46 @@ direct DB/Auth API checks):**
 - [x] Production `patroncup.com` independently re-confirmed unaffected, still serving its
       own ref
 
-**Still needs an actual human in a real browser** — these are inherently visual/interactive
-and were not faked or assumed:
+**Backend/RLS behavior verified 2026-10-01, with real authenticated sessions against the
+seeded data** (no browser tool was available in that session — no `claude-in-chrome` or
+built-in browser was actually loaded despite appearing in the skill catalog, and `WebFetch`
+can't carry Deployment Protection's bypass or real login cookies — so this substituted a
+rigorous API-level check for the parts of "admin flows write successfully" and "avatar upload
+succeeds" that don't strictly require pixels):
+- [x] Committee/admin can write another player's row (`current_handicap` update, `204`);
+      verified the new value actually persisted, not just a non-error status
+- [x] A player **cannot** write another player's row — the request returns `200` with an
+      empty result (RLS silently filters it, not an error), confirmed by checking the target
+      row's value was unchanged
+- [x] A player **can** write their own row (`bio` update, succeeded with full column access,
+      correct for `authenticated`)
+- [x] Full match-result flow end-to-end via the real RPCs, not a mock: `propose_match_result`
+      (as `test-admin`, a match participant) → `finalize_match_result_from_pending` (as
+      `test-committee`, a different participant, confirming) → verified the match's
+      `winner_team_id`/`is_halved` were actually set and the proposal row shows
+      `status='confirmed'`, `promoted_at` populated
+- [x] Avatar upload through the real Storage API as `test-player`: upload to own folder
+      succeeds (`200`), the result is publicly readable by `anon` (`200`, no auth header),
+      and uploading into a *different* user's folder is correctly rejected
+      (`"new row violates row-level security policy"`) — this is the first time task 3.4's
+      bucket policies were tested with an actual upload rather than a policy-definition diff
+- [x] Test data restored to its pristine seeded state afterward (re-ran the idempotent seed
+      script), since the checks above legitimately wrote to match 5, Alex Fairway's
+      handicap, and test-player's bio
+
+**Still needs an actual human in a real browser** — purely visual/interactive, not
+approximable via API:
 - [ ] Home page's pre-trip vs on-trip visual state, and all pages' **dark mode** rendering
 - [ ] **Mobile viewport** layout (per `AGENTS.md`, this is the priority surface, not an
       afterthought)
-- [ ] Admin flows actually writing correctly through the UI (create/edit a player, set up a
-      match, enter a score, approve a pending result) — login as `test-admin@example.com`
-- [ ] Avatar upload through the actual file-picker UI (validates task 3.4's bucket/policy
-      setup end-to-end, not just that the policies exist)
-- [ ] `/dashboard` and award nominations as `test-player@example.com`
-- [ ] Forced password-change flow, specifically via `test-player@example.com` (seeded with
-      `must_change_password = true`)
+- [ ] The admin UI itself — the backend logic behind "create/edit a player, set up a match,
+      enter a score, approve a pending result" is now proven correct (above), but the forms
+      and buttons that drive it have not been clicked
+- [ ] Avatar upload through the actual file-picker UI (the storage policy is now proven
+      correct; the `<input type="file">` UX itself hasn't been exercised)
+- [ ] Forced password-change **screen**, via `test-player@example.com` (seeded with
+      `must_change_password = true`) — the middleware redirect to it is tested, the screen
+      itself is not
 
 Since Deployment Protection is still on, only the account owner can currently do this walk —
 worth doing before deciding to make the site public.
