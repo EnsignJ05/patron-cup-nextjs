@@ -636,7 +636,7 @@ and were not faked or assumed:
 Since Deployment Protection is still on, only the account owner can currently do this walk —
 worth doing before deciding to make the site public.
 
-### Task 7.2 (Agent) Document the workflow in `AGENTS.md`
+### Task 7.2 (done 2026-10-01) Document the workflow in `AGENTS.md`
 Add a short section covering:
 - The branch flow: feature → `test` → `main`.
 - Environments table: local (`.env.local`), test (`test` branch → test.patron-cup.com → `patron-cup-test`), production (`main` → patroncup.com → prod project).
@@ -659,7 +659,7 @@ reuses them.
 
 Do this as its own commit, separate from the test-environment work.
 
-### Task 7.4 (Agent) Add `.env.example`
+### Task 7.4 (done 2026-10-01) Add `.env.example`
 There is no template for the three required variables. Add a committed
 `.env.example` listing `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
 `SUPABASE_SERVICE_ROLE_KEY` with placeholder values and a comment noting that pointing
