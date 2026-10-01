@@ -2272,7 +2272,7 @@ not just the original 9) do not each re-derive the conventions and drift. **Acce
 reviewer who has never seen the handoff can migrate a page using only `AGENTS.md` plus one
 existing redesigned page as reference.
 
-### Task R2 (Agent) `/roster` — first tab-bar seam
+### Task R2 (done 2026-10-01, commit `2c4cd6e`) `/roster` — first tab-bar seam
 `src/app/roster/page.tsx` (117 lines) is mostly a MUI `Table` with a `TextField` search and
 `Chip`s. Rebuild as a mobile-first card/list layout using `--pc-card`, `--pc-rule`,
 `--pc-ink*` — a desktop-oriented data table is exactly the pattern `AGENTS.md` warns
@@ -2304,12 +2304,12 @@ Also the second tab-bar seam (15.3), and a Part II site (`dashboard/page.tsx:159
 Consider splitting the PR by component rather than by page if review size becomes a problem,
 but land them in one sequence without an intervening release.
 
-### Task R5 (Agent) `/players`
+### Task R5 (done 2026-10-01, commit `d84883a`) `/players`
 143 lines. Note its CSS module already has 2 theme references **and** 4 hardcoded colors —
 reconcile both into tokens. Part II site (`players/page.tsx:31`) and its detail page was
 handled in R4 (`players/[playerId]/page.tsx:37`).
 
-### Task R6 (Agent) `/teams`
+### Task R6 (done 2026-10-01, commit `908a3fa`) `/teams`
 162 lines. **Highest-value Part II overlap:** `teams/page.tsx:57` is the nested-embed leak
 (`team_rosters.select('*, player:players(*)')`) that Part II labels F4 and that the original
 third-party review missed. Replace the embed's `players(*)` with an explicit column list in
