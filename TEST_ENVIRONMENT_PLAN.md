@@ -1,6 +1,6 @@
 # Test Environment Implementation Plan
 
-Goal: a fully isolated test site at `https://test.patroncup.com` backed by its own
+Goal: a fully isolated test site at `https://test.patron-cup.com` backed by its own
 Supabase project, deployed from a long-lived `test` git branch on Vercel, so that
 schema changes and feature work can be validated against realistic-but-fake data
 before touching production.
@@ -132,8 +132,8 @@ not found). Phase 2 installs it.
 ### Task 1.1 (Human) Confirm access
 Verify you can sign in to all of these before starting; the plan stalls without them.
 - Supabase dashboard, with permission to create a new project in the org that owns the production project.
-- Vercel dashboard, with access to the project serving `patroncup.com`.
-- DNS control for `patroncup.com` (wherever the nameservers point — registrar or Cloudflare).
+- Vercel dashboard, with access to the project serving `patroncup.com` (production is on a friend's `patroncup.com`; the test subdomain goes on `patron-cup.com`, which the user owns through Vercel — see task 5.1).
+- DNS control for `patron-cup.com` (the user's own domain, managed through Vercel) — **not** `patroncup.com`, which belongs to someone else and is why the test site lives on a different domain entirely rather than a subdomain of production.
 - GitHub `EnsignJ05/patron-cup-nextjs` push access.
 
 ### Task 1.2 (Human) Decide the Supabase plan/cost
@@ -355,7 +355,7 @@ git pull
 git checkout -b test
 git push -u origin test
 ```
-Convention going forward: feature branch → `test` (validate on test.patroncup.com) →
+Convention going forward: feature branch → `test` (validate on test.patron-cup.com) →
 `main` (production). Document this in `AGENTS.md` as part of task 7.2.
 
 ### Task 4.2 (Human) Choose the Vercel wiring — one project, branch-scoped env
@@ -388,7 +388,7 @@ already uses Custom Environments; fewer moving parts.
 ### Task 4.3 (Human) Deployment protection
 Preview deployments may sit behind Vercel Authentication (SSO), which would block
 non-Vercel testers. Settings → Deployment Protection: either disable protection for this
-environment, or add `test.patroncup.com` as a protection bypass. Decide whether the test
+environment, or add `test.patron-cup.com` as a protection bypass. Decide whether the test
 site should be publicly reachable — it will contain fake data but mirrors the real UI, so
 public is usually acceptable and much easier for trip participants to test with.
 
@@ -398,22 +398,23 @@ public is usually acceptable and much easier for trip participants to test with.
 
 ## 6. Phase 5 — Domain and auth URLs
 
-### Task 5.1 (Human) Point `test.patroncup.com` at the test branch
-1. Vercel → project → Settings → Domains → Add `test.patroncup.com`.
+### Task 5.1 (Human) Point `test.patron-cup.com` at the test branch
+1. Vercel → project → Settings → Domains → Add `test.patron-cup.com`.
 2. When prompted, assign it to the **`test` git branch** (not Production). This is what
    makes the subdomain track that branch's latest deployment instead of a one-off URL.
 3. Add the DNS record Vercel shows — normally `CNAME test → cname.vercel-dns.com` — at
-   whatever host serves `patroncup.com` DNS. Do not guess the target; copy the exact
-   value Vercel displays.
+   whatever host manages `patron-cup.com` DNS (the user's own domain, through Vercel — this
+   is a separate domain from production's `patroncup.com`, not a subdomain of it, since a
+   friend owns that one). Do not guess the target; copy the exact value Vercel displays.
 4. Wait for Vercel to report the domain as Valid (DNS propagation, minutes to hours).
 
-**Acceptance:** `https://test.patroncup.com` serves the app over valid TLS, and
-`dig test.patroncup.com` resolves.
+**Acceptance:** `https://test.patron-cup.com` serves the app over valid TLS, and
+`dig test.patron-cup.com` resolves.
 
 ### Task 5.2 (Human) Configure Supabase Auth for the test site
 Test project → Authentication → URL Configuration:
-- **Site URL:** `https://test.patroncup.com`
-- **Redirect allow list:** add `https://test.patroncup.com/**` and, for local dev against
+- **Site URL:** `https://test.patron-cup.com`
+- **Redirect allow list:** add `https://test.patron-cup.com/**` and, for local dev against
   the test backend, `http://localhost:3000/**`.
 
 Without this, auth redirects bounce to the wrong origin or are rejected.
@@ -434,7 +435,7 @@ from production**. Do not clone prod rows wholesale — `players` holds real nam
 emails, and GHIN numbers.
 
 ### Task 6.1 (Agent) Prove isolation before writing anything
-Open `https://test.patroncup.com`, and in the browser devtools network tab confirm
+Open `https://test.patron-cup.com`, and in the browser devtools network tab confirm
 Supabase requests go to `<TEST_REF>.supabase.co`, not the prod ref. Do not proceed to
 seeding until this is confirmed — this is the guard against the 4.2 failure mode.
 
@@ -482,7 +483,7 @@ and set `profiles.must_change_password` to `false` for the day-to-day test accou
 
 Store the test credentials in the team password manager, not in the repo.
 
-**Acceptance:** all three accounts can log in at `https://test.patroncup.com/login`;
+**Acceptance:** all three accounts can log in at `https://test.patron-cup.com/login`;
 `/admin` is reachable as admin/committee and redirects to `/unauthorized` as player.
 
 ---
@@ -490,7 +491,7 @@ Store the test credentials in the team password manager, not in the repo.
 ## 8. Phase 7 — Verification, docs, and the ongoing workflow
 
 ### Task 7.1 (Agent) Smoke-test checklist
-On `https://test.patroncup.com`, in **both light and dark mode** and **on a narrow
+On `https://test.patron-cup.com`, in **both light and dark mode** and **on a narrow
 mobile viewport** (per `AGENTS.md`, mobile is the priority surface):
 - [ ] Home page renders; pre-trip vs on-trip state matches `events.is_active`.
 - [ ] `/faq`, `/roster`, `/matches`, `/scoreboard`, `/itinerary`, `/teams`, `/tee-times` render with seeded data.
@@ -504,7 +505,7 @@ mobile viewport** (per `AGENTS.md`, mobile is the priority surface):
 ### Task 7.2 (Agent) Document the workflow in `AGENTS.md`
 Add a short section covering:
 - The branch flow: feature → `test` → `main`.
-- Environments table: local (`.env.local`), test (`test` branch → test.patroncup.com → `patron-cup-test`), production (`main` → patroncup.com → prod project).
+- Environments table: local (`.env.local`), test (`test` branch → test.patron-cup.com → `patron-cup-test`), production (`main` → patroncup.com → prod project).
 - **Migration promotion rule:** every schema change is written as a timestamped file in
   `supabase/migrations/`, committed, applied to test via
   `supabase link --project-ref <TEST_REF> && supabase db push --linked`, verified on the
@@ -1780,7 +1781,7 @@ Walk every public route in both themes at 375px and at desktop width:
 - [ ] Storybook still builds (`npm run build-storybook`) — stories reference class names.
 - [ ] Every page touched has an explicit column list, no `select('*')` on `players` (closes 15.8).
 
-Do this on `test.patroncup.com` once Part I is live, so it runs against seeded data in a
+Do this on `test.patron-cup.com` once Part I is live, so it runs against seeded data in a
 production-like build rather than `next dev`.
 
 ---
