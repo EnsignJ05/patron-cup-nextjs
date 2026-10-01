@@ -1,7 +1,4 @@
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import Paper from '@mui/material/Paper';
-import Avatar from '@mui/material/Avatar';
+import Image from 'next/image';
 import { createSupabaseServerClient } from '@/lib/supabaseServer';
 import { calculateMatchHandicapMetrics } from '@/lib/matchHandicapMetrics';
 import { notFound } from 'next/navigation';
@@ -25,10 +22,39 @@ const formatTime = (timeStr: string | null) => {
   return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 };
 
+const getInitials = (first: string, last: string) =>
+  `${first[0] ?? ''}${last[0] ?? ''}`.toUpperCase();
+
+function ProfileAvatar({
+  firstName,
+  lastName,
+  imageUrl,
+  size = 64,
+}: {
+  firstName: string;
+  lastName: string;
+  imageUrl?: string | null;
+  size?: number;
+}) {
+  const name = `${firstName} ${lastName}`;
+  if (imageUrl) {
+    return (
+      <div className={styles.avatarImgWrap} style={{ width: size, height: size }}>
+        <Image src={imageUrl} alt={name} width={size} height={size} style={{ objectFit: 'cover' }} />
+      </div>
+    );
+  }
+  return (
+    <div className={styles.avatar} style={{ width: size, height: size, fontSize: Math.round(size * 0.32) }}>
+      {getInitials(firstName, lastName)}
+    </div>
+  );
+}
+
 export default async function PlayerProfilePage({ params }: { params: Promise<{ playerId: string }> }) {
   const supabase = await createSupabaseServerClient();
   const { playerId } = await params;
-  
+
   // Get the player info
   // Explicit columns, not '*': this route is gated behind auth (see S3 in
   // TEST_ENVIRONMENT_PLAN.md Part II), so it may read private fields the public-safe
@@ -47,7 +73,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
   // Check if current user can edit this profile
   const { data } = await supabase.auth.getUser();
   const currentUser = data?.user;
-  
+
   let canEdit = false;
   if (currentUser) {
     // Get current user's player record
@@ -58,34 +84,10 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
       .single();
 
     // Can edit if: same player or admin
-    canEdit = 
-      currentPlayerRecord?.id === player.id || 
+    canEdit =
+      currentPlayerRecord?.id === player.id ||
       currentPlayerRecord?.role === 'admin';
   }
-
-  // Calculate player's record from match_players (disabled for now)
-  // const { data: matchPlayers } = await supabase
-  //   .from('match_players')
-  //   .select('is_winner, match:matches(is_halved)')
-  //   .eq('player_id', playerId);
-  //
-  // let wins = 0;
-  // let losses = 0;
-  // let ties = 0;
-  //
-  // if (matchPlayers) {
-  //   matchPlayers.forEach((mp: any) => {
-  //     if (mp.match?.is_halved) {
-  //       ties++;
-  //     } else if (mp.is_winner) {
-  //       wins++;
-  //     } else {
-  //       losses++;
-  //     }
-  //   });
-  // }
-  //
-  // const record = { wins, losses, ties };
 
   const { data: activeEvent } = await supabase
     .from('events')
@@ -111,6 +113,8 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
   let matchesList: PlayerDashboardMatch[] = [];
   let eventTeams: Array<{ id: string; name: string; color: string | null }> = [];
   let handicapByPlayerId = new Map<string, number | null>();
+  let myTeamId: string | null = null;
+  let isCaptain = false;
 
   if (activeEvent?.id) {
     const { data: teamsData } = await supabase
@@ -124,12 +128,19 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
     if (eventTeams.length > 0) {
       const { data: rosterData } = await supabase
         .from('team_rosters')
-        .select('player_id, handicap_at_event')
+        .select('player_id, team_id, handicap_at_event')
         .in('team_id', eventTeams.map((team) => team.id));
 
       handicapByPlayerId = new Map(
         (rosterData || []).map((roster) => [roster.player_id, roster.handicap_at_event ?? null]),
       );
+      myTeamId = (rosterData || []).find((roster) => roster.player_id === playerId)?.team_id ?? null;
+
+      const { data: captainsData } = await supabase
+        .from('team_captains')
+        .select('player_id')
+        .in('team_id', eventTeams.map((team) => team.id));
+      isCaptain = (captainsData || []).some((c: { player_id: string }) => c.player_id === playerId);
     }
 
     const { data: playerMatchIds } = await supabase
@@ -185,6 +196,25 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
       });
     }
   }
+
+  // "This Trip" record, derived from this event's matches already fetched above -- not the
+  // match_players.is_winner-based aggregate found disabled elsewhere (see memory: that one
+  // isn't a safe foundation to build on). Counts only matches with a recorded result.
+  let thisTripRecord: { w: number; l: number; t: number } | null = null;
+  if (myTeamId) {
+    let w = 0;
+    let l = 0;
+    let t = 0;
+    for (const { match } of matchesList) {
+      if (match.is_halved) t++;
+      else if (match.winner_team_id === myTeamId) w++;
+      else if (match.winner_team_id) l++;
+    }
+    if (w + l + t > 0) thisTripRecord = { w, l, t };
+  }
+
+  const myTeam = eventTeams.find((team) => team.id === myTeamId) ?? null;
+  const teamColor = myTeam ? myTeam.color || (eventTeams[0]?.id === myTeam.id ? 'var(--pc-team-a)' : 'var(--pc-team-b)') : null;
 
   let lodgingInfo: {
     buildingName: string | null;
@@ -281,179 +311,201 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
   }
 
   return (
-    <Box className={styles.pageRoot}>
-      <Avatar
-        src={player.profile_image_url || undefined}
-        alt={`${player.first_name} ${player.last_name}`}
-        className={styles.avatar}
-        sx={{
-          width: 'min(320px, calc(100vw - 32px))',
-          height: 'min(320px, calc(100vw - 32px))',
-        }}
-      >
-        {!player.profile_image_url && `${player.first_name[0]}${player.last_name[0]}`}
-      </Avatar>
+    <div className={styles.root}>
+      <div className={styles.container}>
+        <div className={styles.hero} style={teamColor ? { borderBottomColor: teamColor } : undefined}>
+          {teamColor && (
+            <div
+              className={styles.heroGlow}
+              style={{ background: `linear-gradient(135deg, transparent 30%, ${teamColor} 130%)` }}
+            />
+          )}
+          <div className={styles.heroRow}>
+            <div className={styles.avatarWrap}>
+              <ProfileAvatar
+                firstName={player.first_name}
+                lastName={player.last_name}
+                imageUrl={player.profile_image_url}
+                size={64}
+              />
+              {teamColor && <span className={styles.teamChip} style={{ background: teamColor }} />}
+            </div>
+            <div className={styles.heroInfo}>
+              <div className={styles.heroBadges}>
+                {myTeam && (
+                  <span className={styles.teamLabel} style={{ color: teamColor ?? undefined }}>
+                    Team {myTeam.name}
+                  </span>
+                )}
+                {isCaptain && (
+                  <span className={styles.captBadge} style={{ background: teamColor ?? undefined }}>
+                    ★ Captain
+                  </span>
+                )}
+              </div>
+              <h1 className={styles.displayName}>
+                {player.first_name} {player.last_name}
+              </h1>
+            </div>
+          </div>
 
-      <Typography variant="h3" className={styles.pageTitle}>
-        {player.first_name} {player.last_name}
-      </Typography>
+          <div className={styles.statStrip}>
+            <div className={styles.statCell}>
+              <div className={styles.statValue}>
+                {player.current_handicap !== null ? player.current_handicap.toFixed(1) : '—'}
+              </div>
+              <div className={styles.statLabel}>HCP</div>
+            </div>
+            {thisTripRecord && (
+              <div className={styles.statCell}>
+                <div className={styles.statValue}>
+                  {thisTripRecord.w}-{thisTripRecord.l}-{thisTripRecord.t}
+                </div>
+                <div className={styles.statLabel}>
+                  This Trip{activeEvent ? ` · ${activeEvent.year}` : ''}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
 
-      <Paper
-        elevation={2}
-        className={`${styles.profileCard} ${styles.profileCardAccent}`}
-      >
-        <Typography variant="h6" className={styles.sectionTitle}>
-          Profile Information
-        </Typography>
-        
-        <DashboardProfileForm
-          playerId={player.id}
-          firstName={player.first_name}
-          lastName={player.last_name}
-          phone={player.phone ?? ''}
-          handicap={player.current_handicap?.toString() ?? ''}
-          ghinNumber={player.ghin_number ?? ''}
-          ghinClub={player.ghin_club ?? ''}
-          officialEventHandicap={handicapByPlayerId.get(player.id) ?? null}
-          profileImageUrl={player.profile_image_url ?? ''}
-          readOnly={!canEdit}
-        />
-      </Paper>
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>Profile Information</h2>
+          <DashboardProfileForm
+            playerId={player.id}
+            firstName={player.first_name}
+            lastName={player.last_name}
+            phone={player.phone ?? ''}
+            handicap={player.current_handicap?.toString() ?? ''}
+            ghinNumber={player.ghin_number ?? ''}
+            ghinClub={player.ghin_club ?? ''}
+            officialEventHandicap={handicapByPlayerId.get(player.id) ?? null}
+            profileImageUrl={player.profile_image_url ?? ''}
+            readOnly={!canEdit}
+          />
+        </section>
 
-      <Paper
-        elevation={2}
-        className={`${styles.matchesCard} ${styles.matchesCardAccent}`}
-      >
-        <Typography variant="h6" className={styles.sectionTitle}>
-          Matches {activeEvent ? `· ${activeEvent.name} ${activeEvent.year}` : ''}
-        </Typography>
-        {matchesList.length === 0 ? (
-          <Typography variant="body2" className={styles.emptyText}>
-            No matches scheduled for this player yet.
-          </Typography>
-        ) : (
-          <Box className={styles.matchList}>
-            {matchesList.map(({ match, playersByTeam }) => {
-              const [teamA, teamB] = eventTeams;
-              const teamAPlayers = teamA ? playersByTeam.get(teamA.id) || [] : [];
-              const teamBPlayers = teamB ? playersByTeam.get(teamB.id) || [] : [];
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>
+            Matches {activeEvent ? `· ${activeEvent.name} ${activeEvent.year}` : ''}
+          </h2>
+          {matchesList.length === 0 ? (
+            <p className={styles.emptyText}>No matches scheduled for this player yet.</p>
+          ) : (
+            <div className={styles.matchList}>
+              {matchesList.map(({ match, playersByTeam }) => {
+                const [teamA, teamB] = eventTeams;
+                const teamAPlayers = teamA ? playersByTeam.get(teamA.id) || [] : [];
+                const teamBPlayers = teamB ? playersByTeam.get(teamB.id) || [] : [];
 
-              const buildPlayers = (playersForTeam: Array<{ id: string; name: string; profileImageUrl: string | null }>) =>
-                playersForTeam.map((matchPlayer) => ({
-                  ...matchPlayer,
-                  officialEventHandicap: handicapByPlayerId.get(matchPlayer.id) ?? null,
-                }));
+                const buildPlayers = (playersForTeam: Array<{ id: string; name: string; profileImageUrl: string | null }>) =>
+                  playersForTeam.map((matchPlayer) => ({
+                    ...matchPlayer,
+                    officialEventHandicap: handicapByPlayerId.get(matchPlayer.id) ?? null,
+                  }));
 
-              const teamAPlayerCards = buildPlayers(teamAPlayers);
-              const teamBPlayerCards = buildPlayers(teamBPlayers);
-              const matchPlayerCards = [...teamAPlayerCards, ...teamBPlayerCards];
-              const handicapMetricsByPlayerId = calculateMatchHandicapMetrics(
-                matchPlayerCards.map((matchPlayer) => ({
-                  playerId: matchPlayer.id,
-                  officialEventHandicap: matchPlayer.officialEventHandicap,
-                })),
-                {
-                  slope: match.course?.slope ?? null,
-                  rating: match.course?.rating ?? null,
-                  par: match.course?.par ?? null,
-                },
-              );
+                const teamAPlayerCards = buildPlayers(teamAPlayers);
+                const teamBPlayerCards = buildPlayers(teamBPlayers);
+                const matchPlayerCards = [...teamAPlayerCards, ...teamBPlayerCards];
+                const handicapMetricsByPlayerId = calculateMatchHandicapMetrics(
+                  matchPlayerCards.map((matchPlayer) => ({
+                    playerId: matchPlayer.id,
+                    officialEventHandicap: matchPlayer.officialEventHandicap,
+                  })),
+                  {
+                    slope: match.course?.slope ?? null,
+                    rating: match.course?.rating ?? null,
+                    par: match.course?.par ?? null,
+                  },
+                );
 
-              const withMetrics = <T extends { id: string; officialEventHandicap: number | null }>(matchPlayer: T) => {
-                const metrics = handicapMetricsByPlayerId.get(matchPlayer.id);
-                return {
-                  ...matchPlayer,
-                  courseHandicap: metrics?.courseHandicap ?? null,
-                  strokesGiven: metrics?.strokesGiven ?? null,
+                const withMetrics = <T extends { id: string; officialEventHandicap: number | null }>(matchPlayer: T) => {
+                  const metrics = handicapMetricsByPlayerId.get(matchPlayer.id);
+                  return {
+                    ...matchPlayer,
+                    courseHandicap: metrics?.courseHandicap ?? null,
+                    strokesGiven: metrics?.strokesGiven ?? null,
+                  };
                 };
-              };
 
-              return (
-                <MatchCard
-                  key={match.id}
-                  matchNumber={match.match_number}
-                  matchType={match.match_type}
-                  teeTime={formatTime(match.match_time)}
-                  matchDateLabel={formatDate(match.match_date)}
-                  courseLabel={match.course?.name ?? 'Course TBD'}
-                  winnerTeamId={match.winner_team_id}
-                  isHalved={match.is_halved}
-                  teamA={
-                    teamA
-                      ? {
-                          id: teamA.id,
-                          name: teamA.name,
-                          color: teamA.color,
-                          players: teamAPlayerCards.map(withMetrics),
-                        }
-                      : null
-                  }
-                  teamB={
-                    teamB
-                      ? {
-                          id: teamB.id,
-                          name: teamB.name,
-                          color: teamB.color,
-                          players: teamBPlayerCards.map(withMetrics),
-                        }
-                      : null
-                  }
-                />
-              );
-            })}
-          </Box>
-        )}
-      </Paper>
+                return (
+                  <MatchCard
+                    key={match.id}
+                    matchNumber={match.match_number}
+                    matchType={match.match_type}
+                    teeTime={formatTime(match.match_time)}
+                    matchDateLabel={formatDate(match.match_date)}
+                    courseLabel={match.course?.name ?? 'Course TBD'}
+                    winnerTeamId={match.winner_team_id}
+                    isHalved={match.is_halved}
+                    teamA={
+                      teamA
+                        ? {
+                            id: teamA.id,
+                            name: teamA.name,
+                            color: teamA.color,
+                            players: teamAPlayerCards.map(withMetrics),
+                          }
+                        : null
+                    }
+                    teamB={
+                      teamB
+                        ? {
+                            id: teamB.id,
+                            name: teamB.name,
+                            color: teamB.color,
+                            players: teamBPlayerCards.map(withMetrics),
+                          }
+                        : null
+                    }
+                  />
+                );
+              })}
+            </div>
+          )}
+        </section>
 
-      <LodgingInfoCard
-        lodgingInfo={lodgingInfo}
-        cardClassName={`${styles.lodgingCard} ${styles.lodgingCardAccent}`}
-        emptyMessage="No room assignment found for this player yet."
-      />
+        <LodgingInfoCard
+          lodgingInfo={lodgingInfo}
+          emptyMessage="No room assignment found for this player yet."
+        />
 
-      {/* Player Rerounds */}
-      <Paper
-        elevation={2}
-        className={`${styles.reroundsCard} ${styles.reroundsCardAccent}`}
-      >
-        <Typography variant="h6" className={styles.sectionTitle}>
-          Re-Rounds {activeEvent ? `· ${activeEvent.name} ${activeEvent.year}` : ''}
-        </Typography>
-        {reroundsList.length === 0 ? (
-          <Typography variant="body2" className={styles.emptyText}>
-            No re-rounds scheduled for this player yet.
-          </Typography>
-        ) : (
-          <Box className={styles.reroundList}>
-            {reroundsList.map((reround) => {
-              const playerNames = [
-                reround.player1_id,
-                reround.player2_id,
-                reround.player3_id,
-                reround.player4_id,
-              ]
-                .map((id) => {
-                  if (!id) return 'TBD';
-                  const reroundPlayer = reroundPlayersById.get(id);
-                  return reroundPlayer ? `${reroundPlayer.first_name} ${reroundPlayer.last_name}` : 'TBD';
-                })
-                .join(', ');
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>
+            Re-Rounds {activeEvent ? `· ${activeEvent.name} ${activeEvent.year}` : ''}
+          </h2>
+          {reroundsList.length === 0 ? (
+            <p className={styles.emptyText}>No re-rounds scheduled for this player yet.</p>
+          ) : (
+            <div className={styles.reroundList}>
+              {reroundsList.map((reround) => {
+                const playerNames = [
+                  reround.player1_id,
+                  reround.player2_id,
+                  reround.player3_id,
+                  reround.player4_id,
+                ]
+                  .map((id) => {
+                    if (!id) return 'TBD';
+                    const reroundPlayer = reroundPlayersById.get(id);
+                    return reroundPlayer ? `${reroundPlayer.first_name} ${reroundPlayer.last_name}` : 'TBD';
+                  })
+                  .join(', ');
 
-              return (
-                <Box key={reround.id} className={styles.reroundItem}>
-                  <Typography variant="subtitle1" className={styles.reroundTitle}>
-                    {formatDate(reround.reround_date)} · {formatTime(reround.reround_time)} ·{' '}
-                    {reround.course?.name || 'Course TBD'}
-                  </Typography>
-                  <Typography variant="body2" className={styles.reroundPlayers}>
-                    {playerNames}
-                  </Typography>
-                </Box>
-              );
-            })}
-          </Box>
-        )}
-      </Paper>
-    </Box>
+                return (
+                  <div key={reround.id} className={styles.reroundItem}>
+                    <div className={styles.reroundTitle}>
+                      {formatDate(reround.reround_date)} · {formatTime(reround.reround_time)} ·{' '}
+                      {reround.course?.name || 'Course TBD'}
+                    </div>
+                    <div className={styles.reroundPlayers}>{playerNames}</div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      </div>
+    </div>
   );
 }
