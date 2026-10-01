@@ -1,7 +1,7 @@
 .card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 18px;
+  background: var(--pc-card);
+  border: 1px solid var(--pc-rule);
+  border-radius: var(--pc-radius-lg);
   padding: 16px;
   display: flex;
   flex-direction: column;
@@ -23,15 +23,15 @@
 
 .matchTitle {
   font-weight: 700;
-  color: var(--text);
+  color: var(--pc-ink);
 }
 
 .matchType {
-  color: var(--text-muted);
+  color: var(--pc-ink-3);
 }
 
 .matchMetaLine {
-  color: var(--text-muted);
+  color: var(--pc-ink-3);
   margin-top: 2px;
 }
 
@@ -44,11 +44,11 @@
 
 .matchStatus {
   font-weight: 600;
-  color: var(--text);
+  color: var(--pc-ink);
 }
 
 .teeTime {
-  color: var(--text-muted);
+  color: var(--pc-ink-3);
 }
 
 .teamGrid {
@@ -59,7 +59,7 @@
 }
 
 .vsLabel {
-  color: var(--text-soft);
+  color: var(--pc-ink-3);
   font-weight: 700;
   text-align: center;
 }
@@ -93,7 +93,7 @@
 
 .chevron {
   --chevron-fill: transparent;
-  --chevron-text: var(--text);
+  --chevron-text: var(--pc-ink);
   padding: 12px 16px;
   display: flex;
   flex-direction: column;
@@ -123,7 +123,7 @@
 
 .chevronPending {
   --chevron-fill: transparent;
-  --chevron-text: var(--text);
+  --chevron-text: var(--pc-ink);
 }
 
 .chevronOutline {
@@ -137,7 +137,7 @@
 
 .chevronOutlineStroke {
   fill: none;
-  stroke: color-mix(in srgb, var(--text) 55%, var(--border));
+  stroke: color-mix(in srgb, var(--pc-ink) 55%, var(--pc-rule));
   stroke-width: 2.5;
   vector-effect: non-scaling-stroke;
   stroke-linejoin: miter;
@@ -154,31 +154,23 @@
 }
 
 .chevronWinner {
-  --chevron-fill: var(--team-color, var(--accent-blue));
-  --chevron-text: #ffffff;
+  --chevron-fill: var(--team-color, var(--pc-team-a));
+  --chevron-text: var(--pc-on-team);
 }
 
 .chevronMuted {
-  --chevron-fill: var(--surface-tint);
-  --chevron-text: var(--text-muted);
+  --chevron-fill: var(--pc-fill);
+  --chevron-text: var(--pc-ink-3);
   opacity: 0.85;
 }
 
 .chevronHalved {
   --chevron-fill: repeating-linear-gradient(
     -45deg,
-    #a7a7a7 0 16px,
-    #ffffff 16px 32px
+    var(--pc-stripe) 0 16px,
+    var(--pc-card) 16px 32px
   );
-  --chevron-text: var(--text-muted);
-}
-
-:root[data-theme='dark'] .chevronHalved {
-  --chevron-fill: repeating-linear-gradient(
-    -45deg,
-    #a7a7a7 0 16px,
-    #000000 16px 32px
-  );
+  --chevron-text: var(--pc-ink-3);
 }
 
 .playerList {
@@ -211,16 +203,16 @@
 
 .playerName {
   font-weight: 600;
-  color: var(--text);
+  color: var(--pc-ink);
   text-align: center;
 }
 
 .playerHandicap {
-  color: var(--text-muted);
+  color: var(--pc-ink-3);
 }
 
 .noPlayers {
-  color: var(--text-muted);
+  color: var(--pc-ink-3);
 }
 
 @media (max-width: 720px) {
