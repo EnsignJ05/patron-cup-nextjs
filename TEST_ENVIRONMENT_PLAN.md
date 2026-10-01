@@ -726,6 +726,7 @@ at the test project is the recommended default for local development.
 | Tables found with RLS disabled (11.4 / old S5) | **None — RLS enabled on all 26 tables**, confirmed 2026-10-01. Task S5 rescoped accordingly |
 | Existing anon column grants on `players` (11.5 q4) | `anon` holds SELECT/INSERT/UPDATE/REFERENCES on every column, no exceptions — confirms section 11.2's "Supabase default grants" theory as fact, not inference |
 | S4 migration applied to test / prod (dates) | **Both done 2026-10-01.** Test: verified via seeded fake rows. Prod: PR #24 merged and deployed; independently verified S2/S3 were actually live (307 redirect on `/players/<id>`, exact `PUBLIC_PLAYER_COLUMNS` array present in the deployed bundle, no `select('*')` remaining) before applying the migration. All three acceptance checks pass on production; `/roster`, `/teams`, `/matches` confirmed still returning HTTP 200 |
+| S5 migration applied to test / prod (dates) | **Both done 2026-10-01.** Verified with real rows on both (temporary rows inserted and cleaned up on test; existing historical rows checked-not-modified on production) — see Task S5 for the full verification writeup. Also satisfies Part IV task H2 items 1-2 |
 | S5 public-vs-member classification approved by | _TBD_ — open committee question on `travel_info`/`lodging_assignments` only; everything else in that task needs no decision |
 | Committee notified (S7) | Done — confirmed by user 2026-10-01 |
 
@@ -1267,7 +1268,7 @@ curl -s "https://<REF>.supabase.co/rest/v1/players?select=first_name,last_name,c
 ```
 Plus: `/roster`, `/teams`, `/matches` still render player names in a logged-out browser.
 
-### Task S5 (Agent + Human) Close the un-policied tables — scope reduced 2026-10-01
+### Task S5 (done 2026-10-01) Close the un-policied tables — scope reduced, then completed
 
 **Re-scoped after Task S0's live verification.** Most of this task turned out to already be
 done — see the corrected section 11.4. What's actually left:
@@ -1296,18 +1297,35 @@ create policy "travel_info_select_own_or_committee" on public.travel_info
   );
 ```
 
-**Real action needed — anon-exposed, confirmed:** `match_bandon` and `records_bandon` grant
-`anon` both SELECT and UPDATE (`USING (true)`, no `WITH CHECK`); `branson_roster` (missed by
-the original repo-only grep, found during the Part IV schema audit) grants `anon` SELECT
-including an `email` column. **This is the same fix as Part IV task H2** — do it once, not
-twice. If H2 hasn't run yet, do it here as part of Phase S instead and mark H2 satisfied:
+**Done 2026-10-01 — this also satisfies Part IV task H2; do not redo it there.** Written as
+`supabase/migrations/20261001100000_close_bandon_branson_anon_exposure.sql`, applied to test
+then production. Kept to the minimal fix (dropped only the two UPDATE policies plus
+`branson_roster`'s SELECT policy), not a full table drop — that's gated on the still-undecided
+21.1/21.3 (retire the 2025 Bandon archive?).
 
 ```sql
 drop policy if exists "Match Bandon Update" on public.match_bandon;
 drop policy if exists "Records Update Policy" on public.records_bandon;
--- branson_roster: drop entirely (Part IV 21.3) or at minimum:
 drop policy if exists "Enable read access for all users" on public.branson_roster;
 ```
+
+**Verification required a real fix of its own.** The first attempt tested against row `id=1`
+on the empty test project — `match_bandon`/`records_bandon`/`branson_roster` were never part
+of the Task 6.2 seed script, so that row didn't exist, and the resulting "0 rows affected"
+looked identical whether the policy worked or the row was simply missing. Inserted temporary
+rows to test against for real, confirmed the blocked UPDATE/SELECT with `Prefer:
+return=representation` (ambiguous `204`/empty-array responses otherwise), checked the
+underlying value directly via `psql` as a third confirmation, then deleted the temporary
+rows. On production — which has 48 real rows per table, real historical data — tested against
+existing rows instead of inserting fake ones, confirming `match_bandon.winner` and
+`records_bandon.wins` were unchanged after the blocked write attempt, and used
+`Prefer: count=exact` on `branson_roster` (confirmed `0` of `48` rows visible to anon) rather
+than fetching its content, to avoid pulling a real person's email through even a test
+instrument. All four checks passed on both environments; `match_bandon`'s anon `SELECT`
+confirmed still working both times, since `/tee-times` depends on it.
+
+`team_rosters` and `match_players` are already correctly `TO authenticated, anon` — no change,
+this was this section's own original recommendation and the live state already matches it.
 
 `team_rosters` and `match_players` are already correctly `TO authenticated, anon` — no change,
 this was this section's own original recommendation and the live state already matches it.
@@ -2683,18 +2701,25 @@ it is what lets Part I task 3.3 build a working test project.
 **Acceptance:** applying the baseline + H1 to the test project yields working committee
 writes.
 
-### Task H2 (Agent) Security fixes — ship with Part II, not at the end
+### Task H2 (items 1-2 done via Part II Task S5 2026-10-01; item 3 still open)
 Three changes that are small, independent, and currently exploitable:
-1. Drop `"Records Update Policy"` on `records_bandon` and `"Match Bandon Update"` on
-   `match_bandon` (20.5.3). No app impact.
-2. Drop `branson_roster` (20.5.4), or if 21.3 says archive-first, revoke the anon SELECT now
-   and drop later.
-3. For each of the nine tables from 20.5.2, per H0 query 1: enable RLS if disabled, and add
+1. ~~Drop `"Records Update Policy"` on `records_bandon` and `"Match Bandon Update"` on
+   `match_bandon` (20.5.3). No app impact.~~ **Done** — Part II Task S5 shipped this exact
+   fix (`supabase/migrations/20261001100000_close_bandon_branson_anon_exposure.sql`), applied
+   to test and production, verified with real rows on both. Do not redo it here.
+2. ~~Drop `branson_roster` (20.5.4), or if 21.3 says archive-first, revoke the anon SELECT now
+   and drop later.~~ **Done, the archive-first option** — same migration revoked
+   `branson_roster`'s anon `SELECT` policy without dropping the table, since 21.3 (retire the
+   2025 Bandon archive?) is still undecided. Revisit dropping the table itself once that
+   decision is made.
+3. **Still open.** For each of the nine tables from 20.5.2, per H0 query 1: enable RLS if
+   disabled (already confirmed enabled everywhere, per Part II Task S0), and add
    `DELETE … TO authenticated USING is_committee_or_admin()`.
 
-**Acceptance:** an `anon` client cannot UPDATE `records_bandon` or `match_bandon`; no table in
-`public` has RLS disabled; each of the nine admin delete buttons is verified working against
-the test project by an admin account and rejected for a player account.
+**Acceptance:** item 1/2 verified — an `anon` client cannot UPDATE `records_bandon` or
+`match_bandon`, and cannot `SELECT` `branson_roster`, on both test and production. Item 3 not
+yet done: each of the nine admin delete buttons still needs a policy added, then verified
+working for an admin account and rejected for a player account.
 
 ### Task H3 (Agent) Fix `players.is_active`
 Per 21.2, in one migration plus one code change:
