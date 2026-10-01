@@ -922,8 +922,22 @@ No code change is needed: the app never calls `signUp()`, and invites go through
 
 **Acceptance:** the curl above is rejected on both projects; no probe user remains.
 
-### Task S2 (Agent) Request only the columns that are rendered
+### Task S2 (done 2026-10-01) Request only the columns that are rendered
 Ship this before S4.
+
+**Implemented as written, plus one TS workaround worth knowing about.** `PUBLIC_PLAYER_SELECT`
+(`PUBLIC_PLAYER_COLUMNS.join(', ')`) has the type `string`, not a string literal — `.join()`
+always widens. `postgrest-js` statically parses `.select()`'s argument *as a literal type* to
+infer the result shape, so passing a widened `string` makes it fall back to a
+`GenericStringError` sentinel type instead of inferring anything, which then fails to satisfy
+`PublicPlayer[]`. Fix applied at each call site: declare the result type explicitly on the
+generic instead of relying on string-literal inference —
+`.select<string, PublicPlayer>(PUBLIC_PLAYER_SELECT)`. No change needed to the shared column
+list itself. `matches/page.tsx:296`'s player embed was already explicit
+(`id, first_name, last_name, profile_image_url`) and needed no edit.
+
+**Verified:** `npx tsc --noEmit` clean (2 pre-existing failures in untouched files elsewhere);
+`npm test` 149/149; the acceptance grep below returns nothing.
 
 **S2a — define the column list once.** Per `AGENTS.md`'s DRY rule, do not paste the list
 into four files. Create `src/lib/playerColumns.ts`:
