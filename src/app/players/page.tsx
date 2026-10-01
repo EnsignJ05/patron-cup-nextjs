@@ -1,21 +1,36 @@
 'use client';
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Paper from '@mui/material/Paper';
-import TextField from '@mui/material/TextField';
-import Chip from '@mui/material/Chip';
-import Avatar from '@mui/material/Avatar';
 import Link from 'next/link';
+import Image from 'next/image';
+import TextField from '@mui/material/TextField';
 import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
 import { PUBLIC_PLAYER_SELECT, type PublicPlayer } from '@/lib/playerColumns';
 import styles from './page.module.css';
+
+const getInitials = (first: string, last: string) =>
+  `${first[0] ?? ''}${last[0] ?? ''}`.toUpperCase();
+
+function PlayerAvatar({ player, size = 40 }: { player: PublicPlayer; size?: number }) {
+  const name = `${player.first_name} ${player.last_name}`;
+  if (player.profile_image_url) {
+    return (
+      <div className={styles.avatarImgWrap} style={{ width: size, height: size }}>
+        <Image
+          src={player.profile_image_url}
+          alt={name}
+          width={size}
+          height={size}
+          style={{ objectFit: 'cover' }}
+        />
+      </div>
+    );
+  }
+  return (
+    <div className={styles.avatar} style={{ width: size, height: size, fontSize: Math.round(size * 0.38) }}>
+      {getInitials(player.first_name, player.last_name)}
+    </div>
+  );
+}
 
 export default function PlayersPage() {
   const [players, setPlayers] = useState<PublicPlayer[]>([]);
@@ -42,102 +57,59 @@ export default function PlayersPage() {
     fetchPlayers();
   }, [fetchPlayers]);
 
-  const filteredPlayers = players.filter((player) => {
-    const search = searchTerm.toLowerCase();
-    return (
-      player.first_name.toLowerCase().includes(search) ||
-      player.last_name.toLowerCase().includes(search)
-    );
-  });
+  const filteredPlayers = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return players;
+    return players.filter((player) => {
+      const name = `${player.first_name} ${player.last_name}`.toLowerCase();
+      return name.includes(term);
+    });
+  }, [players, searchTerm]);
 
   return (
-    <Box className={styles.pageRoot}>
-      <Typography variant="h4" className={styles.pageTitle}>
-        Players
-      </Typography>
-      <Typography variant="body1" className={styles.pageSubtitle}>
-        Browse all players in the Patron Cup
-      </Typography>
+    <div className={styles.root}>
+      <div className={styles.container}>
+        <div className={styles.hero}>
+          <span className={styles.label}>Directory · {players.length} patrons</span>
+          <h1 className={styles.displayHeading}>Players</h1>
+        </div>
 
-      <Box className={styles.searchWrap}>
         <TextField
           placeholder="Search players..."
           variant="outlined"
           size="small"
+          fullWidth
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className={styles.searchField}
         />
-      </Box>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow className={styles.tableHeaderRow}>
-              <TableCell className={styles.tableHeaderCell}>Player</TableCell>
-              <TableCell className={styles.tableHeaderCell}>Handicap</TableCell>
-              <TableCell className={styles.tableHeaderCell}>GHIN club</TableCell>
-              <TableCell className={styles.tableHeaderCell}>Location</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={4} align="center">
-                  Loading...
-                </TableCell>
-              </TableRow>
-            ) : filteredPlayers.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={4} align="center">
-                  No players found
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredPlayers.map((player) => (
-                <TableRow 
-                  key={player.id} 
-                  hover
-                  className={styles.playerRow}
-                >
-                  <TableCell>
-                    <Link 
-                      href={`/players/${player.id}`}
-                      className={styles.playerLink}
-                    >
-                      <Avatar
-                        src={player.profile_image_url || undefined}
-                        alt={`${player.first_name} ${player.last_name}`}
-                        className={styles.playerAvatar}
-                      >
-                        {!player.profile_image_url && `${player.first_name[0]}${player.last_name[0]}`}
-                      </Avatar>
-                      <Box>
-                        <Typography
-                          className={styles.playerName}
-                        >
-                          {player.first_name} {player.last_name}
-                        </Typography>
-                      </Box>
-                    </Link>
-                  </TableCell>
-                  <TableCell>
-                    {player.current_handicap !== null ? (
-                      <Chip label={player.current_handicap} size="small" color="primary" />
-                    ) : (
-                      '-'
-                    )}
-                  </TableCell>
-                  <TableCell>{player.ghin_club?.trim() ? player.ghin_club : '—'}</TableCell>
-                  <TableCell>
-                    {player.city && player.state ? `${player.city}, ${player.state}` : '-'}
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    </Box>
+        <div className={styles.playerList}>
+          {loading ? (
+            <p className={styles.emptyState}>Loading...</p>
+          ) : filteredPlayers.length === 0 ? (
+            <p className={styles.emptyState}>No players found</p>
+          ) : (
+            filteredPlayers.map((player) => (
+              <Link key={player.id} href={`/players/${player.id}`} className={styles.playerRow}>
+                <PlayerAvatar player={player} />
+                <div className={styles.playerInfo}>
+                  <div className={styles.playerName}>
+                    {player.first_name} {player.last_name}
+                  </div>
+                  <div className={styles.playerMeta}>
+                    {player.ghin_club?.trim() ? player.ghin_club : 'No GHIN club'}
+                    {player.city && player.state ? ` · ${player.city}, ${player.state}` : ''}
+                  </div>
+                </div>
+                {player.current_handicap !== null && (
+                  <div className={styles.handicapChip}>{player.current_handicap}</div>
+                )}
+              </Link>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
   );
 }

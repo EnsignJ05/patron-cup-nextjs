@@ -1,75 +1,139 @@
-.pageRoot {
-  padding: 24px;
-  max-width: 1200px;
+/* ── Root ───────────────────────────────────────────────────────────────── */
+.root {
+  min-height: calc(100vh - 64px);
+  background: var(--pc-bg);
+  color: var(--pc-ink);
+}
+
+.container {
+  max-width: 480px;
   margin: 0 auto;
+  padding: 20px 16px 48px;
+  display: flex;
+  flex-direction: column;
 }
 
-.pageTitle {
-  font-weight: 700;
-  color: var(--text);
-  margin-bottom: 8px;
-}
-
-.pageSubtitle {
-  color: var(--text-muted);
-  margin-bottom: 24px;
-}
-
-.searchWrap {
-  margin-bottom: 24px;
-}
-
-.searchField {
-  width: 300px;
-}
-
-.tableHeaderRow {
-  background-color: var(--text);
-  color: #ffffff;
-}
-
-/* Beat globals `.MuiTableCell-root { color: var(--text) }` (same specificity as `.tableHeaderCell` alone). */
-.tableHeaderRow .tableHeaderCell {
+/* ── Type helpers ─────────────────────────────────────────────────────────── */
+.label {
+  font-family: var(--pc-font-sans);
+  font-size: 10px;
   font-weight: 600;
-  color: #ffffff;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--pc-ink-3);
 }
 
-:root[data-theme='dark'] .tableHeaderRow {
-  color: #000000;
+/* ── Hero ─────────────────────────────────────────────────────────────────── */
+.hero {
+  padding-bottom: 6px;
 }
 
-:root[data-theme='dark'] .tableHeaderRow .tableHeaderCell {
-  color: #000000;
+.displayHeading {
+  font-family: var(--pc-font-serif);
+  font-size: 36px;
+  font-weight: 500;
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  color: var(--pc-ink);
+  margin: 8px 0 14px;
+}
+
+/* ── Search ───────────────────────────────────────────────────────────────── */
+.searchField {
+  margin-bottom: 14px;
+}
+
+/* ── Player list ──────────────────────────────────────────────────────────── */
+.playerList {
+  display: flex;
+  flex-direction: column;
+}
+
+.emptyState {
+  font-family: var(--pc-font-sans);
+  font-size: 13px;
+  color: var(--pc-ink-3);
+  text-align: center;
+  padding: 24px 0;
 }
 
 .playerRow {
-  cursor: pointer;
-}
-
-.playerRow:hover {
-  background-color: var(--surface-muted);
-}
-
-.playerLink {
-  text-decoration: none;
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--pc-rule);
   color: inherit;
+  text-decoration: none;
+}
+
+.playerRow:last-child {
+  border-bottom: none;
+}
+
+.avatar {
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--pc-fill);
+  color: var(--pc-ink-2);
+  font-family: var(--pc-font-sans);
+  font-weight: 700;
 }
 
-.playerAvatar {
-  width: 40px;
-  height: 40px;
-  font-size: 1rem;
-  background-color: var(--accent-blue-strong);
+.avatarImgWrap {
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.playerInfo {
+  min-width: 0;
 }
 
 .playerName {
+  font-size: 14px;
   font-weight: 600;
-  color: var(--accent-blue-strong);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.playerName:hover {
-  text-decoration: underline;
+.playerMeta {
+  font-family: var(--pc-font-mono);
+  font-size: 10px;
+  color: var(--pc-ink-3);
+  letter-spacing: 0.05em;
+  margin-top: 2px;
+}
+
+.handicapChip {
+  font-family: var(--pc-font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--pc-fill);
+  min-width: 40px;
+  text-align: center;
+}
+
+/* ── Desktop (≥1024px) ────────────────────────────────────────────────────── */
+@media (min-width: 1024px) {
+  .container {
+    max-width: 700px;
+    padding: 40px 24px 72px;
+  }
+
+  .displayHeading {
+    font-size: 56px;
+    margin-bottom: 18px;
+    letter-spacing: -0.035em;
+  }
+
+  .searchField {
+    max-width: 320px;
+  }
 }
