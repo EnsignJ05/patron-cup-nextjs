@@ -25,17 +25,26 @@ import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
-import type { Player, PlayerRole } from '@/types/database';
+import type { Player, PlayerPrivate, PlayerRole } from '@/types/database';
 import styles from './page.module.css';
+
+// address/shirt size/dietary/emergency-contact fields live in public.player_private (Task
+// S6) -- more sensitive than the rest of Player, which any authenticated member can read.
+type EditingPlayer = Partial<Player> & Partial<PlayerPrivate>;
+
+function normalizePrivate(raw: unknown): Partial<PlayerPrivate> {
+  const row = Array.isArray(raw) ? raw[0] : raw;
+  return row ?? {};
+}
 
 export default function PlayersAdminPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
-  const [players, setPlayers] = useState<Player[]>([]);
+  const [players, setPlayers] = useState<(Player & { player_private?: Partial<PlayerPrivate> | Partial<PlayerPrivate>[] })[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingPlayer, setEditingPlayer] = useState<Partial<Player> | null>(null);
+  const [editingPlayer, setEditingPlayer] = useState<EditingPlayer | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [playerToDelete, setPlayerToDelete] = useState<Player | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -44,7 +53,7 @@ export default function PlayersAdminPage() {
     setLoading(true);
     const { data, error } = await supabase
       .from('players')
-      .select('*')
+      .select('*, player_private(*)')
       .order('last_name', { ascending: true });
 
     if (error) {
@@ -59,8 +68,9 @@ export default function PlayersAdminPage() {
     fetchPlayers();
   }, [fetchPlayers]);
 
-  const handleEdit = (player: Player) => {
-    setEditingPlayer({ ...player });
+  const handleEdit = (player: Player & { player_private?: Partial<PlayerPrivate> | Partial<PlayerPrivate>[] }) => {
+    const { player_private, ...playerFields } = player;
+    setEditingPlayer({ ...playerFields, ...normalizePrivate(player_private) });
     setDialogOpen(true);
   };
 
@@ -91,39 +101,54 @@ export default function PlayersAdminPage() {
     if (!editingPlayer) return;
     setError('');
 
-    const playerData = {
-      first_name: editingPlayer.first_name,
-      last_name: editingPlayer.last_name,
-      email: editingPlayer.email,
-      phone: editingPlayer.phone || null,
-      address_line1: editingPlayer.address_line1 || null,
-      address_line2: editingPlayer.address_line2 || null,
-      city: editingPlayer.city || null,
-      state: editingPlayer.state || null,
-      zip_code: editingPlayer.zip_code || null,
-      country: editingPlayer.country || 'USA',
-      current_handicap: editingPlayer.current_handicap,
-      shirt_size: editingPlayer.shirt_size || null,
-      dietary_restrictions: editingPlayer.dietary_restrictions || null,
-      emergency_contact_name: editingPlayer.emergency_contact_name || null,
-      emergency_contact_phone: editingPlayer.emergency_contact_phone || null,
-      bio: editingPlayer.bio || null,
-      role: editingPlayer.role || 'player',
-      status: editingPlayer.status || 'active',
-    };
-
     if (!editingPlayer.id) {
       setError('New players must be invited from the Invite Player page.');
       return;
     }
 
-    const { error } = await supabase
+    const playerData = {
+      first_name: editingPlayer.first_name,
+      last_name: editingPlayer.last_name,
+      email: editingPlayer.email,
+      phone: editingPlayer.phone || null,
+      city: editingPlayer.city || null,
+      state: editingPlayer.state || null,
+      country: editingPlayer.country || 'USA',
+      current_handicap: editingPlayer.current_handicap,
+      bio: editingPlayer.bio || null,
+      role: editingPlayer.role || 'player',
+      status: editingPlayer.status || 'active',
+    };
+
+    // address/shirt size/dietary/emergency-contact live in public.player_private (Task S6) --
+    // a separate write, upserted since a row may not exist yet for this player.
+    const privateData = {
+      player_id: editingPlayer.id,
+      address_line1: editingPlayer.address_line1 || null,
+      address_line2: editingPlayer.address_line2 || null,
+      zip_code: editingPlayer.zip_code || null,
+      shirt_size: editingPlayer.shirt_size || null,
+      dietary_restrictions: editingPlayer.dietary_restrictions || null,
+      emergency_contact_name: editingPlayer.emergency_contact_name || null,
+      emergency_contact_phone: editingPlayer.emergency_contact_phone || null,
+    };
+
+    const { error: playerError } = await supabase
       .from('players')
       .update(playerData)
       .eq('id', editingPlayer.id);
 
-    if (error) {
-      setError(error.message);
+    if (playerError) {
+      setError(playerError.message);
+      return;
+    }
+
+    const { error: privateError } = await supabase
+      .from('player_private')
+      .upsert(privateData);
+
+    if (privateError) {
+      setError(privateError.message);
       return;
     }
 

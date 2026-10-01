@@ -10,23 +10,34 @@ export interface Player {
   last_name: string;
   email: string;
   phone: string | null;
-  address_line1: string | null;
-  address_line2: string | null;
   city: string | null;
   state: string | null;
-  zip_code: string | null;
   country: string;
   current_handicap: number | null;
   ghin_number: string | null;
   ghin_club: string | null;
-  shirt_size: string | null;
-  dietary_restrictions: string | null;
-  emergency_contact_name: string | null;
-  emergency_contact_phone: string | null;
   profile_image_url: string | null;
   bio: string | null;
   role: PlayerRole;
   status: PlayerStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * public.player_private -- columns more sensitive than the "member directory" posture
+ * (section 11.7 of TEST_ENVIRONMENT_PLAN.md) accepts for the rest of Player. RLS: own row
+ * or committee/admin only, no anon access at all. See Part II Task S6.
+ */
+export interface PlayerPrivate {
+  player_id: string;
+  address_line1: string | null;
+  address_line2: string | null;
+  zip_code: string | null;
+  shirt_size: string | null;
+  dietary_restrictions: string | null;
+  emergency_contact_name: string | null;
+  emergency_contact_phone: string | null;
   created_at: string;
   updated_at: string;
 }

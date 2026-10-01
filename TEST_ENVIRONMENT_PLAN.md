@@ -1334,20 +1334,65 @@ this was this section's own original recommendation and the live state already m
 `branson_roster` all fail; nothing else in this task requires a code or schema change unless
 the committee asks for the tighter `travel_info` posture above.
 
-### Task S6 (Optional, recommended) Move never-public columns out of `players`
+### Task S6 (done on test 2026-10-01; production pending the same test→main PR flow as S2-S4)
 `address_line1`, `address_line2`, `zip_code`, `shirt_size`, `dietary_restrictions`,
 `emergency_contact_name`, `emergency_contact_phone` are (per the original report) **empty
 today**. They are also the fields that should never be readable by the whole membership.
 Moving them while empty is nearly free; doing it after Streamsong logistics are entered is a
 migration with real data risk.
 
-Create `public.player_private` (`player_id` PK → `players.id`, plus those columns), RLS
-member-own + committee, no anon grant at all. Move `src/app/admin/travel/page.tsx` and
-`src/app/admin/lodging/page.tsx` reads over to it, drop the columns from `players`, and
-update `src/types/database.ts`.
+**Re-confirmed empty on both test and production before touching anything** (direct query,
+not trusting the original report). **The plan's guess about which files reference these
+columns was wrong** — a fresh grep found exactly one consumer in the whole codebase,
+`src/app/admin/players/page.tsx`; `admin/travel/page.tsx` and `admin/lodging/page.tsx`
+reference neither. This made the change far smaller than the plan anticipated.
 
-This is the only task here that changes the schema shape, so it is the one that most wants
-the test environment first. Not a blocker for S1–S5.
+**What S6 actually buys, beyond S4:** S4 already revoked `anon`'s access to these columns
+entirely (table-wide write revoke, column-restricted read grant). The real gap S6 closes is
+**authenticated-to-authenticated** exposure — `players_select_authenticated` is
+`USING (true)`, so today any of the 54 members can read any other member's home address or
+emergency contact via the directory-style `players` table. `player_private` uses a tighter
+policy (own row, or committee/admin) instead of the directory model.
+
+**Done as two migrations, same ordering lesson as S2→S4** — schema-additive first (safe
+anytime), breaking column-drop second (only after code stops referencing the old columns):
+- `supabase/migrations/20261001110000_create_player_private.sql` — creates
+  `public.player_private` (`player_id` PK → `players.id` `ON DELETE CASCADE`, the 7 columns,
+  `updated_at` trigger via the existing `update_updated_at()` function), RLS policies scoped
+  to own-row-or-committee for select/insert/update, and an explicit
+  `revoke all on public.player_private from anon` — new tables inherit a blanket
+  anon/authenticated table-level grant from this project's default privileges (confirmed via
+  `information_schema.table_privileges`, same pattern found on every pre-existing table
+  before being hardened), so this needed stating explicitly rather than relying on RLS alone,
+  consistent with how `players`/`profiles` were hardened. Includes a defensive (currently
+  no-op) backfill `INSERT ... SELECT` from `players`.
+- `supabase/migrations/20261001120000_drop_players_private_columns.sql` — drops the 7
+  columns from `players`. Applied to test only after the application code below was verified
+  working against the new table.
+
+**Code changes** (the one real consumer): `src/types/database.ts` — removed the 7 fields from
+`Player`, added a `PlayerPrivate` interface. `src/app/admin/players/page.tsx` — fetch now
+embeds `player_private(*)`; `handleEdit` flattens the (possibly array-or-object, handled
+defensively like the existing `players/[playerId]/page.tsx` embed-normalizing pattern) nested
+row into the edit form's state; `handleSave` splits into two writes — `UPDATE players` for
+the remaining fields, `UPSERT player_private` for the relocated ones.
+
+**Verified on test with real authenticated sessions** (same rigor as S4/S5 — this table was
+empty, so ambiguous-204 was a risk here too; inserted and later cleaned up temporary rows):
+anon blocked at the table-grant level entirely (`401`/`42501`, stronger than an RLS-only
+block); a different player reading another player's private row returns empty (RLS); the
+owning player can insert/read their own row; committee/admin can read any row; `upsert`
+against an existing row correctly merges rather than erroring, and the `updated_at` trigger
+fires. Re-ran Task 6.2's seed script after the column drop to confirm no conflict (it never
+referenced these columns). `npx tsc --noEmit` clean (2 pre-existing unrelated failures);
+`npm test` 40/40 suites, 177/177 tests.
+
+**Production:** not yet applied — needs the same flow as S2-S4 (PR from `test` to `main`,
+merge, deploy, independently verify the new code is actually live before running either
+migration there, migration A then migration B in order). This is the one Part II task that
+changes schema shape, so doing it on test first — exactly as this task originally
+recommended — caught the wrong-file guess and the anon-default-grant gap before either could
+reach production.
 
 ### Task S7 (done) Disclosure
 The emails and phone numbers of 54 people were readable by unauthenticated callers for some
