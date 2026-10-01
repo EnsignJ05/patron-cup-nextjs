@@ -1994,45 +1994,95 @@ plans a scoreboard route — coordinate before deleting that one.
 
 ---
 
-## 16. Decisions required before starting
+## 16. Decisions — finalized by the user 2026-10-01, superseding the recommendations below
 
-Do not begin task R2 until 16.1–16.3 are answered; they are cheap to decide now and
-expensive to reverse later. Record answers in section 19.
+**These materially change Part III's scope from how the rest of this section was written.**
+`/admin` being in scope roughly doubles the page count this part covers (19 more routes),
+and interacts with 16.1 and 16.4 in ways worth being explicit about. Read 16.6 below before
+starting any R-series task — it's new, added to capture what these answers actually require
+that the original plan didn't account for.
 
-### 16.1 Is "CSS modules for layout, MUI for form controls" the target or a waypoint?
-Recommendation: **ratify it as the target.** It is what the three redesigned pages already
-do (15.5), it keeps accessible form behavior for free, and full MUI removal would mean
-rebuilding selects, dialogs and date pickers by hand for no user-visible gain. Decide
-explicitly, because "redesigned" pages currently disagree with each other and a lower-level
-model will otherwise copy whichever file it opens first.
+### 16.1 MUI: target or waypoint? — **Tiered removal, not all-or-nothing**
+User: agnostic on MUI itself, wants "the best path forward" and consistency, open to removing
+it if that's right. Given 16.2 now puts `/admin` in scope too (including `@mui/x-data-grid`
+and `@mui/x-date-pickers`, genuinely complex widgets — sorting, filtering, pagination,
+accessible date picking), a full from-scratch rebuild of those two specifically is real
+engineering risk for committee-only screens, for a cost disproportionate to the benefit.
 
-### 16.2 Is `/admin` in scope?
-Recommendation: **no.** 19 routes, 17 MUI files, `@mui/x-data-grid`, used by a handful of
-committee members on desktop. The Hi-Fi handoff targeted public surfaces. Excluding admin
-also means the legacy variables cannot be fully deleted (16.4).
+**Decision: remove MUI everywhere it has a reasonable hand-built equivalent** (buttons,
+dialogs, text fields, simple tables, chips, menus) **— keep only `@mui/x-data-grid` and
+`@mui/x-date-pickers`, re-themed to the `--pc-*` token palette** via a `ThemeProvider` rather
+than left in MUI's default look. **No `ThemeProvider` exists in the codebase today**
+(confirmed by grep) — setting one up, mapping `--pc-*` tokens to a MUI theme object, is new
+setup work this decision requires, not something to discover mid-task. If full MUI removal
+(including those two) is preferred instead, say so before R-series work starts on any page
+that uses them — it changes the admin task list materially.
 
-### 16.3 Page order
-Recommendation, driven by the 15.3 seam and the 15.7 coupling:
+### 16.2 Is `/admin` in scope? — **Yes, everything is in scope**
+User: "Everything is now in scope for redesign, but if we need a design for something let's
+note that in the plan to get one." **This is the decision with the largest planning
+consequence** — see 16.6.
 
-1. `/roster` — tab-bar target, smallest of the two seams
-2. `/dashboard` + `/players/[playerId]` + their three shared components — one unit
-3. `/players`
-4. `/teams`
-5. `/tee-times`
-6. `/itinerary`
-7. `/login` + `/change-password` + `/unauthorized` — auth trio, shared visual language
-8. `/dashboard/award-nominations`
-9. `/gallery`
+### 16.3 Page order — **Judgment delegated; ship as one batch, not incrementally**
+User trusts the implementation order already recommended (driven by the 15.3 seam and 15.7
+component coupling — unchanged, still the right dependency order to *build* in) but intends
+to **push everything to test, verify the whole site, then push everything to production in
+one release** — not the page-by-page incremental PRs the rest of this plan otherwise used for
+Parts I/II. Consequence: the R-series task boundaries below remain useful for *implementation
+sequencing* (what to build first, since later pages reuse earlier pages' components), but do
+not each need to be independently production-shippable — final verification (something like
+Part I's task 7.1, redone for the whole redesigned site) happens once, at the end, not once
+per page.
 
-### 16.4 When do the legacy variables get deleted?
-If admin stays out of scope (16.2), the legacy set can never be fully removed — admin
-depends on it. Recommendation: **keep both systems in `globals.css` indefinitely**, add a
-comment block marking the legacy set "admin-only, do not use in public pages", and delete
-only variables that end up with zero references. Do not attempt a big-bang rename.
+### 16.4 Legacy CSS variables — **Full sunset, not permanent coexistence**
+User: "unused variables are no longer maintained... with admin in scope, these probably
+should go away if unused." Since 16.2 now puts every page (including admin) on the path to
+`--pc-*` tokens, the original constraint behind "keep both systems indefinitely" (admin would
+otherwise permanently depend on the legacy set) no longer applies. **Decision: the ~48 legacy
+variables are a temporary bridge, not a second permanent system** — delete each one once the
+last page referencing it migrates (Task R11's logic, upgraded from "sunset what's safe" to
+"sunset everything, eventually").
 
-### 16.5 Delete the dead code now, or with its page?
-Recommendation: **now, as task R0**, in its own PR. It is independent, reviewable in one
-sitting, and shrinks the surface every later task has to reason about.
+### 16.5 Delete dead code now or later? — **Now, and go further: delete on sight generally**
+User: "if unused, get rid of it... worst case is we rebuild something, which I can live
+with." Confirmed unchanged by a fresh grep 2026-10-01: `CountdownTimer`, `OverallScoreBanner`,
+`PageContainer`, `ComingSoon`, `CourseBox`, and all of `src/styles/` are still genuinely
+unreferenced — proceed with Task R0 as originally written. The higher risk tolerance here
+also applies to the newly-decided Bandon archive retirement below — it's a strictly bigger
+version of the same instruction, not a separate judgment call.
+
+### Bandon archive retirement — **Decided: retire it.** (Same question as Part IV 21.1)
+User: "Bandon Archive can go away, it was a static build for a POC. We are moving onto bigger
+and better things." This resolves Part III's task R7 and Part IV's 21.1/21.3 identically —
+don't re-litigate either. Unlocks deleting, confirmed still accurate by a fresh grep
+2026-10-01: the `/tee-times` and `/tee-times/2025/[playerSlug]` routes, `src/lib/repositories/bandon.ts`,
+`getAllPlayersAndMatches.ts`, `getPlayerRecord.ts`, `getMatchesWithPlayers.ts`, and — confirmed
+solely reachable through that archive, cascading — `PlayerMatches.tsx`,
+`scoreboard/CourseScoreCard.tsx`, `scoreboard/MatchRow.tsx`. Fold all of this into Task R0's
+scope (it's the same "delete confirmed-dead code" action, just larger than originally
+scoped). The matching database side (Part IV Task H8: drop `match_bandon`, `player`,
+`records_bandon`, `team_bandon`) is a separate task in a separate system — coordinate but
+don't block one on the other; nothing else depends on those tables once the routes are gone.
+
+### 16.6 New: `/admin` has no Hi-Fi design to implement against
+The original Claude Design handoff (referenced throughout section 15) targeted public pages
+only — there is no existing Hi-Fi spec for any of `/admin`'s 19 routes. Section 15's whole
+inventory (15.6: route-by-route LOC/MUI/dark-mode table; 15.7: shared component usage) only
+covers public pages, by design, because admin was out of scope when it was written. **Per the
+user's 16.2 answer ("if we need a design for something let's note that in the plan to get
+one"): before any admin route can get an R-series task written for it, two things need to
+happen that don't exist yet:**
+1. **A fresh audit of `/admin`**, at the same depth as section 15 did for public pages —
+   route-by-route inventory, exact MUI/`@mui/x-data-grid`/`@mui/x-date-pickers` usage,
+   shared-component coupling, dark-mode/mobile gaps. Not done as part of recording these
+   decisions; this is the next concrete piece of work.
+2. **New design direction for admin**, not a port of an existing spec — likely the `design`
+   skill (canvas-based mockup), scoped to admin's actual needs (data tables, forms, bulk
+   actions) rather than the public pages' marketing-site aesthetic.
+
+Until both exist, the admin portion of Part III isn't actionable beyond "it's in scope" —
+treat this section as the task that produces the audit + design request, not as something
+already planned.
 
 ---
 
@@ -2043,22 +2093,41 @@ Every task: mobile-first, verified in **both** light and dark mode (per `AGENTS.
 these tasks are mostly visual refactors of existing behavior, so the practical bar is
 "existing tests still pass, and add a test when you change behavior rather than appearance."
 
-### Task R0 (Agent) Remove the dead code
+### Task R0 (Agent) Remove the dead code — scope expanded 2026-10-01 with the Bandon decision
 Delete everything in 15.10: the 5 orphaned components with their CSS modules, stories and
 tests; all 10 files under `src/styles/`; and the empty directories `src/app/schedule/[playerSlug]/`
-and `src/app/player/[playerSlug]/`. **Leave `src/app/scoreboard/` alone** pending
-`LIVE_SCORING_PLAN.md`.
+and `src/app/player/[playerSlug]/`. **Leave `src/app/scoreboard/` alone** — reserved for
+[[project-live-scoring]], a different feature than the Bandon archive below.
+
+**Also delete, now that the Bandon archive retirement is decided (section 16, "Bandon archive
+retirement"):** the `/tee-times` and `/tee-times/2025/[playerSlug]` routes (the only `.jsx`
+files in the codebase live here — this removes them entirely), `src/lib/repositories/bandon.ts`,
+`src/lib/getAllPlayersAndMatches.ts`, `src/lib/getPlayerRecord.ts`,
+`src/lib/getMatchesWithPlayers.ts`, and — confirmed solely reachable through this archive by a
+fresh grep — `src/components/player/PlayerMatches.tsx`,
+`src/components/scoreboard/CourseScoreCard.tsx`, `src/components/scoreboard/MatchRow.tsx`.
+This is a larger version of the same action (confirmed-dead code, now also confirmed-obsolete
+feature), not a separate judgment call — the user's standing instruction is "if unused, get
+rid of it, worst case we rebuild."
+
+The matching database tables (Part IV Task H8: `match_bandon`, `player`, `records_bandon`,
+`team_bandon`) are a separate task in a separate system (requires DB access, not just a code
+commit) — do in either order, nothing else depends on those tables once these routes are gone.
 
 Before deleting each item, re-run the check rather than trusting this document:
 ```bash
 grep -rn "CountdownTimer\|OverallScoreBanner\|PageContainer\|ComingSoon\|CourseBox" src --include="*.tsx" --include="*.jsx" | grep -v "__tests__\|\.stories\."
 grep -rn "@/styles\|styles/theme\|styles/pages" src --include="*.tsx" --include="*.ts"
+grep -rln "PlayerMatches\|CourseScoreCard\|MatchRow" src --include="*.tsx" --include="*.jsx" | grep -v "__tests__\|\.stories\.\|tee-times/2025\|components/player/PlayerMatches\|components/scoreboard/"
 ```
-Both must return nothing but the components' own self-imports.
+All must return nothing but the components' own self-imports (and PlayerMatches's internal
+use of the two scoreboard components, until all three are deleted together).
 
-**Acceptance:** `npm test` green, `npm run build` succeeds, `npx tsc --noEmit` clean, and
-the deleted-file count is ~20. One commit, message explaining these were superseded by the
-inlined home/matches implementations.
+**Acceptance:** `npm test` green, `npm run build` succeeds, `npx tsc --noEmit` clean. Deleted
+file count is now larger than the original ~20 estimate given the added archive scope — no
+new estimate given, since the exact file list above is authoritative. Consider two commits
+(original dead-code set, then the Bandon archive) rather than one, since they have different
+"why" explanations even though both land in the same task.
 
 ### Task R1 (Agent) Write down the conventions before copying them
 Extract the pattern already established in `page.module.css`, `faq/page.module.css` and
@@ -2193,15 +2262,18 @@ production-like build rather than `next dev`.
 
 ## 19. Part III decisions to record
 
+All decided by the user 2026-10-01 — see section 16 for full reasoning on each.
+
 | Item | Value |
 |---|---|
-| 16.1 MUI boundary ratified as target? | _TBD_ |
-| 16.2 `/admin` in scope? | _TBD_ |
-| 16.3 Page order accepted (or revised) | _TBD_ |
-| 16.4 Legacy variable strategy | _TBD_ |
-| R0 dead-code deletion shipped (commit) | _TBD_ |
-| R7 — is the 2025 `[playerSlug]` archive still needed? | _TBD_ |
-| `src/app/scoreboard/` — deleted, or reserved for live scoring? | _TBD_ |
+| 16.1 MUI boundary | Tiered: removed everywhere with a reasonable hand-built equivalent; `@mui/x-data-grid` + `@mui/x-date-pickers` kept, re-themed to `--pc-*` tokens via a new `ThemeProvider` (none exists yet) |
+| 16.2 `/admin` in scope? | Yes — everything in scope. Needs its own audit + new design direction first (section 16.6); not yet actionable beyond that |
+| 16.3 Page order accepted (or revised) | Accepted as the *build* order; shipped as one batch to test then production, not per-page increments |
+| 16.4 Legacy variable strategy | Full sunset — delete each legacy variable once its last referencing page migrates, not a permanent second system |
+| R0 dead-code deletion shipped (commit) | _TBD_ — not started; scope now also includes the Bandon archive files (below) |
+| Bandon archive retirement (= Part IV 21.1/21.3) | **Decided: retire.** `/tee-times`, `/tee-times/2025/[playerSlug]`, `repositories/bandon.ts`, `getAllPlayersAndMatches.ts`, `getPlayerRecord.ts`, `getMatchesWithPlayers.ts`, `PlayerMatches.tsx`, `scoreboard/CourseScoreCard.tsx`, `scoreboard/MatchRow.tsx` all confirmed deletable, folded into Task R0 |
+| `src/app/scoreboard/` — deleted, or reserved for live scoring? | Still reserved for [[project-live-scoring]] — the Bandon decision doesn't touch this, it's a different empty directory for a different future feature |
+| Admin audit + design request (16.6) | _TBD_ — not started; this is the next concrete piece of work before any admin R-series task can be written |
 
 ---
 
@@ -2830,8 +2902,13 @@ avoid two authors editing the same policies. **Acceptance:** Part II's RLS test 
 different.
 
 ### Task H8 (Agent) Drop unused tables and add audit-column defaults
-Per 21.3/21.4: drop `team_bandon`, `branson_captains`, `reround_signups`, and — if 21.1 says
-retire — `match_bandon`, `player`, `records_bandon` (with the code deletions from 20.4).
+Per 21.1/21.3 (decided 2026-10-01: retire) and 21.4 ignored here, unrelated: drop
+`team_bandon`, `branson_captains`, `branson_roster` (its anon-exposing policy was already
+dropped in Part II Task S5; the table itself is still unreferenced and unused — drop it too,
+consistent with the standing "if unused, get rid of it" instruction), `reround_signups`, and
+`match_bandon`/`player`/`records_bandon` (with the matching code deletions, which land in
+Part III Task R0 — do that side first or in the same sitting, since this task only removes
+the database tables, not the routes/components still referencing them).
 Then 20.7.5: `NOT NULL DEFAULT now()` on audit columns and one shared `set_updated_at()`
 trigger attached to every table with `updated_at`.
 
@@ -2893,10 +2970,10 @@ dedicated Part IV pass:
 | Extra functions found beyond what any prior source mentioned | `finalize_match_result_from_pending`, `get_current_player_id`, `get_current_role`, `handle_new_user`, `propose_match_result`, `reject_match_result_pending`, `set_official_match_result`, `withdraw_match_result_pending`, `update_updated_at` — all captured verbatim in the baseline migration. `handle_new_user` is wired to `auth.users` via trigger `on_auth_user_created` (not in the `--schema=public` dump; created manually, confirmed matching on both projects) |
 | Indexes (H0 q3/q4) | 17 non-PK indexes exist on production already (not "assume none" as originally written) — covers `players` (auth_user_id, email, name, role), `events` (is_active, year), `matches` (date, event_id), `round_scores` (event_id, player_id), `team_rosters` (player_id, team_id), `travel_info` (event_id), `ceremony_award_nominations` (event_id), `match_results_pending` (match_id, status, + the partial unique index). Section 20.8.1's list still stands for what's *missing* — most FK columns on `teams, courses, team_captains, match_players, course_holes, hole_scores, lodging*, event_participants, rerounds, reround_signups, match_results_pending`'s other player-FKs, and `ceremony_award_nominations`'s player-FKs remain unindexed |
 | Baseline migration applied to test | **Done 2026-09-28** — `supabase/migrations/00000000000000_baseline_schema.sql` applied via direct `pg_dump`/`psql` (Docker/`supabase db dump` was unavailable; native `pg_dump` from `libpq` used instead, see task 2.1's updated instructions). Verified identical to production: 26 tables (exact name match), 12 functions, 77 policies, 10 triggers, 57 indexes, 2 enums, plus the `auth.users` trigger. One quirk recorded in the migration file itself: 8 trailing `ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin` statements fail as the `postgres` user (platform-locked role, already correct by default on every fresh project) — commented out in place with an explanation; the 8 equivalent `FOR ROLE postgres` statements did apply |
-| 21.1 Retire the 2025 Bandon archive? | _TBD_ |
-| 21.2 `status` chosen over `is_active`? | _TBD_ |
-| 21.3 Tables approved for dropping | _TBD_ |
-| 21.4 `round_scores`/`hole_scores` — reuse or replace? | _TBD_ |
+| 21.1 Retire the 2025 Bandon archive? | **Decided 2026-10-01: yes** (same decision recorded in Part III section 16/19) — `/tee-times`, `/tee-times/2025/[playerSlug]`, and their supporting lib/components folded into Part III Task R0; `match_bandon`/`player`/`records_bandon`/`team_bandon` table drops remain Task H8 below |
+| 21.2 `status` chosen over `is_active`? | _TBD_ — separate question, not addressed by the Bandon decision |
+| 21.3 Tables approved for dropping | **Decided 2026-10-01**, as part of 21.1: `match_bandon`, `player`, `records_bandon`, `team_bandon`. `branson_roster`/`branson_captains` already addressed separately (branson_roster's anon exposure closed via Part II Task S5; both tables still exist, dropping them is bundled into this same H8 pass since they're equally unreferenced) |
+| 21.4 `round_scores`/`hole_scores` — reuse or replace? | _TBD_ — unrelated to the Bandon decision; still needs input from whoever drives [[project-live-scoring]] |
 | Duplicate rows found by H5 constraints | _TBD_ |
 | H1–H8 applied to test (dates) | _TBD_ |
 | H1–H8 applied to prod (dates) | _TBD_ |
