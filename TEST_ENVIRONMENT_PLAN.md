@@ -601,17 +601,40 @@ directly exercise `getAuthRedirectDecision` against each role.
 
 ## 8. Phase 7 — Verification, docs, and the ongoing workflow
 
-### Task 7.1 (Agent) Smoke-test checklist
-On `https://test.patron-cup.com`, in **both light and dark mode** and **on a narrow
-mobile viewport** (per `AGENTS.md`, mobile is the priority surface):
-- [ ] Home page renders; pre-trip vs on-trip state matches `events.is_active`.
-- [ ] `/faq`, `/roster`, `/matches`, `/scoreboard`, `/itinerary`, `/teams`, `/tee-times` render with seeded data.
-- [ ] Login works for each of the three roles; middleware redirects behave (`/admin` gating, forced password change).
-- [ ] Admin flows write successfully: create/edit a player, set up a match, enter a score, approve a pending result.
-- [ ] Avatar upload succeeds and the image renders (validates task 3.4).
-- [ ] `/dashboard` and award nominations work for a player-role account.
-- [ ] Network tab shows **only** the test Supabase ref.
-- [ ] Production `patroncup.com` is unaffected and still points at the prod ref.
+### Task 7.1 (split 2026-10-01: programmatic half done; visual half needs a human)
+This checklist mixes two different kinds of checks. What follows is which is which, plus
+one correction: **`/scoreboard` is not a real route** — `src/app/scoreboard/` is an empty
+directory (confirmed via `find`), reserved for the not-yet-started live-scoring feature
+(see `LIVE_SCORING_PLAN.md`). Its `404` is correct behavior, not a bug; it was a stale item
+in this checklist, not something to fix here.
+
+**Verified programmatically (via `vercel curl`, which bypasses Deployment Protection, plus
+direct DB/Auth API checks):**
+- [x] `/`, `/faq`, `/roster`, `/matches`, `/itinerary`, `/teams`, `/tee-times` all return `200`
+- [x] `/dashboard` and `/players/<id>` correctly `307` to `/login` when unauthenticated
+- [x] All three test accounts (Task 6.3) authenticate successfully via the password-grant
+      endpoint
+- [x] Network/bundle check confirms the test site's build references the test Supabase ref
+      (`uffvcocmlqoxakawnbaq`) and production's references its own (`gqsfaxasmodlykeqvhuu`)
+      — re-confirmed fresh today, not just carried over from the earlier incident
+- [x] Production `patroncup.com` independently re-confirmed unaffected, still serving its
+      own ref
+
+**Still needs an actual human in a real browser** — these are inherently visual/interactive
+and were not faked or assumed:
+- [ ] Home page's pre-trip vs on-trip visual state, and all pages' **dark mode** rendering
+- [ ] **Mobile viewport** layout (per `AGENTS.md`, this is the priority surface, not an
+      afterthought)
+- [ ] Admin flows actually writing correctly through the UI (create/edit a player, set up a
+      match, enter a score, approve a pending result) — login as `test-admin@example.com`
+- [ ] Avatar upload through the actual file-picker UI (validates task 3.4's bucket/policy
+      setup end-to-end, not just that the policies exist)
+- [ ] `/dashboard` and award nominations as `test-player@example.com`
+- [ ] Forced password-change flow, specifically via `test-player@example.com` (seeded with
+      `must_change_password = true`)
+
+Since Deployment Protection is still on, only the account owner can currently do this walk —
+worth doing before deciding to make the site public.
 
 ### Task 7.2 (Agent) Document the workflow in `AGENTS.md`
 Add a short section covering:
