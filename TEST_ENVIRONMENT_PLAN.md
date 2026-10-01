@@ -2252,7 +2252,7 @@ new estimate given, since the exact file list above is authoritative. Consider t
 (original dead-code set, then the Bandon archive) rather than one, since they have different
 "why" explanations even though both land in the same task.
 
-### Task R1 (Agent) Write down the conventions before copying them — updated 2026-10-01
+### Task R1 (done 2026-10-01, commit `091d654`) Write down the conventions before copying them — updated 2026-10-01
 Extract the pattern already established in `page.module.css`, `faq/page.module.css` and
 `matches/page.module.css` into a short "Design system" section in `AGENTS.md` (10–20 lines,
 matching that file's existing terse tone). It must state, per the finalized decisions in
@@ -2405,7 +2405,7 @@ All decided by the user 2026-10-01 — see section 16 for full reasoning on each
 | 16.2 `/admin` in scope? | Yes — everything in scope. Needs its own audit + new design direction first (section 16.6); not yet actionable beyond that |
 | 16.3 Page order accepted (or revised) | Accepted as the *build* order; shipped as one batch to test then production, not per-page increments |
 | 16.4 Legacy variable strategy | Full sunset — delete each legacy variable once its last referencing page migrates, not a permanent second system |
-| R0 dead-code deletion shipped (commit) | _TBD_ — not started; scope now also includes the Bandon archive files (below) |
+| R0 dead-code deletion shipped (commit) | **Done 2026-10-01** — two commits on `test`: `f851713` (orphaned components + legacy `src/styles/`), `cda2e19` (Bandon archive, incl. two orphaned test files the original inventory missed: `lib/repositories/__tests__/bandon.test.ts`, `lib/__tests__/bandonLegacy.test.ts`, plus 3 leftover `.module.css` files). `npm test` (36/36), `npm run build`, and `npx tsc --noEmit` (2 pre-existing unrelated errors only) all verified before committing. Not yet pushed to remote (user pushes) |
 | Bandon archive retirement (= Part IV 21.1/21.3) | **Decided: retire.** `/tee-times`, `/tee-times/2025/[playerSlug]`, `repositories/bandon.ts`, `getAllPlayersAndMatches.ts`, `getPlayerRecord.ts`, `getMatchesWithPlayers.ts`, `PlayerMatches.tsx`, `scoreboard/CourseScoreCard.tsx`, `scoreboard/MatchRow.tsx` all confirmed deletable, folded into Task R0 |
 | `src/app/scoreboard/` — deleted, or reserved for live scoring? | Still reserved for [[project-live-scoring]] — the Bandon decision doesn't touch this, it's a different empty directory for a different future feature |
 | Admin audit (16.6, half of it) | **Done 2026-10-01 — see section 15.11.** Found 17 real pages (not 19 — 2 are redirect stubs), 10 of which have no CSS module at all (pure inline `sx`), zero `--pc-*` usage anywhere, and critically: `@mui/x-data-grid` has one consumer total (the Bandon archive being deleted) and `@mui/x-date-pickers` has one (`admin/rerounds`). This reopens 16.1 — see that entry |
