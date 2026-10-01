@@ -482,11 +482,28 @@ grep -oE '/_next/static/[^"]+\.js' /tmp/test_home.html | sort -u
 # download each path found above, then:
 grep -ohE "[a-z]{20}\.supabase\.co" /tmp/chunk_*.js | sort -u
 ```
-This only works while Deployment Protection is off/bypassed (task 4.3) — with it on, use the
-browser devtools method instead, or Vercel's Protection Bypass header. Root cause that time:
-the live deployment predated the task 4.2 env var changes, since Vercel only applies variable
-changes to new builds, not retroactively. The fix is always the same — confirm the variable
-scoping is correct, then trigger a fresh deployment, then re-run this check before trusting it.
+This only works directly while Deployment Protection is off. With it on (which is now the
+default stance per the reordered task 4.3), use `npx vercel curl <url>` in place of plain
+`curl` — it auto-generates a deployment protection bypass token for the linked project and
+gets through with no manual setup, including for downloading the JS chunk files themselves.
+No separate bypass-header configuration was needed in practice.
+
+**Actual root cause, found 2026-09-30 via `vercel env ls preview test`** (lists exactly what a
+Preview build of a given branch would receive — more reliable than reading the dashboard
+table by eye): it was not a stale-build timing issue as first suspected. Task 4.2 had only
+been done one-third of the way — `NEXT_PUBLIC_SUPABASE_URL` was correctly scoped to
+`Preview (test)`, but `NEXT_PUBLIC_SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` had
+never been added for that scope at all, only for `Production`. Exactly why the broken build
+served a *valid-looking* production URL rather than crashing outright on the missing keys was
+never fully explained — not worth chasing once the actual gap was found and fixed.
+
+**Fix procedure that worked:** add the missing variable(s) with the correct scope → confirm
+via `vercel env ls preview <branch>` that all required variables now appear (don't trust the
+dashboard UI alone) → `vercel redeploy <existing-deployment-url> --target preview` to force a
+fresh build without needing a new git push (the domain and branch aliases move to the new
+deployment automatically) → re-run the JS-bundle-ref check via `vercel curl` → confirm the
+correct ref appears. All of this is doable without disabling Deployment Protection at any
+point.
 
 ### Task 6.2 (Agent) Write a seed script
 Create `supabase/seed/seed-test.sql` (or a `scripts/seed-test.ts` using
@@ -601,13 +618,22 @@ at the test project is the recommended default for local development.
 1. **Test site writing to production data** — mitigated by task 4.2's unscoped-variable
    check and task 6.1's pre-seed verification. Highest-severity risk in this plan, and
    **it actually occurred on 2026-09-30**: the live `test.patron-cup.com` deployment was
-   found serving a build wired to the production Supabase ref, not test, because the live
-   deployment predated the task 4.2 env var changes (Vercel doesn't rebuild automatically
-   when variables change). Caught before any seeding or test-account activity touched it, by
-   checking the deployed JS bundle directly rather than trusting the dashboard config alone.
-   Response: Deployment Protection turned back on immediately to cut off access while the
-   wiring gets fixed and re-verified — see the updated task 4.3 and 6.1 for the corrected
-   procedure (protection stays on until isolation is proven, not a one-time Phase 4 choice).
+   found serving a build wired to the production Supabase ref, not test. Caught before any
+   seeding or test-account activity touched it, by checking the deployed JS bundle directly
+   rather than trusting the dashboard config alone. Immediate response: Deployment Protection
+   turned back on to cut off access while the wiring got fixed — see the updated task 4.3 and
+   6.1 for the corrected procedure (protection stays on until isolation is proven, not a
+   one-time Phase 4 choice).
+
+   **Resolved the same day.** Root cause (found via `vercel env ls preview test`, not by
+   re-reading the dashboard): task 4.2 had only been completed one-third of the way —
+   `NEXT_PUBLIC_SUPABASE_URL` was correctly scoped to `Preview (test)`, but
+   `NEXT_PUBLIC_SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` had never been added for
+   that scope at all. Fixed by adding both, confirming via the CLI (not the dashboard table)
+   that all three now appear for `preview test`, then `vercel redeploy` to force a fresh build
+   without a git push. Re-verified via `vercel curl` (works through Deployment Protection
+   automatically — no manual bypass setup needed) against the fresh build's JS bundle: correct
+   test ref (`uffvcocmlqoxakawnbaq`) now appears, production's does not.
 2. **Schema drift between projects over time** — mitigated by the task 7.2 promotion rule.
    Re-dump and diff periodically if drift is suspected.
 3. **Incomplete baseline dump** — RLS policies, triggers, or storage policies that don't
