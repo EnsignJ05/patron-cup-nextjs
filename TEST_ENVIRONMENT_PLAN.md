@@ -612,6 +612,14 @@ at the test project is the recommended default for local development.
 | Prod/migration drift found (task 2.3) | None — superseded by task 3.2's full `pg_dump`, which is stronger evidence than the originally-planned spot-check queries. All 4 previously-untracked migrations' effects (ghin columns, `match_results_pending`, `ceremony_award_nominations`, `event_participants` trip-planning columns) are present in the live schema |
 | Baseline dump edits made (task 3.2) | 3: (1) removed `CREATE SCHEMA public` — always pre-exists; (2) commented out 8 trailing `ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin` statements — platform-locked role, fails as `postgres` user, already correct by default; (3) manually appended the `auth.users` → `handle_new_user()` trigger, which a `--schema=public` dump can't capture |
 | Test site public or SSO-protected (task 4.3) | SSO-protected as of 2026-09-30; **isolation now proven (task 6.1 passed 2026-10-01)** — ready to flip to public whenever desired, just not done yet |
+| Live `players` policies found on prod (11.5 q1) | `players_select_all` confirmed live, `{anon,authenticated}`, `USING (true)` — core vulnerability unchanged, fix still pending |
+| `disable_signup` state on prod (11.5 q2) | _TBD_ — Task S1, not yet done |
+| Real `players` column list (11.5 q3) | Matches section 11.7's planned safe-list exactly, no drift — confirmed 2026-10-01 via direct query |
+| Tables found with RLS disabled (11.4 / old S5) | **None — RLS enabled on all 26 tables**, confirmed 2026-10-01. Task S5 rescoped accordingly |
+| Existing anon column grants on `players` (11.5 q4) | `anon` holds SELECT/INSERT/UPDATE/REFERENCES on every column, no exceptions — confirms section 11.2's "Supabase default grants" theory as fact, not inference |
+| S4 migration applied to test / prod (dates) | _TBD_ — not yet written as a migration file |
+| S5 public-vs-member classification approved by | _TBD_ — open committee question on `travel_info`/`lodging_assignments` only; everything else in that task needs no decision |
+| Committee notified (S7) | _TBD_ |
 
 ## 10. Known risks
 
@@ -719,28 +727,31 @@ still renders the values. The same page renders lodging building/room and roomma
 (`:195-227`). So phone, GHIN number, and room assignment are visible to anyone who opens the
 URL, without any API knowledge. Any fix that only changes RLS and not this page is incomplete.
 
-### 11.4 Secondary finding: tables with no RLS at all
+### 11.4 Secondary finding: tables with no RLS *migration file* — corrected, mostly good news
 
-Grepping `ENABLE ROW LEVEL SECURITY` across `supabase/migrations/` shows policies for
-`players`, `events`, `teams`, `courses`, `matches`, `tee_times`, `profiles`,
-`match_results_pending`, and `ceremony_award_nominations`. **Not present for any of:**
+Originally written from a repo-only grep: `ENABLE ROW LEVEL SECURITY` wasn't found in
+`supabase/migrations/` for `travel_info`, `lodging`, `lodging_assignments`,
+`event_participants`, `team_rosters`, `match_players`, `rerounds`, `reround_signups`,
+`team_captains`, `course_holes`, `round_scores`, `hole_scores`, `match_bandon`,
+`records_bandon` — which raised the possibility they were fully open to `anon` (RLS disabled
++ default grants).
 
-`travel_info`, `lodging`, `lodging_assignments`, `event_participants`, `team_rosters`,
-`match_players`, `rerounds`, `reround_signups`, `team_captains`, `course_holes`,
-`round_scores`, `hole_scores`, `match_bandon`, `records_bandon`.
+**Resolved 2026-10-01 against the live database (Task S0), via both a direct `pg_class` query
+and the full policy list captured in Part I's `pg_dump`.** The absence from migration files
+only meant these tables were created by hand in the dashboard, same as the core schema
+(Part I section 1.3) — **RLS is enabled on all 26 tables with no exception**, and almost all
+of them already have correctly-scoped policies:
 
-In Supabase, a dashboard-created table with RLS *disabled* and default grants is fully
-readable by `anon`. Whether that is the live state cannot be confirmed from the repo
-(section 11.5), but if it is, the notable ones are:
+| Tables | Actual live posture |
+|---|---|
+| `travel_info`, `lodging`, `lodging_assignments`, `event_participants`, `rerounds`, `reround_signups`, `team_captains`, `course_holes`, `round_scores`, `hole_scores` | SELECT policy is `TO authenticated` only. **Not anon-exposed.** Flight numbers, dates, and `confirmation_num` are member-directory-visible (any of the 54 can read any other's), same posture as `players`' email/phone post-fix — not the "wide open to the internet" scenario originally feared |
+| `team_rosters`, `match_players` | SELECT policy is `TO authenticated, anon`. **Intentionally public** — matches this section's own original recommendation (names and pairings are meant to be public) |
+| `match_bandon`, `records_bandon` | SELECT **and UPDATE** both granted `TO anon`, `USING (true)`, no `WITH CHECK`. **Confirmed real exposure** — already identified independently in the Part IV schema audit (section 20.5.3) as unauthenticated write access to the 2025 archive, with zero app code ever writing to either table |
 
-- **`travel_info`** — `arrival_flight_number`, `arrival_date/time`, `departure_*`
-  (`src/types/database.ts:210-234`). Flight numbers plus dates tell a stranger exactly when
-  54 named people's homes are empty. Arguably more sensitive than the emails.
-- **`lodging_assignments.confirmation_num`** — a booking credential usable against the resort.
-- **`event_participants`, `team_rosters`, `match_players`** — low sensitivity; names and
-  scores on a golf-trip site are fine public.
-
-Task S5 handles this.
+So Task S5's actual remaining scope is much smaller than originally written: just the two
+Bandon tables (plus `branson_roster`, found during Part IV, which exposes `email` to anon and
+isn't in this list at all since it was missed by the original repo grep too). Everything else
+in the original worry-list requires no action.
 
 ### 11.5 What could NOT be verified from the repo — verify these in the dashboard
 
@@ -862,15 +873,34 @@ is void. Do S1 first. Task S6 offers a stricter model if the committee wants one
 Suggested sequencing: S0 → S1 → S2 → S3 → S4 (same day, in that order) → S5 → S7, with S6
 as a follow-up. S1 alone is a 2-minute dashboard change and should not wait for the rest.
 
-### Task S0 (Agent) Prerequisites
-1. Complete **Task 2.2** — `.gitignore:45`'s `/supabase` rule otherwise silently swallows
-   the migration written in S4.
-2. Run all four queries in section 11.5 against **production** and record the answers in
-   section 9. In particular, do not write the S4 grant list until query 3 has confirmed the
-   real column names.
+### Task S0 (done 2026-10-01) Prerequisites
+1. **Task 2.2 complete** (done during Part I) — migrations are tracked, no longer swallowed
+   by `.gitignore`.
+2. All four section 11.5 queries run directly against production via the `~/.pgpass`
+   connection already set up in Part I (no dashboard needed). Results:
 
-**Acceptance:** `git check-ignore supabase/migrations/` reports nothing; section 9 has real
-values for the four unknowns.
+   - **Query 1 (live `players` policies):** confirms `players_select_all` is exactly as
+     documented — `{anon,authenticated}`, `USING (true)`, no column restriction. The core
+     vulnerability is live, unchanged, still open.
+   - **Query 1b (RLS enabled state, all 26 tables):** **`relrowsecurity = true` on every
+     single table** — RLS is not disabled anywhere. This corrects section 11.4's worst-case
+     framing (see the update there): the "secondary finding" tables are not wide open, they
+     already have policies scoped to `authenticated` only. Section 11.4 and Task S5 are
+     revised accordingly.
+   - **Query 3 (actual `players` columns):** matches section 11.7's planned safe-list
+     exactly — `id, first_name, last_name, current_handicap, ghin_club, city, state,
+     profile_image_url, status` all exist with the expected names/types. **No drift, no
+     changes needed to the Task S4 migration's column list.**
+   - **Query 4 (existing column grants):** `anon` currently holds `SELECT, INSERT, UPDATE,
+     REFERENCES` on **every column** of `players`, no exceptions — exactly the "Supabase
+     default grants on a new table" pattern section 11.2 describes, confirmed rather than
+     inferred. The blanket INSERT/UPDATE grant is not currently exploitable (no RLS policy
+     grants `anon` either operation), but Task S4 step 3's defense-in-depth revoke is
+     correctly scoped to close it anyway.
+   - **Query 2 (`disable_signup`):** still unverifiable by SQL by nature — this is Task S1.
+
+**Acceptance (met):** `git check-ignore supabase/migrations/` reports nothing; section 9 has
+real values for all four unknowns (recorded there now).
 
 ### Task S1 (Human) Disable self-service signup — do this first
 Production Supabase dashboard → Authentication → Sign In / Providers → Email → turn **off**
@@ -1062,46 +1092,54 @@ curl -s "https://<REF>.supabase.co/rest/v1/players?select=first_name,last_name,c
 ```
 Plus: `/roster`, `/teams`, `/matches` still render player names in a logged-out browser.
 
-### Task S5 (Agent + Human) Close the un-policied tables
-For every table in section 11.4, decide public or member-only, then enforce it. Suggested
-classification — confirm with the committee, it is a judgement call:
+### Task S5 (Agent + Human) Close the un-policied tables — scope reduced 2026-10-01
 
-| Table | Posture | Rationale |
-|---|---|---|
-| `travel_info` | **member-only** (own row + committee for write) | flight numbers + dates ⇒ when homes are empty |
-| `lodging_assignments` | member-only; never expose `confirmation_num` to non-committee | booking credential |
-| `lodging` | member-only | room numbers |
-| `team_rosters`, `match_players`, `event_participants`, `team_captains` | public read | names and pairings; already rendered publicly |
-| `rerounds`, `reround_signups` | public read | schedule data |
-| `course_holes`, `round_scores`, `hole_scores`, `match_bandon`, `records_bandon` | public read | scores |
+**Re-scoped after Task S0's live verification.** Most of this task turned out to already be
+done — see the corrected section 11.4. What's actually left:
 
-Pattern for a member-only table (adapt per table; `public.current_player_id()` already
-exists from `supabase/migrations/20260404_match_results_pending.sql:48`):
+**No action needed, pending one judgment call:** `travel_info`, `lodging`,
+`lodging_assignments`, `event_participants`, `rerounds`, `reround_signups`, `team_captains`,
+`course_holes`, `round_scores`, `hole_scores` already have RLS enabled with SELECT scoped to
+`authenticated` only — functionally the same "member directory" posture section 11.7
+*explicitly accepts* for `players`' email/phone (any of the 54 invited members can read any
+other's data; the public internet cannot). If that acceptance stands for `players`, it
+already covers these tables too, and no migration is needed here at all.
+
+The one open question worth taking to the committee: do flight numbers/dates
+(`travel_info`) and a lodging `confirmation_num` warrant *tighter* than the `players` email
+directory precedent — i.e. own-row + committee-only, rather than any-member-can-read? The
+original own-row pattern is preserved below in case the answer is yes:
 ```sql
-alter table public.travel_info enable row level security;
-revoke all on public.travel_info from anon;
-
+-- Only if the committee wants travel_info/lodging_assignments tighter than the
+-- players-directory precedent. Not required by anything else in this plan.
+drop policy if exists "travel_info_select_all" on public.travel_info;
 drop policy if exists "travel_info_select_own_or_committee" on public.travel_info;
 create policy "travel_info_select_own_or_committee" on public.travel_info
   for select to authenticated using (
     player_id = public.current_player_id()
-    or exists (
-      select 1 from public.players
-      where auth_user_id = auth.uid() and role in ('committee','admin')
-    )
+    or public.is_committee_or_admin()
   );
 ```
-For a public-read table, enabling RLS with an explicit `for select to anon, authenticated
-using (true)` is still worth doing — it makes the intent auditable instead of relying on
-RLS being off.
 
-Check each one against the app afterwards: `/itinerary` and `/tee-times` read some of these,
-and `src/app/dashboard/page.tsx` / `src/app/admin/travel/page.tsx` read `travel_info`.
-Anything that regresses shows up in the 13.1c static guard or the 13.2 suite.
+**Real action needed — anon-exposed, confirmed:** `match_bandon` and `records_bandon` grant
+`anon` both SELECT and UPDATE (`USING (true)`, no `WITH CHECK`); `branson_roster` (missed by
+the original repo-only grep, found during the Part IV schema audit) grants `anon` SELECT
+including an `email` column. **This is the same fix as Part IV task H2** — do it once, not
+twice. If H2 hasn't run yet, do it here as part of Phase S instead and mark H2 satisfied:
 
-**Acceptance:** the `pg_class` query from 11.5 shows `relrowsecurity = true` for every table
-in `public`; anon `select=*` on `travel_info`, `lodging`, and `lodging_assignments` returns
-403 or `[]`.
+```sql
+drop policy if exists "Match Bandon Update" on public.match_bandon;
+drop policy if exists "Records Update Policy" on public.records_bandon;
+-- branson_roster: drop entirely (Part IV 21.3) or at minimum:
+drop policy if exists "Enable read access for all users" on public.branson_roster;
+```
+
+`team_rosters` and `match_players` are already correctly `TO authenticated, anon` — no change,
+this was this section's own original recommendation and the live state already matches it.
+
+**Acceptance:** anon `UPDATE` on `match_bandon`/`records_bandon` and anon `SELECT` on
+`branson_roster` all fail; nothing else in this task requires a code or schema change unless
+the committee asks for the tighter `travel_info` posture above.
 
 ### Task S6 (Optional, recommended) Move never-public columns out of `players`
 `address_line1`, `address_line2`, `zip_code`, `shirt_size`, `dietary_restrictions`,
@@ -1461,16 +1499,15 @@ Be explicit so nobody assumes coverage that does not exist:
 
 ## 14. Additions to section 9 — record these too
 
+**Filled into section 9 directly as of 2026-10-01** (Task S0) rather than duplicated here —
+see that table for: live `players` policies, real column list (`is_active` does exist, also
+covered in Part IV section 20.5.1), RLS-disabled table count (none), S4/S5/S7 status.
+
+One item from the original list is still genuinely open, not yet testable:
+
 | Item | Value |
 |---|---|
-| `disable_signup` state found on prod before S1 (11.5 q2) | _TBD_ |
-| Live `players` policies found on prod (11.5 q1) | _TBD_ |
-| Real `players` column list — does `is_active` exist? (11.5 q3) | _TBD_ |
-| Tables found with RLS disabled (11.4 / S5) | _TBD_ |
-| Does PostgREST 403 on anon `select=*`? (11.6) | _TBD_ |
-| S4 migration applied to test / to prod (dates) | _TBD_ |
-| S5 public-vs-member classification approved by | _TBD_ |
-| Committee notified (S7) | _TBD_ |
+| Does PostgREST 403 on anon `select=*`? (11.6) | _TBD_ — can't test until the Task S4 migration exists and is applied somewhere (test or prod); this is the first assertion in section 13.2's test suite |
 
 ---
 
