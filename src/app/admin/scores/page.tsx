@@ -1,28 +1,19 @@
 'use client';
 
 import { useEffect, useMemo, useState, useCallback } from 'react';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import Paper from '@mui/material/Paper';
-import Tabs from '@mui/material/Tabs';
-import Tab from '@mui/material/Tab';
 import Alert from '@mui/material/Alert';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
-import Divider from '@mui/material/Divider';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import Chip from '@mui/material/Chip';
-import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
 import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
 import { setOfficialMatchResult } from '@/lib/matchResultMutations';
 import type { Match, Event, Course, Team, Player, MatchPlayer } from '@/types/database';
+import AdminHead from '@/components/admin/AdminHead';
+import { AIcon } from '@/components/admin/AdminIcons';
+import styles from './page.module.css';
 
 type MatchWithJoins = Match & { course?: Course; winner_team?: Team };
 type MatchPlayerWithJoins = MatchPlayer & {
@@ -31,10 +22,10 @@ type MatchPlayerWithJoins = MatchPlayer & {
 };
 
 const formatTime = (timeStr: string | null) => {
-  if (!timeStr) return '-';
+  if (!timeStr) return '—';
   const normalized = timeStr.length === 5 ? `${timeStr}:00` : timeStr;
   const date = new Date(`1970-01-01T${normalized}`);
-  if (Number.isNaN(date.getTime())) return '-';
+  if (Number.isNaN(date.getTime())) return '—';
   return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
 };
 
@@ -50,16 +41,11 @@ export default function ScoresAdminPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [confirming, setConfirming] = useState(false);
-  const [pendingResult, setPendingResult] = useState<{ match: MatchWithJoins; value: string } | null>(
-    null,
-  );
+  const [pendingResult, setPendingResult] = useState<{ match: MatchWithJoins; value: string } | null>(null);
 
   useEffect(() => {
     const loadEvents = async () => {
-      const { data, error: eventsError } = await supabase
-        .from('events')
-        .select('*')
-        .order('year', { ascending: false });
+      const { data, error: eventsError } = await supabase.from('events').select('*').order('year', { ascending: false });
 
       if (eventsError) {
         setError(eventsError.message);
@@ -90,10 +76,7 @@ export default function ScoresAdminPage() {
           .order('group_number', { ascending: true })
           .order('match_number', { ascending: true }),
         supabase.from('teams').select('*').eq('event_id', eventId).order('name'),
-        supabase
-          .from('match_players')
-          .select('*, player:players(*), match:matches!inner(id,event_id,match_date)')
-          .eq('match.event_id', eventId),
+        supabase.from('match_players').select('*, player:players(*), match:matches!inner(id,event_id,match_date)').eq('match.event_id', eventId),
       ]);
 
       if (matchesRes.error) setError(matchesRes.error.message);
@@ -150,17 +133,10 @@ export default function ScoresAdminPage() {
   }, [matchPlayers]);
 
   const groupedMatches = useMemo(() => {
-    const filtered = selectedCourseId
-      ? matches.filter((match) => (match.course?.id || 'tbd') === selectedCourseId)
-      : [];
+    const filtered = selectedCourseId ? matches.filter((match) => (match.course?.id || 'tbd') === selectedCourseId) : [];
     const groups = new Map<string, MatchWithJoins[]>();
     filtered.forEach((match) => {
-      const key = [
-        match.event_id,
-        match.match_date,
-        match.match_time || 'unscheduled',
-        match.group_number ?? 'unscheduled',
-      ].join('|');
+      const key = [match.event_id, match.match_date, match.match_time || 'unscheduled', match.group_number ?? 'unscheduled'].join('|');
       const list = groups.get(key) || [];
       list.push(match);
       groups.set(key, list);
@@ -222,272 +198,191 @@ export default function ScoresAdminPage() {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, color: 'var(--text)' }}>
-          Match Scores
-        </Typography>
-      </Box>
+    <div>
+      <AdminHead
+        crumb="Scores"
+        title="Scores"
+        sub="Review and set official match results."
+        actions={
+          <FormControl size="small" className={styles.eventFilter}>
+            <InputLabel>Event</InputLabel>
+            <Select value={selectedEventId} label="Event" onChange={(event) => setSelectedEventId(event.target.value)}>
+              {events.map((event) => (
+                <MenuItem key={event.id} value={event.id}>
+                  {event.name} ({event.year})
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        }
+      />
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
+        <Alert severity="error" className={styles.alert} onClose={() => setError('')}>
           {error}
         </Alert>
       )}
       {success && (
-        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>
+        <Alert severity="success" className={styles.alert} onClose={() => setSuccess('')}>
           {success}
         </Alert>
       )}
 
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
-        <FormControl sx={{ minWidth: 240 }}>
-          <InputLabel>Event</InputLabel>
-          <Select
-            value={selectedEventId}
-            label="Event"
-            onChange={(event) => setSelectedEventId(event.target.value)}
-          >
-            {events.map((event) => (
-              <MenuItem key={event.id} value={event.id}>
-                {event.name} ({event.year})
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </Box>
-
       {eventTeams.length !== 2 && (
-        <Alert severity="warning" sx={{ mb: 2 }}>
+        <Alert severity="warning" className={styles.alert}>
           Match scoring expects exactly two teams for the selected event. Current team count: {eventTeams.length}.
         </Alert>
       )}
 
       {matchCourses.length === 0 ? (
-        <Paper sx={{ p: 3 }}>
-          <Typography>No matches found for this event.</Typography>
-        </Paper>
+        <p className={styles.emptyState}>No matches found for this event.</p>
       ) : (
-        <Paper>
-          <Tabs
-            value={selectedCourseId}
-            onChange={(_, value) => setSelectedCourseId(value)}
-            variant="scrollable"
-            scrollButtons="auto"
-            sx={{
-              backgroundColor: 'var(--surface-muted)',
-              px: 2,
-              '& .MuiTabs-indicator': {
-                height: 4,
-                borderRadius: 2,
-                backgroundColor: 'var(--text)',
-              },
-            }}
-          >
+        <>
+          <div className={styles.courseTabs}>
             {matchCourses.map((course) => (
-              <Tab
+              <button
                 key={course.id}
-                value={course.id}
-                label={course.name}
-                sx={{
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  borderRadius: 2,
-                  minHeight: 56,
-                  px: 2.5,
-                  mr: 1,
-                  color: 'var(--tab-unselected-text)',
-                  '&.Mui-selected': {
-                    color: 'var(--text)',
-                    backgroundColor: 'var(--surface-muted)',
-                  },
-                }}
-              />
+                type="button"
+                className="ad-chip"
+                data-on={selectedCourseId === course.id}
+                onClick={() => setSelectedCourseId(course.id)}
+              >
+                {course.name}
+              </button>
             ))}
-          </Tabs>
-          <Divider />
-          <Box sx={{ p: 3 }}>
-            {loading ? (
-              <Typography>Loading match scores...</Typography>
-            ) : (
-              groupedMatches.map((group) => {
-                const groupMatch = group.matches[0];
-                const groupLabel =
-                  groupMatch.match_time && groupMatch.group_number !== null
-                    ? `${formatTime(groupMatch.match_time)} · Group ${groupMatch.group_number}`
-                    : 'Unscheduled';
+          </div>
 
-                return (
-                  <Paper key={group.key} sx={{ p: 3, mb: 3 }} variant="outlined">
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                      <Box>
-                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                          {groupLabel}
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: 'var(--text-muted)' }}>
-                          {groupMatch.course?.name || 'Course TBD'}
-                        </Typography>
-                      </Box>
-                    </Box>
+          {loading ? (
+            <p className={styles.emptyState}>Loading match scores...</p>
+          ) : (
+            groupedMatches.map((group) => {
+              const groupMatch = group.matches[0];
+              const groupLabel =
+                groupMatch.match_time && groupMatch.group_number !== null
+                  ? `${formatTime(groupMatch.match_time)} · Group ${groupMatch.group_number}`
+                  : 'Unscheduled';
 
-                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 2 }}>
-                      {group.matches.map((match) => {
-                        const matchPlayersForMatch = matchPlayersByMatchId.get(match.id) || [];
-                        const teamA = eventTeams[0];
-                        const teamB = eventTeams[1];
-                        const teamAPlayers = teamA
-                          ? matchPlayersForMatch.filter((mp) => mp.team_id === teamA.id)
-                          : [];
-                        const teamBPlayers = teamB
-                          ? matchPlayersForMatch.filter((mp) => mp.team_id === teamB.id)
-                          : [];
-                        const winnerValue = match.is_halved ? 'halved' : match.winner_team_id || '';
-                        const isPending = !match.is_halved && !match.winner_team_id;
-                        const isOfficial = match.result_set_by_official === true;
-                        const winnerLabel = match.is_halved
-                          ? 'Halved'
-                          : match.winner_team_id
-                            ? `Winner: ${getTeamName(match.winner_team_id)}`
-                            : 'Pending';
+              return (
+                <div key={group.key} className={styles.group}>
+                  <h2 className={styles.groupHeading}>{groupLabel}</h2>
+                  <p className="ad-sub" style={{ margin: '2px 0 12px' }}>
+                    {groupMatch.course?.name || 'Course TBD'}
+                  </p>
 
-                        return (
-                          <Card key={match.id} variant="outlined">
-                            <CardContent>
-                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                                <Box>
-                                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                                    Match #{match.match_number}
-                                  </Typography>
-                                  <Typography variant="body2" sx={{ color: 'var(--text-muted)' }}>
-                                    {match.match_type}
-                                  </Typography>
-                                </Box>
-                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, justifyContent: 'flex-end' }}>
-                                  <Chip
-                                    label={winnerLabel}
-                                    size="small"
-                                    color={match.is_halved ? 'info' : match.winner_team_id ? 'success' : 'default'}
-                                    sx={
-                                      isPending
-                                        ? {
-                                            color: 'var(--pending-chip-text)',
-                                            backgroundColor: 'var(--pending-chip-bg)',
-                                            border: '1px solid var(--pending-chip-border)',
-                                          }
-                                        : undefined
-                                    }
-                                  />
-                                  {isOfficial ? (
-                                    <Chip label="Official" size="small" color="secondary" variant="outlined" />
-                                  ) : null}
-                                </Box>
-                              </Box>
+                  <div className={styles.matchGrid}>
+                    {group.matches.map((match) => {
+                      const matchPlayersForMatch = matchPlayersByMatchId.get(match.id) || [];
+                      const teamA = eventTeams[0];
+                      const teamB = eventTeams[1];
+                      const teamAPlayers = teamA ? matchPlayersForMatch.filter((mp) => mp.team_id === teamA.id) : [];
+                      const teamBPlayers = teamB ? matchPlayersForMatch.filter((mp) => mp.team_id === teamB.id) : [];
+                      const winnerValue = match.is_halved ? 'halved' : match.winner_team_id || '';
+                      const isOfficial = match.result_set_by_official === true;
+                      const winnerLabel = match.is_halved ? 'Halved' : match.winner_team_id ? `Winner: ${getTeamName(match.winner_team_id)}` : 'Pending';
 
-                              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
-                                {[teamA, teamB].map((team, teamIndex) => {
-                                  if (!team) return null;
-                                  const assignedPlayers = teamIndex === 0 ? teamAPlayers : teamBPlayers;
-
-                                  return (
-                                    <Box key={team.id}>
-                                      <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                                        {team.name}
-                                      </Typography>
-                                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                                        {assignedPlayers.length ? (
-                                          assignedPlayers.map((mp) => (
-                                            <Chip
-                                              key={mp.id}
-                                              label={`${mp.player?.first_name || ''} ${mp.player?.last_name || ''}`.trim()}
-                                              variant="outlined"
-                                              size="small"
-                                              sx={{ color: 'var(--player-name-text)' }}
-                                            />
-                                          ))
-                                        ) : (
-                                          <Typography variant="caption" sx={{ color: 'var(--text-muted)' }}>
-                                            No players assigned
-                                          </Typography>
-                                        )}
-                                      </Box>
-                                    </Box>
-                                  );
-                                })}
-                              </Box>
-
-                              <Divider sx={{ my: 2 }} />
-
-                              <Box
-                                sx={{
-                                  display: 'grid',
-                                  gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, minmax(0, 1fr))' },
-                                  gap: 1.5,
-                                }}
+                      return (
+                        <div key={match.id} className="ad-card" style={{ padding: 16, display: 'grid', gap: 14 }}>
+                          <div className={styles.matchHeader}>
+                            <div>
+                              <div style={{ fontSize: 14, fontWeight: 600 }}>Match #{match.match_number}</div>
+                              <div style={{ fontSize: 12, color: 'var(--pc-ink-3)' }}>{match.match_type}</div>
+                            </div>
+                            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                              <span
+                                className={
+                                  match.is_halved ? styles.statusHalved : match.winner_team_id ? styles.statusFinal : styles.statusPending
+                                }
                               >
-                                <Button
-                                  fullWidth
-                                  size="large"
-                                  variant={winnerValue === teamA?.id ? 'contained' : 'outlined'}
-                                  onClick={() => teamA && openConfirm(match, teamA.id)}
-                                  sx={{ py: 1.5 }}
-                                  disabled={!teamA}
-                                >
-                                  {teamA?.name || 'Team A'}
-                                </Button>
-                                <Button
-                                  fullWidth
-                                  size="large"
-                                  color="info"
-                                  variant={winnerValue === 'halved' ? 'contained' : 'outlined'}
-                                  onClick={() => openConfirm(match, 'halved')}
-                                  sx={{ py: 1.5 }}
-                                >
-                                  Halved
-                                </Button>
-                                <Button
-                                  fullWidth
-                                  size="large"
-                                  color="secondary"
-                                  variant={winnerValue === teamB?.id ? 'contained' : 'outlined'}
-                                  onClick={() => teamB && openConfirm(match, teamB.id)}
-                                  sx={{ py: 1.5 }}
-                                  disabled={!teamB}
-                                >
-                                  {teamB?.name || 'Team B'}
-                                </Button>
-                              </Box>
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
-                    </Box>
-                  </Paper>
-                );
-              })
-            )}
-          </Box>
-        </Paper>
+                                {winnerLabel}
+                              </span>
+                              {isOfficial && <span className="ad-badge">Official</span>}
+                            </div>
+                          </div>
+
+                          <div className={styles.teamsGrid}>
+                            {[teamA, teamB].map((team, teamIndex) => {
+                              if (!team) return null;
+                              const assignedPlayers = teamIndex === 0 ? teamAPlayers : teamBPlayers;
+
+                              return (
+                                <div key={team.id}>
+                                  <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>{team.name}</div>
+                                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                    {assignedPlayers.length ? (
+                                      assignedPlayers.map((mp) => (
+                                        <span key={mp.id} className="ad-badge">
+                                          {`${mp.player?.first_name || ''} ${mp.player?.last_name || ''}`.trim()}
+                                        </span>
+                                      ))
+                                    ) : (
+                                      <span style={{ fontSize: 11, color: 'var(--pc-ink-3)' }}>No players assigned</span>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          <div className={styles.resultRow}>
+                            <button
+                              type="button"
+                              className="pc-d-actionbtn"
+                              data-primary={winnerValue === teamA?.id || undefined}
+                              disabled={!teamA}
+                              onClick={() => teamA && openConfirm(match, teamA.id)}
+                            >
+                              {teamA?.name || 'Team A'}
+                            </button>
+                            <button
+                              type="button"
+                              className="pc-d-actionbtn"
+                              data-primary={winnerValue === 'halved' || undefined}
+                              onClick={() => openConfirm(match, 'halved')}
+                            >
+                              Halved
+                            </button>
+                            <button
+                              type="button"
+                              className="pc-d-actionbtn"
+                              data-primary={winnerValue === teamB?.id || undefined}
+                              disabled={!teamB}
+                              onClick={() => teamB && openConfirm(match, teamB.id)}
+                            >
+                              {teamB?.name || 'Team B'}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </>
       )}
 
-      <Dialog open={Boolean(pendingResult)} onClose={() => setPendingResult(null)}>
-        <DialogTitle>Confirm Result</DialogTitle>
+      <Dialog open={Boolean(pendingResult)} onClose={() => setPendingResult(null)} PaperProps={{ className: 'ad-dlg' }}>
+        <div className="ad-dlg-h">
+          <h2 className={styles.dialogTitle}>Confirm result</h2>
+        </div>
         <DialogContent>
-          <Typography sx={{ mb: 1 }}>
+          <p style={{ margin: '0 0 8px', color: 'var(--pc-ink)' }}>
             Set result for match #{pendingResult?.match.match_number} to <strong>{confirmLabel}</strong>?
-          </Typography>
-          <Typography variant="body2" sx={{ color: 'var(--text-muted)' }}>
-            This will clear any previously selected winner or halved status.
-          </Typography>
+          </p>
+          <p style={{ margin: 0, fontSize: 13, color: 'var(--pc-ink-3)' }}>This will clear any previously selected winner or halved status.</p>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setPendingResult(null)} disabled={confirming}>
+        <div className="ad-dlg-f">
+          <span style={{ flex: 1 }} />
+          <button type="button" className="pc-d-actionbtn" disabled={confirming} onClick={() => setPendingResult(null)}>
             Cancel
-          </Button>
-          <Button onClick={handleConfirm} variant="contained" disabled={confirming}>
-            Confirm
-          </Button>
-        </DialogActions>
+          </button>
+          <button type="button" className="pc-d-actionbtn" data-primary="true" disabled={confirming} onClick={handleConfirm}>
+            <AIcon name="check" size={14} />
+            <span>Confirm</span>
+          </button>
+        </div>
       </Dialog>
-    </Box>
+    </div>
   );
 }
