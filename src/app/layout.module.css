@@ -20,9 +20,9 @@
 /* ── Mobile AppBar ─────────────────────────────────────────────────────────── */
 .appBar {
   box-shadow: none;
-  background: var(--bg);
+  background: var(--pc-card);
   backdrop-filter: none;
-  border-bottom: 1px solid var(--divider);
+  border-bottom: 1px solid var(--pc-rule);
   min-height: 72px;
 }
 
@@ -58,7 +58,7 @@
 }
 
 .menuButton {
-  color: var(--text);
+  color: var(--pc-ink);
 }
 
 /* ── Mobile bottom tab bar ─────────────────────────────────────────────────── */
@@ -286,7 +286,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--accent-red);
+  color: var(--pc-team-a);
   font-family: var(--pc-font-sans);
   font-size: 14px;
   font-weight: 600;
@@ -296,7 +296,7 @@
 }
 
 .sidebarLogoutBtn:hover {
-  background: rgba(231, 76, 60, 0.08);
+  background: color-mix(in oklab, var(--pc-team-a) 8%, transparent);
 }
 
 .sidebarLoginLink {
