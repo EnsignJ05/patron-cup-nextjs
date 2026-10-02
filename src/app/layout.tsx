@@ -9,7 +9,9 @@ import IconButton from '@mui/material/IconButton';
 import { Analytics } from '@vercel/analytics/react';
 import { Inter, Newsreader, JetBrains_Mono, IBM_Plex_Sans } from 'next/font/google';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
-import { canAccessDashboard, isAdminRole } from '@/lib/authConfig';
+import { canAccessDashboard, isAdminRole, isAdminPath } from '@/lib/authConfig';
+import { ADMIN_NAV_GROUPS } from '@/lib/adminNavGroups';
+import { AIcon } from '@/components/admin/AdminIcons';
 import { useRouter, usePathname } from 'next/navigation';
 import './globals.css';
 import styles from './layout.module.css';
@@ -116,6 +118,8 @@ function DesktopSidebar({
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname.startsWith(href);
 
+  const inAdmin = isAdminPath(pathname);
+
   return (
     <aside className={styles.sidebar}>
       <Link href="/" className={styles.sidebarLogo}>
@@ -131,20 +135,54 @@ function DesktopSidebar({
         <span className={styles.sidebarWordmark}>Patron Cup</span>
       </Link>
 
-      <nav className={styles.sidebarNav}>
-        {links.map((link) => (
+      {inAdmin ? (
+        <nav className={styles.sidebarNav}>
           <Link
-            key={link.href}
-            href={link.href}
-            className={`${styles.sidebarLink} ${isActive(link.href) ? styles.sidebarLinkActive : ''}`}
+            href="/"
+            className={styles.sidebarLink}
           >
             <span className={styles.sidebarLinkIcon}>
-              <TabIcon name={link.icon} />
+              <AIcon name="back" size={16} />
             </span>
-            <span>{link.label}</span>
+            <span>Back to site</span>
           </Link>
-        ))}
-      </nav>
+          {ADMIN_NAV_GROUPS.map((group) => (
+            <div key={group.name}>
+              <div className={styles.sidebarGroupLabel}>
+                <span className={styles.sidebarGroupDot} style={{ background: group.color }} />
+                <span>{group.name}</span>
+              </div>
+              {group.items.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`${styles.sidebarLink} ${isActive(item.href) ? styles.sidebarLinkActive : ''}`}
+                >
+                  <span className={styles.sidebarLinkIcon}>
+                    <AIcon name={item.icon} size={18} />
+                  </span>
+                  <span>{item.label}</span>
+                </Link>
+              ))}
+            </div>
+          ))}
+        </nav>
+      ) : (
+        <nav className={styles.sidebarNav}>
+          {links.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={`${styles.sidebarLink} ${isActive(link.href) ? styles.sidebarLinkActive : ''}`}
+            >
+              <span className={styles.sidebarLinkIcon}>
+                <TabIcon name={link.icon} />
+              </span>
+              <span>{link.label}</span>
+            </Link>
+          ))}
+        </nav>
+      )}
 
       <div className={styles.sidebarFooter}>
         <button

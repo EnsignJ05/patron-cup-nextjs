@@ -51,6 +51,37 @@ implementations: `page.module.css`, `faq/page.module.css`, `matches/page.module.
 - **No hardcoded hex values** in any page's CSS or `sx` styling — public or admin. If a color
   isn't a token yet, add one; don't inline a hex value to work around it.
 
+### Admin design system (`/admin/**`)
+Admin has its own shared building blocks, global rather than per-page CSS modules since
+they're reused across all 17 real admin routes (see `TEST_ENVIRONMENT_PLAN.md` section 17a/17b
+for the full admin redesign plan).
+
+- **Two extra tokens, admin-only:** `--pc-chip-bg` (badge background) and `--pc-shadow-strong`
+  (dialog/sheet shadow, heavier than `--pc-shadow`).
+- **Global CSS utility classes**, defined in `globals.css`'s "Admin design system" section:
+  `.ad-card`, `.ad-row` (+ `.head`/`.hover`/`.sel`), `.ad-th`, `.ad-num`, `.ad-badge`, `.ad-ib`
+  (icon button), `.ad-seg` (segmented control), `.ad-sk` (loading skeleton), `.ad-gcard`
+  (dashboard nav tile), `.ad-pcard`/`.ad-slot` (drag-and-drop card + drop target), `.ad-dlg`/
+  `.ad-dlg-h`/`.ad-dlg-f` (desktop dialog) and `.ad-sheet`/`.ad-grab` (its mobile bottom-sheet
+  equivalent), `.ad-scrim`/`.ad-scrim.sheet`, `.ad-in`(+`.mono`/`.lg`/`.focus`), `.ad-lab`,
+  `.ad-btn`(+`.p`/`.ok`/`.lg`, mobile), `.ad-chip` (mobile), `.ad-m-sticky` (mobile sticky
+  action bar), `.ad-head`/`.ad-head-title`/`.ad-head-actions`/`.ad-crumb`.
+- **Shared components**, `src/components/admin/`: `AdminIcons.tsx` (`AIcon`/`AGrip`),
+  `AdminHead.tsx` (breadcrumb + title + actions), `AdminField.tsx`, `AdminName.tsx`
+  (avatar + team chip + name, for tables), `AdminScrim.tsx`. One responsive component per
+  concern, not separate desktop/mobile component trees — same approach as every redesigned
+  public page, via `@media (min-width: 1024px)` where a page needs it.
+- **Admin nav taxonomy** lives once in `src/lib/adminNavGroups.ts` (`ADMIN_NAV_GROUPS`),
+  consumed by both the sidebar (`src/app/layout.tsx`'s `DesktopSidebar`, which swaps to this
+  nav when `isAdminPath(pathname)`) and the admin dashboard hub — don't duplicate the grouping
+  in a third place.
+- **Before building a new admin page**, check `TEST_ENVIRONMENT_PLAN.md` section 17a for
+  whether a worked example already establishes its pattern (Courses → CRUD table; Handicaps →
+  sortable/searchable table; Match Setup → drag-and-drop, re-skin only, never touch the
+  `@dnd-kit` logic; the generic account-action form → Invite/Username, but Reset Password uses
+  a richer variant) versus pages with no worked example at all (Teams, specifically) where a
+  real design decision is still needed.
+
 ## File/Folder Conventions
 - App routes live in `src/app/**/page.tsx`.
 - Components live close to their usage; prefer colocated CSS modules.

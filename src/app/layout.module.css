@@ -224,6 +224,27 @@
   flex-shrink: 0;
 }
 
+/* ── Admin nav grouping (DesktopSidebar, admin mode) ──────────────────────────── */
+.sidebarGroupLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 10px 4px;
+  font-family: var(--pc-font-sans);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--pc-ink-3);
+}
+
+.sidebarGroupDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
 .sidebarFooter {
   display: flex;
   flex-direction: column;

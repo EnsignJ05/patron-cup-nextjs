@@ -317,6 +317,7 @@ a {
   --pc-radius-sm: 8px;
   --pc-radius-lg: 18px;
   --pc-shadow:    0 1px 2px rgba(0,0,0,0.04), 0 4px 14px rgba(0,0,0,0.06);
+  --pc-shadow-strong: 0 2px 8px rgba(0,0,0,0.08), 0 16px 40px rgba(0,0,0,0.18);
   --pc-team-a:    #c1272d;
   --pc-team-b:    #1d4e89;
   /* Text/stripe colors paired with the saturated team colors above -- these don't flip
@@ -342,6 +343,7 @@ a {
   --pc-live-bg:  #fef3c7;
   --pc-live-fg:  #92400e;
   --pc-live-dot: #f59e0b;
+  --pc-chip-bg:  #f0eee9;
 }
 
 :root[data-theme='dark'] {
@@ -358,6 +360,7 @@ a {
   --pc-live-bg:  #422006;
   --pc-live-fg:  #fbbf24;
   --pc-live-dot: #f59e0b;
+  --pc-chip-bg:  #27272a;
 }
 
 @keyframes pcGlobeSpin {
@@ -377,4 +380,409 @@ a {
   70%  { box-shadow: 0 0 0 6px rgba(245,158,11,0); }
   100% { box-shadow: 0 0 0 0 rgba(245,158,11,0); }
 }
+
+/* ── Admin design system (Task RA1) ───────────────────────────────────────────
+   Shared utility classes used across /admin/** pages. Global rather than a CSS
+   module per page: these are reused across ~17 routes, and the Hi-Fi v3 source
+   itself defines them the same way (one injected stylesheet, not per-component
+   modules). Components that use these classes live in src/components/admin/. */
+
+/* Breadcrumb + title + subtitle + actions (AdminHead). */
+.ad-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.ad-head-title {
+  font-family: var(--pc-font-serif);
+  font-weight: 500;
+  font-size: 26px;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--pc-ink);
+  margin: 8px 0 0;
+}
+
+.ad-head-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.ad-crumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--pc-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pc-ink-3);
+}
+
+.ad-crumb-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.ad-crumb-link:hover {
+  color: var(--pc-ink);
+}
+
+.ad-crumb .sep {
+  opacity: 0.5;
+}
+
+.ad-sub {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: var(--pc-ink-3);
+}
+
+/* Card / table primitives. */
+.ad-card {
+  background: var(--pc-card);
+  border: 1px solid var(--pc-rule);
+  border-radius: var(--pc-radius);
+  box-shadow: var(--pc-shadow);
+}
+
+.ad-lab {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pc-ink-3);
+  margin-bottom: 6px;
+}
+
+.ad-in {
+  height: 38px;
+  box-sizing: border-box;
+  width: 100%;
+  border: 1px solid var(--pc-rule-2);
+  border-radius: 8px;
+  background: var(--pc-card);
+  color: var(--pc-ink);
+  padding: 0 12px;
+  font: 500 13px var(--pc-font-sans);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ad-in.mono {
+  font-family: var(--pc-font-mono);
+}
+
+.ad-in.lg {
+  height: 52px;
+  font-size: 16px;
+  padding: 0 14px;
+}
+
+.ad-in.focus {
+  border-color: var(--pc-ink);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--pc-ink) 12%, transparent);
+}
+
+.ad-in .ph {
+  color: var(--pc-ink-3);
+}
+
+.ad-th {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--pc-ink-3);
+}
+
+.ad-row {
+  display: grid;
+  align-items: center;
+  gap: 14px;
+  padding: 0 20px;
+  min-height: 52px;
+  border-bottom: 1px solid var(--pc-rule);
+}
+
+.ad-row:last-child {
+  border-bottom: none;
+}
+
+.ad-row.head {
+  min-height: 38px;
+  background: var(--pc-card-2);
+  border-bottom: 1px solid var(--pc-rule);
+}
+
+.ad-row.hover:hover,
+.ad-row.sel {
+  background: var(--pc-fill);
+}
+
+.ad-num {
+  font-family: var(--pc-font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.ad-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: var(--pc-chip-bg);
+  color: var(--pc-ink-2);
+  font: 600 11px var(--pc-font-sans);
+  white-space: nowrap;
+}
+
+.ad-ib {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--pc-ink-3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.ad-ib:hover {
+  background: var(--pc-fill-2);
+  color: var(--pc-ink);
+}
+
+/* Segmented control (round/team/mode filters). */
+.ad-seg {
+  display: inline-flex;
+  background: var(--pc-card);
+  border: 1px solid var(--pc-rule);
+  border-radius: 8px;
+  padding: 3px;
+}
+
+.ad-seg > span {
+  padding: 7px 16px;
+  border-radius: 6px;
+  font: 600 12px var(--pc-font-sans);
+  color: var(--pc-ink-2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ad-seg > span[data-on='true'] {
+  background: var(--pc-ink);
+  color: var(--pc-bg);
+}
+
+/* Loading skeleton. */
+.ad-sk {
+  border-radius: 6px;
+  height: 12px;
+  background: linear-gradient(90deg, var(--pc-fill) 0%, var(--pc-fill-2) 50%, var(--pc-fill) 100%);
+  background-size: 200% 100%;
+  animation: adSkeletonShimmer 1.4s linear infinite;
+}
+
+@keyframes adSkeletonShimmer {
+  to { background-position: -200% 0; }
+}
+
+/* Dashboard nav tile (admin hub). */
+.ad-gcard {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+  text-decoration: none;
+  color: inherit;
+}
+
+.ad-gcard:hover {
+  transform: translateY(-2px);
+  border-color: var(--pc-rule-2);
+  box-shadow: var(--pc-shadow-strong);
+}
+
+/* Draggable player card + drop target (Match Setup). */
+.ad-pcard {
+  display: grid;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px 8px 8px;
+  border-radius: 10px;
+  background: var(--pc-card);
+  border: 1px solid var(--pc-rule);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 3px 8px rgba(0,0,0,0.05);
+  cursor: grab;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pc-ink);
+}
+
+.ad-pcard:hover {
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08), 0 8px 18px rgba(0,0,0,0.1);
+  transform: translateY(-1px);
+}
+
+.ad-slot {
+  height: 46px;
+  border: 1.5px dashed var(--pc-rule-2);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 500 12px var(--pc-font-sans);
+  color: var(--pc-ink-3);
+}
+
+.ad-slot.hot {
+  border-color: var(--pc-ink);
+  background: color-mix(in oklab, var(--pc-ink) 6%, transparent);
+  color: var(--pc-ink);
+}
+
+/* Dialog (desktop) + its mobile bottom-sheet equivalent. */
+.ad-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(12,10,9,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+}
+
+.ad-scrim.sheet {
+  align-items: flex-end;
+}
+
+.ad-dlg {
+  background: var(--pc-card);
+  color: var(--pc-ink);
+  border: 1px solid var(--pc-rule);
+  border-radius: 16px;
+  box-shadow: var(--pc-shadow-strong);
+  overflow: hidden;
+}
+
+.ad-dlg-h {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 22px 26px 16px;
+}
+
+.ad-dlg-f {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 26px;
+  border-top: 1px solid var(--pc-rule);
+  background: var(--pc-card-2);
+}
+
+.ad-sheet {
+  width: 100%;
+  background: var(--pc-card);
+  color: var(--pc-ink);
+  border-radius: 20px 20px 0 0;
+  box-shadow: var(--pc-shadow-strong);
+  overflow: hidden;
+}
+
+.ad-grab {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--pc-rule-2);
+  margin: 8px auto 0;
+}
+
+/* Mobile buttons + chips + sticky action bar (bottom sheets, Match Setup pool). */
+.ad-btn {
+  height: 48px;
+  border-radius: 10px;
+  border: 1px solid var(--pc-rule-2);
+  background: var(--pc-card);
+  color: var(--pc-ink);
+  font: 600 14px var(--pc-font-sans);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 0 16px;
+}
+
+.ad-btn.p {
+  background: var(--pc-ink);
+  color: var(--pc-bg);
+  border-color: var(--pc-ink);
+}
+
+.ad-btn.ok {
+  background: var(--pc-team-b);
+  color: var(--pc-on-team);
+  border-color: var(--pc-team-b);
+}
+
+.ad-btn.lg {
+  height: 56px;
+  font-size: 15px;
+}
+
+.ad-chip {
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--pc-rule-2);
+  background: var(--pc-card);
+  font: 600 12px var(--pc-font-sans);
+  color: var(--pc-ink-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.ad-chip[data-on='true'] {
+  background: var(--pc-ink);
+  color: var(--pc-bg);
+  border-color: var(--pc-ink);
+}
+
+.ad-m-sticky {
+  flex-shrink: 0;
+  padding: 12px 16px;
+  border-top: 1px solid var(--pc-rule);
+  background: var(--pc-bg);
+  display: grid;
+  gap: 8px;
+}
+
 
