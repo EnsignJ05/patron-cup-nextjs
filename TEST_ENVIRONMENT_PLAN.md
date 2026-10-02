@@ -2506,7 +2506,7 @@ loading/empty states) — build it first as the reference, then apply the same s
 `events` and `rerounds` (no worked example, same pattern per 17a). `players` already has a CSS
 module; reconcile its existing styling into tokens rather than a ground-up rebuild.
 
-### Task RA5 Relational and review pages — `travel`+`lodging`, `participants`, `teams`, `award-nominations` (admin side)
+### Task RA5 (done 2026-10-01, commits `92a859a`+`f2c305e`+`6500c55`+`1871094`+`24e6d27`) Relational and review pages — `travel`+`lodging`, `participants`, `teams`, `award-nominations` (admin side)
 Resolve the Travel/Lodging separate-vs-combined question (17a) before writing either page.
 `participants` follows the same table+detail pattern. `teams` has no worked example — expect a
 real design decision (roster/captain assignment), not a reskin. `award-nominations` here is
