@@ -317,3 +317,54 @@
   background: var(--pc-fill);
   color: var(--pc-ink);
 }
+
+/* ── Mobile menu drawer (admin nav + logout, MobileAppBar's hamburger) ────────── */
+.mobileMenu {
+  display: flex;
+  flex-direction: column;
+  width: 260px;
+  min-height: 100%;
+  padding: 16px 12px;
+  box-sizing: border-box;
+}
+
+.mobileMenuLink {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 10px;
+  border-radius: var(--pc-radius-sm);
+  text-decoration: none;
+  color: var(--pc-ink-2);
+  font-family: var(--pc-font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  border-left: 3px solid transparent;
+}
+
+.mobileMenuLink:hover {
+  background: var(--pc-fill);
+  color: var(--pc-ink);
+}
+
+.mobileMenuGroupLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 10px 4px;
+  font-family: var(--pc-font-sans);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--pc-ink-3);
+}
+
+.mobileMenuFooter {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 12px;
+  margin-top: auto;
+  border-top: 1px solid var(--pc-rule);
+}

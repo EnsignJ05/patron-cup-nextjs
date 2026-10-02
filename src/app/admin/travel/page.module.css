@@ -10,12 +10,13 @@
 }
 
 .eventFilter {
-  min-width: 180px;
+  min-width: 220px;
 }
 
 .searchField {
   flex: 1;
   min-width: 200px;
+  max-width: 320px;
 }
 
 .travelGrid {

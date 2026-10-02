@@ -49,7 +49,7 @@ export default function EventParticipantsPage() {
   }, [supabase]);
 
   const fetchPlayers = useCallback(async () => {
-    const { data, error } = await supabase.from('players').select('*').eq('status', 'active').order('last_name');
+    const { data, error } = await supabase.from('players').select('*').eq('is_active', true).order('last_name');
 
     if (error) {
       setError(error.message);
