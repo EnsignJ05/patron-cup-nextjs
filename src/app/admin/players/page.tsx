@@ -1,31 +1,18 @@
 'use client';
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import Paper from '@mui/material/Paper';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
-import IconButton from '@mui/material/IconButton';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
 import Alert from '@mui/material/Alert';
-import Chip from '@mui/material/Chip';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
 import type { Player, PlayerPrivate, PlayerRole } from '@/types/database';
+import AdminHead from '@/components/admin/AdminHead';
+import AdminName from '@/components/admin/AdminName';
+import { AIcon } from '@/components/admin/AdminIcons';
 import styles from './page.module.css';
 
 // address/shirt size/dietary/emergency-contact fields live in public.player_private (Task
@@ -36,6 +23,12 @@ function normalizePrivate(raw: unknown): Partial<PlayerPrivate> {
   const row = Array.isArray(raw) ? raw[0] : raw;
   return row ?? {};
 }
+
+const ROLE_BADGE_CLASS: Record<PlayerRole, string> = {
+  admin: 'badgeAdmin',
+  committee: 'badgeCommittee',
+  player: 'badgeDefault',
+};
 
 export default function PlayersAdminPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
@@ -81,11 +74,8 @@ export default function PlayersAdminPage() {
 
   const confirmDelete = async () => {
     if (!playerToDelete) return;
-    
-    const { error } = await supabase
-      .from('players')
-      .delete()
-      .eq('id', playerToDelete.id);
+
+    const { error } = await supabase.from('players').delete().eq('id', playerToDelete.id);
 
     if (error) {
       setError(error.message);
@@ -133,19 +123,14 @@ export default function PlayersAdminPage() {
       emergency_contact_phone: editingPlayer.emergency_contact_phone || null,
     };
 
-    const { error: playerError } = await supabase
-      .from('players')
-      .update(playerData)
-      .eq('id', editingPlayer.id);
+    const { error: playerError } = await supabase.from('players').update(playerData).eq('id', editingPlayer.id);
 
     if (playerError) {
       setError(playerError.message);
       return;
     }
 
-    const { error: privateError } = await supabase
-      .from('player_private')
-      .upsert(privateData);
+    const { error: privateError } = await supabase.from('player_private').upsert(privateData);
 
     if (privateError) {
       setError(privateError.message);
@@ -159,101 +144,110 @@ export default function PlayersAdminPage() {
     fetchPlayers();
   };
 
-  const filteredPlayers = players.filter(player =>
-    `${player.first_name} ${player.last_name} ${player.email}`
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase())
+  const filteredPlayers = players.filter((player) =>
+    `${player.first_name} ${player.last_name} ${player.email}`.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
-  const getRoleColor = (role: PlayerRole) => {
-    switch (role) {
-      case 'admin': return 'error';
-      case 'committee': return 'warning';
-      default: return 'default';
-    }
-  };
-
   return (
-    <Box className={styles.pageRoot}>
-      <Box className={styles.headerRow}>
-        <Typography variant="h4" className={styles.pageTitle}>
-          Players Management
-        </Typography>
-      </Box>
-      <Typography variant="body2" color="text.secondary" className={styles.pageSubtitle}>
-        To add a new player, use the Invite Player page at <strong>/admin/invite</strong>.
-      </Typography>
-
-      {error && <Alert severity="error" className={styles.alert} onClose={() => setError('')}>{error}</Alert>}
-      {success && <Alert severity="success" className={styles.alert} onClose={() => setSuccess('')}>{success}</Alert>}
-
-      <TextField
-        fullWidth
-        placeholder="Search players..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        className={styles.searchField}
+    <div>
+      <AdminHead
+        crumb="Players"
+        title="Players"
+        sub="Profiles, roles, and status. To add a new player, use the Invite Player page."
+        actions={
+          <div className="ad-in" style={{ width: 260, justifyContent: 'flex-start', color: 'var(--pc-ink-3)' }}>
+            <AIcon name="search" size={16} />
+            <input
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search players"
+              style={{ border: 'none', outline: 'none', background: 'transparent', font: 'inherit', color: 'var(--pc-ink)', width: '100%' }}
+            />
+          </div>
+        }
       />
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow className={styles.tableHeaderRow}>
-              <TableCell className={styles.tableHeaderCell}>Name</TableCell>
-              <TableCell className={styles.tableHeaderCell}>Email</TableCell>
-              <TableCell className={styles.tableHeaderCell}>Phone</TableCell>
-              <TableCell className={styles.tableHeaderCell}>Handicap</TableCell>
-              <TableCell className={styles.tableHeaderCell}>Role</TableCell>
-              <TableCell className={styles.tableHeaderCell}>Status</TableCell>
-              <TableCell className={styles.tableHeaderCell} align="right">Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={7} align="center">Loading...</TableCell>
-              </TableRow>
-            ) : filteredPlayers.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} align="center">No players found</TableCell>
-              </TableRow>
-            ) : (
-              filteredPlayers.map((player) => (
-                <TableRow key={player.id} hover>
-                  <TableCell>{player.first_name} {player.last_name}</TableCell>
-                  <TableCell>{player.email}</TableCell>
-                  <TableCell>{player.phone || '-'}</TableCell>
-                  <TableCell>{player.current_handicap ?? '-'}</TableCell>
-                  <TableCell>
-                    <Chip label={player.role} size="small" color={getRoleColor(player.role)} />
-                  </TableCell>
-                  <TableCell>
-                    <Chip 
-                      label={player.status === 'active' ? 'Active' : player.status === 'pending' ? 'Pending' : 'Inactive'} 
-                      size="small" 
-                      color={player.status === 'active' ? 'success' : player.status === 'pending' ? 'warning' : 'default'} 
-                    />
-                  </TableCell>
-                  <TableCell align="right">
-                    <IconButton onClick={() => handleEdit(player)} size="small">
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton onClick={() => handleDelete(player)} size="small" color="error">
-                      <DeleteIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      {error && (
+        <Alert severity="error" className={styles.alert} onClose={() => setError('')}>
+          {error}
+        </Alert>
+      )}
+      {success && (
+        <Alert severity="success" className={styles.alert} onClose={() => setSuccess('')}>
+          {success}
+        </Alert>
+      )}
 
-      {/* Edit/Add Dialog */}
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Edit Player</DialogTitle>
+      <div className="ad-card" style={{ overflow: 'hidden' }}>
+        <div className={`ad-row head ${styles.playerGrid}`}>
+          <span className="ad-th">Name</span>
+          <span className="ad-th">Email</span>
+          <span className="ad-th">Phone</span>
+          <span className="ad-th" style={{ textAlign: 'right' }}>Handicap</span>
+          <span className="ad-th">Role</span>
+          <span className="ad-th">Status</span>
+          <span className="ad-th" />
+        </div>
+        {loading ? (
+          [0, 1, 2].map((i) => (
+            <div key={i} className={`ad-row ${styles.playerGrid}`}>
+              {[50, 55, 35, 20, 30, 30, 0].map((w, j) => (
+                <div key={j} className="ad-sk" style={{ width: w ? `${w}%` : 0, marginLeft: j === 3 ? 'auto' : 0, animationDelay: `${i * 0.12}s` }} />
+              ))}
+            </div>
+          ))
+        ) : filteredPlayers.length === 0 ? (
+          <div className={styles.emptyState}>No players found</div>
+        ) : (
+          filteredPlayers.map((player) => (
+            <div key={player.id} className={`ad-row hover ${styles.playerGrid}`}>
+              <AdminName firstName={player.first_name} lastName={player.last_name} profileImageUrl={player.profile_image_url} />
+              <span style={{ fontSize: 13, color: 'var(--pc-ink-2)' }}>{player.email}</span>
+              <span style={{ fontSize: 13, color: 'var(--pc-ink-2)' }}>{player.phone || '—'}</span>
+              <span className="ad-num">{player.current_handicap ?? '—'}</span>
+              <span>
+                <span className={`ad-badge ${styles[ROLE_BADGE_CLASS[player.role]]}`}>{player.role}</span>
+              </span>
+              <span>
+                <span className={`ad-badge ${player.status === 'active' ? styles.badgeActive : ''}`}>
+                  {player.status === 'active' ? 'Active' : player.status === 'pending' ? 'Pending' : 'Inactive'}
+                </span>
+              </span>
+              <span style={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+                <button
+                  type="button"
+                  className="ad-ib"
+                  onClick={() => handleEdit(player)}
+                  aria-label={`Edit ${player.first_name} ${player.last_name}`}
+                >
+                  <AIcon name="edit" size={16} />
+                </button>
+                <button
+                  type="button"
+                  className="ad-ib"
+                  onClick={() => handleDelete(player)}
+                  aria-label={`Delete ${player.first_name} ${player.last_name}`}
+                >
+                  <AIcon name="trash" size={16} />
+                </button>
+              </span>
+            </div>
+          ))
+        )}
+      </div>
+
+      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="md" fullWidth PaperProps={{ className: 'ad-dlg' }}>
+        <div className="ad-dlg-h">
+          <div>
+            <div className="ad-crumb">Players</div>
+            <h2 className={styles.dialogTitle}>Edit player</h2>
+          </div>
+          <button type="button" className="ad-ib" onClick={() => setDialogOpen(false)} aria-label="Close">
+            <AIcon name="x" size={18} />
+          </button>
+        </div>
         <DialogContent>
-          <Box className={styles.dialogGrid}>
+          <div className={styles.formGrid}>
             <TextField
               label="First Name"
               value={editingPlayer?.first_name || ''}
@@ -323,7 +317,9 @@ export default function PlayersAdminPage() {
               type="number"
               inputProps={{ step: 0.1 }}
               value={editingPlayer?.current_handicap ?? ''}
-              onChange={(e) => setEditingPlayer({ ...editingPlayer, current_handicap: e.target.value ? parseFloat(e.target.value) : null })}
+              onChange={(e) =>
+                setEditingPlayer({ ...editingPlayer, current_handicap: e.target.value ? parseFloat(e.target.value) : null })
+              }
               fullWidth
             />
             <TextField
@@ -375,7 +371,7 @@ export default function PlayersAdminPage() {
               fullWidth
               multiline
               rows={2}
-              className={styles.fullRow}
+              className={styles.fieldWide}
             />
             <TextField
               label="Bio"
@@ -384,29 +380,46 @@ export default function PlayersAdminPage() {
               fullWidth
               multiline
               rows={3}
-              className={styles.fullRow}
+              className={styles.fieldWide}
             />
-          </Box>
+          </div>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleSave} variant="contained" className={styles.primaryButton}>
-            Save
-          </Button>
-        </DialogActions>
+        <div className="ad-dlg-f">
+          <span style={{ flex: 1 }} />
+          <button type="button" className="pc-d-actionbtn" onClick={() => setDialogOpen(false)}>
+            Cancel
+          </button>
+          <button type="button" className="pc-d-actionbtn" data-primary="true" onClick={handleSave}>
+            Save player
+          </button>
+        </div>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)}>
-        <DialogTitle>Confirm Delete</DialogTitle>
+      <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)} PaperProps={{ className: 'ad-dlg' }}>
+        <div className="ad-dlg-h">
+          <h2 className={styles.dialogTitle}>Delete player?</h2>
+        </div>
         <DialogContent>
-          Are you sure you want to delete {playerToDelete?.first_name} {playerToDelete?.last_name}?
+          <p style={{ margin: 0, color: 'var(--pc-ink-2)' }}>
+            Are you sure you want to delete {playerToDelete?.first_name} {playerToDelete?.last_name}?
+          </p>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteConfirmOpen(false)}>Cancel</Button>
-          <Button onClick={confirmDelete} color="error" variant="contained">Delete</Button>
-        </DialogActions>
+        <div className="ad-dlg-f">
+          <span style={{ flex: 1 }} />
+          <button type="button" className="pc-d-actionbtn" onClick={() => setDeleteConfirmOpen(false)}>
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="pc-d-actionbtn"
+            data-primary="true"
+            style={{ background: 'var(--pc-team-a)', borderColor: 'var(--pc-team-a)' }}
+            onClick={confirmDelete}
+          >
+            Delete
+          </button>
+        </div>
       </Dialog>
-    </Box>
+    </div>
   );
 }
