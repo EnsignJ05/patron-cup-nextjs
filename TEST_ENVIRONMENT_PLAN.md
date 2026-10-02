@@ -2357,24 +2357,28 @@ already fully dead), folding their `color-scheme` declarations into the `--pc-*`
 references anywhere in `src/`; `globals.css` now contains only `--pc-*` tokens plus the MUI
 reset (now itself `--pc-*`-based). Full suite verified clean (jest/tsc/build/lint/Storybook).
 
-### Task R12 (Agent) Final verification
+### Task R12 (done 2026-10-02) Final verification
 Walk every public route in both themes at 375px and at desktop width:
 `/`, `/faq`, `/matches`, `/roster`, `/players`, `/players/[id]`, `/teams`, `/tee-times`,
 `/itinerary`, `/gallery`, `/login`, `/change-password`, `/unauthorized`, `/dashboard`,
 `/dashboard/award-nominations`.
 
-- [ ] Every tab-bar destination lands on a redesigned page (closes 15.3).
-- [ ] No public page renders a hardcoded color that breaks in dark mode (closes 15.9).
-- [ ] `npm test` green; `npx tsc --noEmit` clean; `npm run build` succeeds.
-- [ ] Storybook still builds (`npm run build-storybook`) — stories reference class names.
-- [ ] Every page touched has an explicit column list, no `select('*')` on `players` (closes 15.8).
+- [x] Every tab-bar destination lands on a redesigned page (closes 15.3).
+- [x] No public page renders a hardcoded color that breaks in dark mode (closes 15.9) — zero
+      legacy-variable/hardcoded-hex references confirmed sitewide as of R11.
+- [x] `npm test` green (150/150); `npx tsc --noEmit` clean (2 pre-existing unrelated errors
+      only); `npm run build` succeeds.
+- [x] Storybook still builds (`npm run build-storybook`) — stories reference class names.
+- [x] Every page touched has an explicit column list, no `select('*')` on `players` (closes
+      15.8) for public pages; admin pages retain `select('*')` on `players` by deliberate
+      earlier decision (admin-authenticated route, same reasoning as
+      `players/[playerId]/page.tsx`).
 
-Do this on `test.patron-cup.com` once Part I is live, so it runs against seeded data in a
-production-like build rather than `next dev`.
-
-R11 is now done (2026-10-02, see above). R12's walk should be extended to include every admin
-route, not just the public ones listed above — only R12 (and the still-outstanding real-browser
-half of RA7) remains before Part III closes out entirely.
+The live-browser walk (both themes, mobile+desktop, all public AND admin routes) was done by
+the user directly against `test.patron-cup.com` rather than by assistant automation (no browser
+tool available in-session) — see [[patron-cup-hifi-redesign]] for the bugs that walk surfaced
+and their fixes. **Part III (the Hi-Fi redesign, public pages + all of Phase R-Admin) is now
+complete**: RA1-RA7, R0-R12 all done, zero legacy CSS variables remain anywhere in `src/`.
 
 ---
 
