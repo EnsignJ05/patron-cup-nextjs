@@ -2494,7 +2494,7 @@ The hub page. Render `AD_GROUPS` as real tiles linking to the other 16 routes (r
 placeholder counts/labels with real ones — e.g. route counts per group, not the mockup's
 placeholder "sixteen tools" copy if that becomes stale).
 
-### Task RA3 Account-action forms — `invite`, `reset-password`, `change-username`
+### Task RA3 (done 2026-10-01, commit `1e38294`) Account-action forms — `invite`, `reset-password`, `change-username`
 Three small, already-CSS-moduled pages (88-138 lines). `invite` and `change-username` fit the
 generic `HiAdminAccountForm` pattern directly. `reset-password` uses the richer `MAdminReset`
 variant (player search, generate-or-type password with a strength meter) — don't flatten it to
