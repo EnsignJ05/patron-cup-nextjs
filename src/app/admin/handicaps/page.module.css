@@ -1,0 +1,29 @@
+.eventFilter {
+  min-width: 220px;
+}
+
+.explainer {
+  font-family: var(--pc-font-sans);
+  font-size: 13px;
+  color: var(--pc-ink-3);
+  margin: -8px 0 16px;
+  max-width: 720px;
+}
+
+.alert {
+  margin-bottom: 16px;
+}
+
+.emptyState {
+  padding: 36px 24px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--pc-ink-3);
+}
+
+.footerNote {
+  margin-top: 12px;
+  font-family: var(--pc-font-mono);
+  font-size: 11px;
+  color: var(--pc-ink-3);
+}

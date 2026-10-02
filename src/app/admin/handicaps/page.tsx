@@ -1,29 +1,20 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import Paper from '@mui/material/Paper';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import TableSortLabel from '@mui/material/TableSortLabel';
-import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import Alert from '@mui/material/Alert';
-import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
 import { buildEventHandicapsCsv, type HandicapCsvCourse, type HandicapCsvRow } from '@/lib/exportEventHandicapsCsv';
 import { sanitizeFilenameSegment } from '@/lib/exportEventMatchesCsv';
 import { calculateCourseHandicap } from '@/lib/courseHandicap';
 import type { Course, Event } from '@/types/database';
+import AdminHead from '@/components/admin/AdminHead';
+import { AIcon } from '@/components/admin/AdminIcons';
+import styles from './page.module.css';
 
 type SortKey = 'firstName' | 'lastName' | 'team' | 'handicap' | 'ghinNumber' | 'ghinClub';
 type SortDir = 'asc' | 'desc';
@@ -56,6 +47,15 @@ function normalizeOne<T>(v: T | T[] | null | undefined): T | null {
   return Array.isArray(v) ? v[0] ?? null : v;
 }
 
+const SORT_COLUMNS: { key: SortKey; label: string }[] = [
+  { key: 'firstName', label: 'First name' },
+  { key: 'lastName', label: 'Last name' },
+  { key: 'team', label: 'Team' },
+  { key: 'handicap', label: 'Official HCP' },
+  { key: 'ghinNumber', label: 'GHIN #' },
+  { key: 'ghinClub', label: 'GHIN club' },
+];
+
 export default function AdminHandicapsPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const [events, setEvents] = useState<Event[]>([]);
@@ -66,6 +66,7 @@ export default function AdminHandicapsPage() {
   const [ghinDrafts, setGhinDrafts] = useState<Record<string, { ghinNumber: string; ghinClub: string }>>({});
   const [sortKey, setSortKey] = useState<SortKey>('lastName');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
+  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -92,11 +93,7 @@ export default function AdminHandicapsPage() {
 
     const [{ data: teamsData, error: teamsErr }, { data: coursesData, error: coursesErr }] = await Promise.all([
       supabase.from('teams').select('id').eq('event_id', selectedEventId),
-      supabase
-        .from('courses')
-        .select('id, name, par, rating, slope')
-        .eq('event_id', selectedEventId)
-        .order('name', { ascending: true }),
+      supabase.from('courses').select('id, name, par, rating, slope').eq('event_id', selectedEventId).order('name', { ascending: true }),
     ]);
 
     if (coursesErr) {
@@ -124,9 +121,7 @@ export default function AdminHandicapsPage() {
 
     const { data: rosterData, error: rosterErr } = await supabase
       .from('team_rosters')
-      .select(
-        'id, player_id, handicap_at_event, player:players(first_name, last_name, ghin_number, ghin_club), team:teams(name)',
-      )
+      .select('id, player_id, handicap_at_event, player:players(first_name, last_name, ghin_number, ghin_club), team:teams(name)')
       .in('team_id', teamIds)
       .order('id');
 
@@ -163,7 +158,6 @@ export default function AdminHandicapsPage() {
   }, [selectedEventId, fetchRosters]);
 
   const selectedEvent = events.find((e) => e.id === selectedEventId) ?? null;
-  const totalColumns = 6 + eventCourses.length;
 
   const handleSort = useCallback((key: SortKey) => {
     setSortKey((prev) => {
@@ -176,8 +170,17 @@ export default function AdminHandicapsPage() {
     });
   }, []);
 
+  const filteredRosterRows = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return rosterRows;
+    return rosterRows.filter((row) => {
+      const p = normalizeOne(row.player);
+      return `${p?.first_name ?? ''} ${p?.last_name ?? ''}`.toLowerCase().includes(term);
+    });
+  }, [rosterRows, searchTerm]);
+
   const sortedRosterRows = useMemo(() => {
-    const rows = [...rosterRows];
+    const rows = [...filteredRosterRows];
     const dir = sortDir === 'asc' ? 1 : -1;
     rows.sort((a, b) => {
       const pa = normalizeOne(a.player);
@@ -186,13 +189,9 @@ export default function AdminHandicapsPage() {
       const tb = normalizeOne(b.team);
       switch (sortKey) {
         case 'firstName':
-          return (
-            (pa?.first_name ?? '').localeCompare(pb?.first_name ?? '', undefined, { sensitivity: 'base' }) * dir
-          );
+          return (pa?.first_name ?? '').localeCompare(pb?.first_name ?? '', undefined, { sensitivity: 'base' }) * dir;
         case 'lastName':
-          return (
-            (pa?.last_name ?? '').localeCompare(pb?.last_name ?? '', undefined, { sensitivity: 'base' }) * dir
-          );
+          return (pa?.last_name ?? '').localeCompare(pb?.last_name ?? '', undefined, { sensitivity: 'base' }) * dir;
         case 'team':
           return (ta?.name ?? '').localeCompare(tb?.name ?? '', undefined, { sensitivity: 'base' }) * dir;
         case 'handicap': {
@@ -204,19 +203,15 @@ export default function AdminHandicapsPage() {
           return (ha - hb) * dir;
         }
         case 'ghinNumber':
-          return (
-            (pa?.ghin_number ?? '').localeCompare(pb?.ghin_number ?? '', undefined, { sensitivity: 'base' }) * dir
-          );
+          return (pa?.ghin_number ?? '').localeCompare(pb?.ghin_number ?? '', undefined, { sensitivity: 'base' }) * dir;
         case 'ghinClub':
-          return (
-            (pa?.ghin_club ?? '').localeCompare(pb?.ghin_club ?? '', undefined, { sensitivity: 'base' }) * dir
-          );
+          return (pa?.ghin_club ?? '').localeCompare(pb?.ghin_club ?? '', undefined, { sensitivity: 'base' }) * dir;
         default:
           return 0;
       }
     });
     return rows;
-  }, [rosterRows, sortKey, sortDir]);
+  }, [filteredRosterRows, sortKey, sortDir]);
 
   const csvRows: HandicapCsvRow[] = useMemo(() => {
     return rosterRows.map((r) => {
@@ -245,10 +240,7 @@ export default function AdminHandicapsPage() {
     });
   }, [eventCourses, rosterRows]);
 
-  const csvCourses: HandicapCsvCourse[] = useMemo(
-    () => eventCourses.map((course) => ({ id: course.id, name: course.name })),
-    [eventCourses],
-  );
+  const csvCourses: HandicapCsvCourse[] = useMemo(() => eventCourses.map((course) => ({ id: course.id, name: course.name })), [eventCourses]);
 
   const handleExportCsv = useCallback(() => {
     if (!selectedEvent) return;
@@ -302,10 +294,7 @@ export default function AdminHandicapsPage() {
     const curClub = normalizeGhinClub(String(p?.ghin_club ?? ''));
     if (ghinNumber === curNum && ghinClub === curClub) return;
 
-    const { error: upErr } = await supabase
-      .from('players')
-      .update({ ghin_number: ghinNumber, ghin_club: ghinClub })
-      .eq('id', playerId);
+    const { error: upErr } = await supabase.from('players').update({ ghin_number: ghinNumber, ghin_club: ghinClub }).eq('id', playerId);
 
     if (upErr) {
       setError(upErr.message);
@@ -315,219 +304,172 @@ export default function AdminHandicapsPage() {
     fetchRosters();
   };
 
+  // Column count varies with the event's course list, so the grid template is computed,
+  // not a static CSS class.
+  const gridTemplate = `1fr 1fr 0.8fr 110px 90px 110px${eventCourses.map(() => ' 90px').join('')}`;
+
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 2, mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, color: 'var(--text)' }}>
-          Event handicaps
-        </Typography>
-        <Button
-          variant="outlined"
-          startIcon={<FileDownloadIcon />}
-          onClick={handleExportCsv}
-          disabled={!selectedEvent || rosterRows.length === 0}
-          sx={{ borderColor: 'var(--border)', color: 'var(--text)' }}
-        >
-          Export CSV
-        </Button>
-      </Box>
+    <div>
+      <AdminHead
+        crumb="Handicaps"
+        title="Handicaps"
+        sub="Click a column to sort. Edit an index inline."
+        actions={
+          <>
+            <FormControl size="small" className={styles.eventFilter}>
+              <InputLabel>Event</InputLabel>
+              <Select value={selectedEventId} label="Event" onChange={(e) => setSelectedEventId(e.target.value)}>
+                {events.map((ev) => (
+                  <MenuItem key={ev.id} value={ev.id}>
+                    {ev.name} ({ev.year})
+                    {ev.is_active ? ' — active' : ''}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <button type="button" className="pc-d-actionbtn" disabled={!selectedEvent || rosterRows.length === 0} onClick={handleExportCsv}>
+              <AIcon name="save" size={14} />
+              <span>Export CSV</span>
+            </button>
+          </>
+        }
+      />
 
-      <Typography variant="body2" sx={{ color: 'var(--text-muted)', mb: 2 }}>
+      <p className={styles.explainer}>
         Official handicaps are stored on team rosters for the selected event. GHIN number and club are stored on each
-        player&apos;s profile and can be edited here. Course handicaps are computed as round(HI * (slope/113) +
-        (rating - par)).
-      </Typography>
-
-      <FormControl sx={{ minWidth: 280, mb: 3 }} size="small">
-        <InputLabel id="handicaps-event-label">Event</InputLabel>
-        <Select
-          labelId="handicaps-event-label"
-          label="Event"
-          value={selectedEventId}
-          onChange={(e) => setSelectedEventId(e.target.value)}
-        >
-          {events.map((ev) => (
-            <MenuItem key={ev.id} value={ev.id}>
-              {ev.name} ({ev.year})
-              {ev.is_active ? ' — active' : ''}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+        player&apos;s profile and can be edited here. Course handicaps are computed as round(HI × (slope/113) + (rating − par)).
+      </p>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+        <Alert severity="error" className={styles.alert} onClose={() => setError(null)}>
           {error}
         </Alert>
       )}
       {success && (
-        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess(null)}>
+        <Alert severity="success" className={styles.alert} onClose={() => setSuccess(null)}>
           {success}
         </Alert>
       )}
 
-      <TableContainer component={Paper} elevation={2} sx={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-        <Table size="small">
-          <TableHead>
-            <TableRow
-              sx={{
-                '& th': { fontWeight: 600, color: 'var(--text)' },
-                '& .MuiTableSortLabel-root': { color: 'var(--text)' },
-                '& .MuiTableSortLabel-icon': { color: 'var(--text-muted)' },
-              }}
-            >
-              <TableCell sortDirection={sortKey === 'firstName' ? sortDir : false}>
-                <TableSortLabel
-                  active={sortKey === 'firstName'}
-                  direction={sortKey === 'firstName' ? sortDir : 'asc'}
-                  onClick={() => handleSort('firstName')}
-                >
-                  First name
-                </TableSortLabel>
-              </TableCell>
-              <TableCell sortDirection={sortKey === 'lastName' ? sortDir : false}>
-                <TableSortLabel
-                  active={sortKey === 'lastName'}
-                  direction={sortKey === 'lastName' ? sortDir : 'asc'}
-                  onClick={() => handleSort('lastName')}
-                >
-                  Last name
-                </TableSortLabel>
-              </TableCell>
-              <TableCell sortDirection={sortKey === 'team' ? sortDir : false}>
-                <TableSortLabel
-                  active={sortKey === 'team'}
-                  direction={sortKey === 'team' ? sortDir : 'asc'}
-                  onClick={() => handleSort('team')}
-                >
-                  Team
-                </TableSortLabel>
-              </TableCell>
-              <TableCell sortDirection={sortKey === 'handicap' ? sortDir : false}>
-                <TableSortLabel
-                  active={sortKey === 'handicap'}
-                  direction={sortKey === 'handicap' ? sortDir : 'asc'}
-                  onClick={() => handleSort('handicap')}
-                >
-                  Official event handicap
-                </TableSortLabel>
-              </TableCell>
-              <TableCell sortDirection={sortKey === 'ghinNumber' ? sortDir : false}>
-                <TableSortLabel
-                  active={sortKey === 'ghinNumber'}
-                  direction={sortKey === 'ghinNumber' ? sortDir : 'asc'}
-                  onClick={() => handleSort('ghinNumber')}
-                >
-                  GHIN number
-                </TableSortLabel>
-              </TableCell>
-              <TableCell sortDirection={sortKey === 'ghinClub' ? sortDir : false}>
-                <TableSortLabel
-                  active={sortKey === 'ghinClub'}
-                  direction={sortKey === 'ghinClub' ? sortDir : 'asc'}
-                  onClick={() => handleSort('ghinClub')}
-                >
-                  GHIN club
-                </TableSortLabel>
-              </TableCell>
-              {eventCourses.map((course) => (
-                <TableCell key={course.id}>{course.name}</TableCell>
-              ))}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={totalColumns}>Loading…</TableCell>
-              </TableRow>
-            ) : rosterRows.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={totalColumns}>
-                  No roster entries for this event. Add players to teams under Teams management.
-                </TableCell>
-              </TableRow>
-            ) : (
-              sortedRosterRows.map((row) => {
-                const p = normalizeOne(row.player);
-                const t = normalizeOne(row.team);
-                const ghin = ghinDrafts[row.id] ?? { ghinNumber: '', ghinClub: '' };
-                return (
-                  <TableRow key={row.id}>
-                    <TableCell>{p?.first_name ?? '—'}</TableCell>
-                    <TableCell>{p?.last_name ?? '—'}</TableCell>
-                    <TableCell>{t?.name ?? '—'}</TableCell>
-                    <TableCell sx={{ maxWidth: 200 }}>
-                      <TextField
-                        size="small"
-                        type="number"
-                        inputProps={{ step: 0.1 }}
-                        value={handicapDrafts[row.id] ?? ''}
-                        onChange={(e) => setHandicapDrafts((prev) => ({ ...prev, [row.id]: e.target.value }))}
-                        onBlur={() => saveHandicap(row.id)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            (e.target as HTMLInputElement).blur();
-                          }
-                        }}
-                        fullWidth
-                      />
-                    </TableCell>
-                    <TableCell sx={{ maxWidth: 160 }}>
-                      <TextField
-                        size="small"
-                        value={ghin.ghinNumber}
-                        onChange={(e) =>
-                          setGhinDrafts((prev) => ({
-                            ...prev,
-                            [row.id]: { ...ghin, ghinNumber: e.target.value },
-                          }))
-                        }
-                        onBlur={() => saveGhin(row.id, row.player_id)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            (e.target as HTMLInputElement).blur();
-                          }
-                        }}
-                        fullWidth
-                        inputProps={{ maxLength: 32 }}
-                      />
-                    </TableCell>
-                    <TableCell sx={{ maxWidth: 220 }}>
-                      <TextField
-                        size="small"
-                        value={ghin.ghinClub}
-                        onChange={(e) =>
-                          setGhinDrafts((prev) => ({
-                            ...prev,
-                            [row.id]: { ...ghin, ghinClub: e.target.value },
-                          }))
-                        }
-                        onBlur={() => saveGhin(row.id, row.player_id)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            (e.target as HTMLInputElement).blur();
-                          }
-                        }}
-                        fullWidth
-                        inputProps={{ maxLength: 80 }}
-                      />
-                    </TableCell>
-                    {eventCourses.map((course) => {
-                      const courseHandicap = calculateCourseHandicap({
-                        handicapIndex: row.handicap_at_event,
-                        slope: course.slope,
-                        rating: course.rating,
-                        par: course.par,
-                      });
-                      return <TableCell key={course.id}>{courseHandicap ?? '—'}</TableCell>;
-                    })}
-                  </TableRow>
-                );
-              })
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    </Box>
+      <div className="ad-in" style={{ width: 320, justifyContent: 'flex-start', color: 'var(--pc-ink-3)', marginBottom: 14 }}>
+        <AIcon name="search" size={16} />
+        <input
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Search players"
+          style={{ border: 'none', outline: 'none', background: 'transparent', font: 'inherit', color: 'var(--pc-ink)', width: '100%' }}
+        />
+      </div>
+
+      <div className="ad-card" style={{ overflow: 'auto' }}>
+        <div className="ad-row head" style={{ gridTemplateColumns: gridTemplate, minWidth: 'max-content' }}>
+          {SORT_COLUMNS.map(({ key, label }) => {
+            const active = sortKey === key;
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => handleSort(key)}
+                style={{
+                  all: 'unset',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  color: active ? 'var(--pc-ink)' : 'var(--pc-ink-3)',
+                }}
+              >
+                {label}
+                <span style={{ opacity: active ? 1 : 0.45 }}>
+                  <AIcon name={active ? (sortDir === 'asc' ? 'up' : 'down') : 'updown'} size={13} />
+                </span>
+              </button>
+            );
+          })}
+          {eventCourses.map((course) => (
+            <span key={course.id} className="ad-th">
+              {course.name}
+            </span>
+          ))}
+        </div>
+        {loading ? (
+          <div className="ad-row" style={{ gridTemplateColumns: gridTemplate, minWidth: 'max-content' }}>
+            {Array.from({ length: 6 + eventCourses.length }).map((_, i) => (
+              <div key={i} className="ad-sk" style={{ width: '70%' }} />
+            ))}
+          </div>
+        ) : rosterRows.length === 0 ? (
+          <div className={styles.emptyState}>No roster entries for this event. Add players to teams under Teams management.</div>
+        ) : sortedRosterRows.length === 0 ? (
+          <div className={styles.emptyState}>No players match &ldquo;{searchTerm}&rdquo;.</div>
+        ) : (
+          sortedRosterRows.map((row) => {
+            const p = normalizeOne(row.player);
+            const t = normalizeOne(row.team);
+            const ghin = ghinDrafts[row.id] ?? { ghinNumber: '', ghinClub: '' };
+            return (
+              <div key={row.id} className="ad-row hover" style={{ gridTemplateColumns: gridTemplate, minWidth: 'max-content' }}>
+                <span style={{ fontSize: 13 }}>{p?.first_name ?? '—'}</span>
+                <span style={{ fontSize: 13, fontWeight: 600 }}>{p?.last_name ?? '—'}</span>
+                <span>
+                  <span className="ad-badge">{t?.name ?? '—'}</span>
+                </span>
+                <TextField
+                  size="small"
+                  type="number"
+                  inputProps={{ step: 0.1 }}
+                  value={handicapDrafts[row.id] ?? ''}
+                  onChange={(e) => setHandicapDrafts((prev) => ({ ...prev, [row.id]: e.target.value }))}
+                  onBlur={() => saveHandicap(row.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                  }}
+                />
+                <TextField
+                  size="small"
+                  value={ghin.ghinNumber}
+                  onChange={(e) => setGhinDrafts((prev) => ({ ...prev, [row.id]: { ...ghin, ghinNumber: e.target.value } }))}
+                  onBlur={() => saveGhin(row.id, row.player_id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                  }}
+                  inputProps={{ maxLength: 32 }}
+                />
+                <TextField
+                  size="small"
+                  value={ghin.ghinClub}
+                  onChange={(e) => setGhinDrafts((prev) => ({ ...prev, [row.id]: { ...ghin, ghinClub: e.target.value } }))}
+                  onBlur={() => saveGhin(row.id, row.player_id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                  }}
+                  inputProps={{ maxLength: 80 }}
+                />
+                {eventCourses.map((course) => {
+                  const courseHandicap = calculateCourseHandicap({
+                    handicapIndex: row.handicap_at_event,
+                    slope: course.slope,
+                    rating: course.rating,
+                    par: course.par,
+                  });
+                  return (
+                    <span key={course.id} className="ad-num">
+                      {courseHandicap ?? '—'}
+                    </span>
+                  );
+                })}
+              </div>
+            );
+          })
+        )}
+      </div>
+      <p className={styles.footerNote}>
+        Showing {sortedRosterRows.length} of {rosterRows.length}
+      </p>
+    </div>
   );
 }
