@@ -2328,17 +2328,17 @@ Then migrate `/tee-times` itself (243 / 219 lines).
 
 **Acceptance:** decision recorded in section 19; no `.jsx` files remain under `src/app/`.
 
-### Task R8 (Agent) `/itinerary`
+### Task R8 (done 2026-10-01, commit `aa34ee9`) `/itinerary`
 170 lines. Self-contained, no shared components.
 
-### Task R9 (Agent) Auth trio — `/login`, `/change-password`, `/unauthorized`
+### Task R9 (done 2026-10-01, commit `fcdf515`; manual must_change_password login still unverified) Auth trio — `/login`, `/change-password`, `/unauthorized`
 Small (9+44, 136, 21 lines) and should share one visual treatment. `/login` is a tab-bar
 target for signed-out visitors, and `/change-password` is reachable via the middleware
 forced-change redirect (`src/middleware.ts`), so verify both by actually logging in with a
 `must_change_password = true` account — this is exactly what the Part I test environment
 (task 6.3) was seeded to make possible.
 
-### Task R10 (Agent) `/dashboard/award-nominations` and `/gallery`
+### Task R10 (done 2026-10-01, commit `b3cd8f1`) `/dashboard/award-nominations` and `/gallery`
 Form-heavy page plus the smallest page (29 lines, uses `GalleryImage`). Migrate
 `gallery/GalleryImage.tsx` with the latter. `/gallery` also consumes the legacy
 `--gallery-bg` variable — replace with a `--pc-*` equivalent or retire the variable.
