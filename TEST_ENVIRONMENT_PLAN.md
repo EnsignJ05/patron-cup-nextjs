@@ -2513,22 +2513,42 @@ real design decision (roster/captain assignment), not a reskin. `award-nominatio
 the **admin tally/review view** (`MAdminAwards` pattern: sorted by vote count, quoted reasons)
 — not the player-facing form R10 already redesigned.
 
-### Task RA6 Complex and high-risk pages — `handicaps`, `scores`, `matches`, `matches/setup`
-`handicaps` is a worked example (sortable/searchable/filterable table with a computed column) —
-build it using the existing hand-rolled-sort code already there (15.11 confirmed this works,
-don't introduce DataGrid). `scores` has no worked example; closest analog is Handicaps' table
-shape but with per-row review actions instead of inline editing. `matches` (the main list) has
-no worked example either; follow the table+detail pattern. **`matches/setup` last and most
-carefully**: re-skin `TeeTimeBoard.tsx`'s visuals only (`AGrip`/`.ad-pcard`/`.ad-slot` styling),
-never touch the `@dnd-kit` drag logic itself — this is the one admin page where a mistake
-breaks real functionality, not just looks.
+### Task RA6 (done 2026-10-01, commits `37dfc98`+`156caa9`+`d985cb5`+`2e30016`) Complex and high-risk pages — `handicaps`, `scores`, `matches`, `matches/setup`
+`handicaps`: sortable-table pattern, real `<button>`+`AIcon` sort headers, dynamic
+`grid-template-columns` computed in JS since course-column count varies, new search box added.
+`scores`: course-tabs became `.ad-chip` segmented buttons, per-match `ad-card` with status
+badges and a 3-button winner-selection row; `setOfficialMatchResult` logic unchanged. `matches`
+(main list): CRUD table pattern, bulk-creation divisibility check unchanged. `matches/setup`
+done last and most carefully: `page.tsx` is a pure visual pass (AdminHead, `.ad-seg` course
+tabs, `.pc-d-actionbtn` actions, restyled `renderCard` content) with zero changes to
+`fetchEventData`/`getAvailablePlayers`/`addMatchPlayer`/`removeMatchPlayer`/
+`handleBoardPersist`/`handleExportMatchesCsv`; `TeeTimeBoard.tsx` got exactly 3 cosmetic line
+changes (`AGrip` icon swap, one outline color) with the `@dnd-kit` logic completely untouched
+(verified via `git diff`). This completes all of Phase R-Admin's page-by-page work.
 
-### Task RA7 Admin final verification, then close out R11/R12
+### Task RA7 (code-verifiable half done 2026-10-01) Admin final verification, then close out R11/R12
 Walk all 17 real admin routes in both themes, mobile and desktop. Confirm the two
 account-action-form variants both still work end-to-end (invite sends an email, reset actually
 changes a password, username actually renames). Only after this: run R11 (legacy variable
 sunset — now actually safe to check "zero references anywhere, admin included") and re-run
 R12's walk extended to cover every admin route, not just public ones.
+
+**Done so far (code-level, no browser/credentials available in this session):** grepped all of
+`src/app/admin/` + `src/components/admin/` for legacy CSS vars (zero hits) and hardcoded hex
+(one hit, a form placeholder string, not styling) — confirms the token migration is complete
+across all 17 routes. Confirmed all 17 routes' `.module.css` files use `--pc-*` tokens wherever
+they set color/background. Confirmed `invite`/`reset-password`/`change-username` still POST to
+their original `/api/admin/*` routes, unchanged. Full suite passed: jest 150/150, `tsc --noEmit`
+(2 pre-existing unrelated errors only), production build, lint, and `build-storybook` all clean.
+Also noticed `src/app/admin/trip-planning/` is an empty, untracked, pre-existing directory (no
+files, predates this session) — not a real route, nothing to migrate, left alone.
+
+**Still not done — needs a real browser + admin credentials, neither available in this
+session:** the actual visual walk (both themes, mobile+desktop) of all 17 routes, and
+end-to-end exercise of the three account-action flows (does invite's email actually send, does
+reset actually change a password, does username actually rename). Also still unverified: RA1's
+root-layout admin sidebar swap has never been seen rendered for a logged-in admin. Recommend
+the user do this pass themselves before R11/R12.
 
 ---
 
