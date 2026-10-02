@@ -39,11 +39,15 @@ export default function LoginClient() {
 
       if (signInError) {
         setError(signInError.message);
+        setSubmitting(false);
       }
+      // On success, leave `submitting` true: AuthContext still has to pick up the new
+      // session and fetch the role/must-change-password profile before the redirect effect
+      // above can fire. Clearing it here would flip the button back to "Sign in" for that
+      // gap, making a real few-second wait look like nothing is happening.
     } catch (err) {
       console.error('Login error:', err);
       setError('An error occurred during login');
-    } finally {
       setSubmitting(false);
     }
   };

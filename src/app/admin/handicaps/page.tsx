@@ -305,8 +305,13 @@ export default function AdminHandicapsPage() {
   };
 
   // Column count varies with the event's course list, so the grid template is computed,
-  // not a static CSS class.
-  const gridTemplate = `1fr 1fr 0.8fr 110px 90px 110px${eventCourses.map(() => ' 90px').join('')}`;
+  // not a static CSS class. minmax(0, Nfr) (not bare Nfr) keeps each row's fr tracks at the
+  // same computed width regardless of that row's own content, since minWidth: 'max-content'
+  // below (needed so the table can scroll horizontally once course columns are added) lets
+  // each `.ad-row` size itself independently -- without the 0 floor, a long team/player name
+  // in one row grows that row's track past its fr share while shorter rows don't, visibly
+  // misaligning columns between rows.
+  const gridTemplate = `minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.8fr) 110px 90px 110px${eventCourses.map(() => ' 90px').join('')}`;
 
   return (
     <div>
@@ -413,10 +418,16 @@ export default function AdminHandicapsPage() {
             const ghin = ghinDrafts[row.id] ?? { ghinNumber: '', ghinClub: '' };
             return (
               <div key={row.id} className="ad-row hover" style={{ gridTemplateColumns: gridTemplate, minWidth: 'max-content' }}>
-                <span style={{ fontSize: 13 }}>{p?.first_name ?? '—'}</span>
-                <span style={{ fontSize: 13, fontWeight: 600 }}>{p?.last_name ?? '—'}</span>
-                <span>
-                  <span className="ad-badge">{t?.name ?? '—'}</span>
+                <span style={{ fontSize: 13, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {p?.first_name ?? '—'}
+                </span>
+                <span style={{ fontSize: 13, fontWeight: 600, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {p?.last_name ?? '—'}
+                </span>
+                <span style={{ minWidth: 0, overflow: 'hidden' }}>
+                  <span className="ad-badge" style={{ maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {t?.name ?? '—'}
+                  </span>
                 </span>
                 <TextField
                   size="small"
