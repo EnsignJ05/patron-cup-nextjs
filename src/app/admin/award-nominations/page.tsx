@@ -1,117 +1,177 @@
-import Box from '@mui/material/Box';
-import Paper from '@mui/material/Paper';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Typography from '@mui/material/Typography';
-import { ceremonyAwardLabel } from '@/lib/ceremonyAwards';
-import { createSupabaseServerClient } from '@/lib/supabaseServer';
+'use client';
+import { useEffect, useMemo, useState } from 'react';
+import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
+import { AWARD_OPTIONS } from '@/lib/ceremonyAwards';
 import type { CeremonyAwardKey } from '@/types/database';
+import AdminHead from '@/components/admin/AdminHead';
+import AdminName from '@/components/admin/AdminName';
+import styles from './page.module.css';
 
-function formatWhen(iso: string) {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  });
-}
+type NominationRow = {
+  id: string;
+  created_at: string;
+  award_key: string;
+  reason: string;
+  nominator_player_id: string;
+  nominated_player_id: string;
+};
 
-export default async function AdminAwardNominationsPage() {
-  const supabase = await createSupabaseServerClient();
-  const { data: activeEvent } = await supabase
-    .from('events')
-    .select('id, name, year')
-    .eq('is_active', true)
-    .maybeSingle();
+type NomineeTally = {
+  playerId: string;
+  firstName: string;
+  lastName: string;
+  count: number;
+  latestReason: string;
+};
 
-  if (!activeEvent) {
-    return (
-      <Box sx={{ p: 3, maxWidth: 1200, mx: 'auto' }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Ceremony award nominations
-        </Typography>
-        <Typography color="text.secondary">No active event. Nominations will appear when an event is active.</Typography>
-      </Box>
-    );
-  }
+export default function AdminAwardNominationsPage() {
+  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
+  const [activeEvent, setActiveEvent] = useState<{ id: string; name: string; year: number } | null>(null);
+  const [rows, setRows] = useState<NominationRow[]>([]);
+  const [nameById, setNameById] = useState<Map<string, { first_name: string; last_name: string }>>(new Map());
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [selectedAward, setSelectedAward] = useState<CeremonyAwardKey>(AWARD_OPTIONS[0].key);
 
-  const { data: nominations, error } = await supabase
-    .from('ceremony_award_nominations')
-    .select('id, created_at, award_key, reason, nominator_player_id, nominated_player_id')
-    .eq('event_id', activeEvent.id)
-    .order('created_at', { ascending: false });
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      const { data: event } = await supabase.from('events').select('id, name, year').eq('is_active', true).maybeSingle();
 
-  if (error) {
-    console.error('ceremony_award_nominations', error);
-    return (
-      <Box sx={{ p: 3, maxWidth: 1200, mx: 'auto' }}>
-        <Typography color="error">Could not load nominations.</Typography>
-      </Box>
-    );
-  }
+      if (cancelled) return;
+      setActiveEvent(event ?? null);
 
-  const rows = nominations ?? [];
-  const playerIds = new Set<string>();
-  rows.forEach((r) => {
-    playerIds.add(r.nominator_player_id);
-    playerIds.add(r.nominated_player_id);
-  });
+      if (!event) {
+        setLoading(false);
+        return;
+      }
 
-  const { data: players } =
-    playerIds.size > 0
-      ? await supabase.from('players').select('id, first_name, last_name').in('id', [...playerIds])
-      : { data: [] as { id: string; first_name: string; last_name: string }[] };
+      const { data: nominations, error: nomError } = await supabase
+        .from('ceremony_award_nominations')
+        .select('id, created_at, award_key, reason, nominator_player_id, nominated_player_id')
+        .eq('event_id', event.id)
+        .order('created_at', { ascending: false });
 
-  const nameById = new Map(
-    (players ?? []).map((p) => [p.id, `${p.first_name} ${p.last_name}`]),
-  );
+      if (cancelled) return;
+
+      if (nomError) {
+        setError('Could not load nominations.');
+        setLoading(false);
+        return;
+      }
+
+      const nominationRows = nominations ?? [];
+      setRows(nominationRows);
+
+      const playerIds = new Set<string>();
+      nominationRows.forEach((r) => {
+        playerIds.add(r.nominator_player_id);
+        playerIds.add(r.nominated_player_id);
+      });
+
+      if (playerIds.size > 0) {
+        const { data: players } = await supabase.from('players').select('id, first_name, last_name').in('id', [...playerIds]);
+        if (!cancelled) {
+          setNameById(new Map((players ?? []).map((p) => [p.id, { first_name: p.first_name, last_name: p.last_name }])));
+        }
+      }
+
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [supabase]);
+
+  const tallyForSelectedAward = useMemo<NomineeTally[]>(() => {
+    const byNominee = new Map<string, NomineeTally>();
+    for (const row of rows) {
+      if (row.award_key !== selectedAward) continue;
+      const existing = byNominee.get(row.nominated_player_id);
+      const name = nameById.get(row.nominated_player_id);
+      if (existing) {
+        existing.count += 1;
+        // rows are newest-first, so the first one seen per nominee is already the latest
+      } else {
+        byNominee.set(row.nominated_player_id, {
+          playerId: row.nominated_player_id,
+          firstName: name?.first_name ?? 'Unknown',
+          lastName: name?.last_name ?? 'player',
+          count: 1,
+          latestReason: row.reason,
+        });
+      }
+    }
+    return Array.from(byNominee.values()).sort((a, b) => b.count - a.count);
+  }, [rows, selectedAward, nameById]);
+
+  const countsByAward = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const row of rows) {
+      counts.set(row.award_key, (counts.get(row.award_key) ?? 0) + 1);
+    }
+    return counts;
+  }, [rows]);
 
   return (
-    <Box sx={{ p: 3, maxWidth: 1200, mx: 'auto' }}>
-      <Typography variant="h4" component="h1" gutterBottom>
-        Ceremony award nominations
-      </Typography>
-      <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-        {activeEvent.name} {activeEvent.year} — submissions from players
-      </Typography>
+    <div>
+      <AdminHead
+        crumb="Award Nominations"
+        title="Award Nominations"
+        sub={activeEvent ? `${activeEvent.name} ${activeEvent.year} · nominees so far, most votes first.` : undefined}
+      />
 
-      {rows.length === 0 ? (
-        <Paper sx={{ p: 3 }}>
-          <Typography color="text.secondary">No nominations yet for this event.</Typography>
-        </Paper>
+      {error && <p className={styles.error}>{error}</p>}
+
+      {!activeEvent ? (
+        <p className={styles.emptyState}>No active event. Nominations will appear when an event is active.</p>
       ) : (
-        <TableContainer component={Paper} sx={{ overflowX: 'auto' }}>
-          <Table size="small" aria-label="Ceremony award nominations">
-            <TableHead>
-              <TableRow>
-                <TableCell>Submitted</TableCell>
-                <TableCell>Award</TableCell>
-                <TableCell>Nominator</TableCell>
-                <TableCell>Nominee</TableCell>
-                <TableCell sx={{ minWidth: 220 }}>Reason</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {rows.map((row) => (
-                <TableRow key={row.id}>
-                  <TableCell sx={{ whiteSpace: 'nowrap' }}>{formatWhen(row.created_at)}</TableCell>
-                  <TableCell>{ceremonyAwardLabel(row.award_key as CeremonyAwardKey)}</TableCell>
-                  <TableCell>{nameById.get(row.nominator_player_id) ?? row.nominator_player_id}</TableCell>
-                  <TableCell>{nameById.get(row.nominated_player_id) ?? row.nominated_player_id}</TableCell>
-                  <TableCell sx={{ verticalAlign: 'top' }}>{row.reason}</TableCell>
-                </TableRow>
+        <>
+          <div className={styles.awardChips}>
+            {AWARD_OPTIONS.map((option) => (
+              <button
+                key={option.key}
+                type="button"
+                className="ad-chip"
+                data-on={selectedAward === option.key}
+                onClick={() => setSelectedAward(option.key)}
+              >
+                {option.label}
+                <span className={styles.chipCount}>{countsByAward.get(option.key) ?? 0}</span>
+              </button>
+            ))}
+          </div>
+
+          {loading ? (
+            <div className={styles.nomineeGrid}>
+              {[0, 1].map((i) => (
+                <div key={i} className="ad-card" style={{ padding: 16, display: 'grid', gap: 12 }}>
+                  <div className="ad-sk" style={{ width: '50%' }} />
+                  <div className="ad-sk" style={{ width: '80%' }} />
+                </div>
               ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+            </div>
+          ) : tallyForSelectedAward.length === 0 ? (
+            <p className={styles.emptyState}>No nominations yet for this award.</p>
+          ) : (
+            <div className={styles.nomineeGrid}>
+              {tallyForSelectedAward.map((nominee, index) => (
+                <div key={nominee.playerId} className="ad-card" style={{ padding: 16, display: 'grid', gap: 12 }}>
+                  <div className={styles.nomineeTop}>
+                    <AdminName firstName={nominee.firstName} lastName={nominee.lastName} size={40} />
+                    <div className={index === 0 ? styles.countBadgePrimary : styles.countBadge}>
+                      <div className={styles.countNumber}>{nominee.count}</div>
+                      <div className={styles.countLabel}>{nominee.count === 1 ? 'Nomination' : 'Nominations'}</div>
+                    </div>
+                  </div>
+                  <p className={styles.quote}>&ldquo;{nominee.latestReason}&rdquo;</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
-    </Box>
+    </div>
   );
 }
