@@ -1,63 +1,97 @@
-.pageRoot {
-  padding: 24px;
-}
-
-.headerRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-}
-
-.pageTitle {
-  font-weight: 700;
-  color: var(--text);
-}
-
-.primaryButton {
-  background-color: var(--text);
-  color: var(--bg);
-}
-
 .alert {
   margin-bottom: 16px;
 }
 
-.tableHeaderRow {
-  background-color: var(--text);
-  color: #ffffff;
+.eventGrid {
+  grid-template-columns: 1.3fr 1.1fr 1.1fr 1fr 100px 72px;
 }
 
-.tableHeaderRow .tableHeaderCell {
+.statusActive {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: var(--pc-live-bg);
+  color: var(--pc-live-fg);
+  font: 600 11px var(--pc-font-sans);
+  white-space: nowrap;
+}
+
+.statusDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--pc-live-dot);
+}
+
+.emptyState {
+  padding: 36px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+}
+
+.emptyIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: var(--pc-fill);
+  color: var(--pc-ink-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.emptyTitle {
+  font-size: 15px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--pc-ink);
 }
 
-:root[data-theme='dark'] .tableHeaderRow {
-  color: #000000;
+.emptyBody {
+  font-size: 13px;
+  color: var(--pc-ink-3);
+  max-width: 320px;
+  margin-bottom: 12px;
 }
 
-:root[data-theme='dark'] .tableHeaderRow .tableHeaderCell {
-  color: #000000;
+.dialogTitle {
+  font-family: var(--pc-font-serif);
+  font-weight: 500;
+  font-size: 26px;
+  margin: 4px 0 0;
+  color: var(--pc-ink);
 }
 
-.tableStrongCell {
-  font-weight: 600;
-}
-
-.dialogGrid {
+.formGrid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 16px;
-  margin-top: 8px;
+  padding-top: 4px;
 }
 
-.fullRow {
+.fieldWide {
   grid-column: 1 / -1;
 }
 
-@media (min-width: 900px) {
-  .dialogGrid {
+@media (min-width: 768px) {
+  .formGrid {
     grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .eventGrid {
+    grid-template-columns: 1.3fr 1fr 90px 50px;
+  }
+
+  .eventGrid > span:nth-child(3),
+  .eventGrid > span:nth-child(4) {
+    display: none;
   }
 }

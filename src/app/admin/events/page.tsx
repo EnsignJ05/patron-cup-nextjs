@@ -1,30 +1,15 @@
 'use client';
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import Paper from '@mui/material/Paper';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
-import IconButton from '@mui/material/IconButton';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import AddIcon from '@mui/icons-material/Add';
 import Alert from '@mui/material/Alert';
-import Chip from '@mui/material/Chip';
 import Switch from '@mui/material/Switch';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
 import type { Event } from '@/types/database';
+import AdminHead from '@/components/admin/AdminHead';
+import { AIcon } from '@/components/admin/AdminIcons';
 import styles from './page.module.css';
 
 const emptyEvent: Partial<Event> = {
@@ -52,10 +37,7 @@ export default function EventsAdminPage() {
 
   const fetchEvents = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('events')
-      .select('*')
-      .order('year', { ascending: false });
+    const { data, error } = await supabase.from('events').select('*').order('year', { ascending: false });
 
     if (error) {
       setError(error.message);
@@ -86,11 +68,8 @@ export default function EventsAdminPage() {
 
   const confirmDelete = async () => {
     if (!eventToDelete) return;
-    
-    const { error } = await supabase
-      .from('events')
-      .delete()
-      .eq('id', eventToDelete.id);
+
+    const { error } = await supabase.from('events').delete().eq('id', eventToDelete.id);
 
     if (error) {
       setError(error.message);
@@ -120,10 +99,7 @@ export default function EventsAdminPage() {
     };
 
     if (editingEvent.id) {
-      const { error } = await supabase
-        .from('events')
-        .update(eventData)
-        .eq('id', editingEvent.id);
+      const { error } = await supabase.from('events').update(eventData).eq('id', editingEvent.id);
 
       if (error) {
         setError(error.message);
@@ -131,9 +107,7 @@ export default function EventsAdminPage() {
       }
       setSuccess('Event updated successfully');
     } else {
-      const { error } = await supabase
-        .from('events')
-        .insert([eventData]);
+      const { error } = await supabase.from('events').insert([eventData]);
 
       if (error) {
         setError(error.message);
@@ -148,88 +122,112 @@ export default function EventsAdminPage() {
   };
 
   const formatDate = (dateStr: string) => {
-    if (!dateStr) return '-';
+    if (!dateStr) return '—';
     return new Date(dateStr).toLocaleDateString();
   };
 
   return (
-    <Box className={styles.pageRoot}>
-      <Box className={styles.headerRow}>
-        <Typography variant="h4" className={styles.pageTitle}>
-          Events Management
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleAdd}
-          className={styles.primaryButton}
-        >
-          Add Event
-        </Button>
-      </Box>
+    <div>
+      <AdminHead
+        crumb="Events"
+        title="Events"
+        sub={`${events.length} event${events.length === 1 ? '' : 's'}.`}
+        actions={
+          <button type="button" className="pc-d-actionbtn" data-primary="true" onClick={handleAdd}>
+            <AIcon name="plus" size={14} />
+            <span>Add Event</span>
+          </button>
+        }
+      />
 
-      {error && <Alert severity="error" className={styles.alert} onClose={() => setError('')}>{error}</Alert>}
-      {success && <Alert severity="success" className={styles.alert} onClose={() => setSuccess('')}>{success}</Alert>}
+      {error && (
+        <Alert severity="error" className={styles.alert} onClose={() => setError('')}>
+          {error}
+        </Alert>
+      )}
+      {success && (
+        <Alert severity="success" className={styles.alert} onClose={() => setSuccess('')}>
+          {success}
+        </Alert>
+      )}
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow className={styles.tableHeaderRow}>
-              <TableCell className={styles.tableHeaderCell}>Name</TableCell>
-              <TableCell className={styles.tableHeaderCell}>Year</TableCell>
-              <TableCell className={styles.tableHeaderCell}>Location</TableCell>
-              <TableCell className={styles.tableHeaderCell}>Resort</TableCell>
-              <TableCell className={styles.tableHeaderCell}>Dates</TableCell>
-              <TableCell className={styles.tableHeaderCell}>Status</TableCell>
-              <TableCell className={styles.tableHeaderCell} align="right">Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={7} align="center">Loading...</TableCell>
-              </TableRow>
-            ) : events.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} align="center">No events found</TableCell>
-              </TableRow>
-            ) : (
-              events.map((event) => (
-                <TableRow key={event.id} hover>
-                  <TableCell className={styles.tableStrongCell}>{event.name}</TableCell>
-                  <TableCell>{event.year}</TableCell>
-                  <TableCell>{event.location_city}, {event.location_state}</TableCell>
-                  <TableCell>{event.resort_name || '-'}</TableCell>
-                  <TableCell>{formatDate(event.start_date)} - {formatDate(event.end_date)}</TableCell>
-                  <TableCell>
-                    <Chip 
-                      label={event.is_active ? 'Active' : 'Inactive'} 
-                      size="small" 
-                      color={event.is_active ? 'success' : 'default'} 
-                    />
-                  </TableCell>
-                  <TableCell align="right">
-                    <IconButton onClick={() => handleEdit(event)} size="small">
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton onClick={() => handleDelete(event)} size="small" color="error">
-                      <DeleteIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <div className="ad-card" style={{ overflow: 'hidden' }}>
+        <div className={`ad-row head ${styles.eventGrid}`}>
+          <span className="ad-th">Name</span>
+          <span className="ad-th">Location</span>
+          <span className="ad-th">Resort</span>
+          <span className="ad-th">Dates</span>
+          <span className="ad-th">Status</span>
+          <span className="ad-th" />
+        </div>
+        {loading ? (
+          [0, 1, 2].map((i) => (
+            <div key={i} className={`ad-row ${styles.eventGrid}`}>
+              {[55, 45, 40, 50, 30, 0].map((w, j) => (
+                <div key={j} className="ad-sk" style={{ width: w ? `${w}%` : 0, animationDelay: `${i * 0.12}s` }} />
+              ))}
+            </div>
+          ))
+        ) : events.length === 0 ? (
+          <div className={styles.emptyState}>
+            <div className={styles.emptyIcon}>
+              <AIcon name="events" size={24} />
+            </div>
+            <div className={styles.emptyTitle}>No events yet</div>
+            <div className={styles.emptyBody}>Create an event to start scheduling courses, teams, and matches.</div>
+            <button type="button" className="pc-d-actionbtn" data-primary="true" onClick={handleAdd}>
+              <AIcon name="plus" size={14} />
+              <span>Add Event</span>
+            </button>
+          </div>
+        ) : (
+          events.map((event) => (
+            <div key={event.id} className={`ad-row hover ${styles.eventGrid}`}>
+              <span style={{ fontSize: 13, fontWeight: 600 }}>
+                {event.name} <span style={{ color: 'var(--pc-ink-3)', fontWeight: 400 }}>({event.year})</span>
+              </span>
+              <span style={{ fontSize: 13, color: 'var(--pc-ink-2)' }}>
+                {event.location_city}, {event.location_state}
+              </span>
+              <span style={{ fontSize: 13, color: 'var(--pc-ink-2)' }}>{event.resort_name || '—'}</span>
+              <span style={{ fontSize: 12, color: 'var(--pc-ink-3)', fontFamily: 'var(--pc-font-mono)' }}>
+                {formatDate(event.start_date)} – {formatDate(event.end_date)}
+              </span>
+              <span>
+                {event.is_active ? (
+                  <span className={styles.statusActive}>
+                    <span className={styles.statusDot} />
+                    Active
+                  </span>
+                ) : (
+                  <span className="ad-badge">Inactive</span>
+                )}
+              </span>
+              <span style={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+                <button type="button" className="ad-ib" onClick={() => handleEdit(event)} aria-label={`Edit ${event.name}`}>
+                  <AIcon name="edit" size={16} />
+                </button>
+                <button type="button" className="ad-ib" onClick={() => handleDelete(event)} aria-label={`Delete ${event.name}`}>
+                  <AIcon name="trash" size={16} />
+                </button>
+              </span>
+            </div>
+          ))
+        )}
+      </div>
 
-      {/* Edit/Add Dialog */}
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>
-          {editingEvent?.id ? 'Edit Event' : 'Add Event'}
-        </DialogTitle>
+      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="md" fullWidth PaperProps={{ className: 'ad-dlg' }}>
+        <div className="ad-dlg-h">
+          <div>
+            <div className="ad-crumb">Events</div>
+            <h2 className={styles.dialogTitle}>{editingEvent?.id ? 'Edit event' : 'Add event'}</h2>
+          </div>
+          <button type="button" className="ad-ib" onClick={() => setDialogOpen(false)} aria-label="Close">
+            <AIcon name="x" size={18} />
+          </button>
+        </div>
         <DialogContent>
-          <Box className={styles.dialogGrid}>
+          <div className={styles.formGrid}>
             <TextField
               label="Event Name"
               value={editingEvent?.name || ''}
@@ -237,12 +235,13 @@ export default function EventsAdminPage() {
               required
               fullWidth
               placeholder="e.g., Patron Cup 2025"
+              className={styles.fieldWide}
             />
             <TextField
               label="Year"
               type="number"
               value={editingEvent?.year || ''}
-              onChange={(e) => setEditingEvent({ ...editingEvent, year: parseInt(e.target.value) })}
+              onChange={(e) => setEditingEvent({ ...editingEvent, year: parseInt(e.target.value, 10) })}
               required
               fullWidth
             />
@@ -268,7 +267,6 @@ export default function EventsAdminPage() {
               onChange={(e) => setEditingEvent({ ...editingEvent, resort_name: e.target.value })}
               fullWidth
               placeholder="e.g., Bandon Dunes Golf Resort"
-              className={styles.fullRow}
             />
             <TextField
               label="Start Date"
@@ -293,7 +291,7 @@ export default function EventsAdminPage() {
               value={editingEvent?.logo_url || ''}
               onChange={(e) => setEditingEvent({ ...editingEvent, logo_url: e.target.value })}
               fullWidth
-              className={styles.fullRow}
+              className={styles.fieldWide}
             />
             <TextField
               label="Description"
@@ -302,38 +300,57 @@ export default function EventsAdminPage() {
               fullWidth
               multiline
               rows={3}
-              className={styles.fullRow}
+              className={styles.fieldWide}
             />
             <FormControlLabel
+              className={styles.fieldWide}
               control={
                 <Switch
                   checked={editingEvent?.is_active || false}
                   onChange={(e) => setEditingEvent({ ...editingEvent, is_active: e.target.checked })}
                 />
               }
-              label="Active Event (current/upcoming)"
+              label="Active event (current/upcoming)"
             />
-          </Box>
+          </div>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleSave} variant="contained" className={styles.primaryButton}>
-            Save
-          </Button>
-        </DialogActions>
+        <div className="ad-dlg-f">
+          <span style={{ flex: 1 }} />
+          <button type="button" className="pc-d-actionbtn" onClick={() => setDialogOpen(false)}>
+            Cancel
+          </button>
+          <button type="button" className="pc-d-actionbtn" data-primary="true" onClick={handleSave}>
+            Save event
+          </button>
+        </div>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)}>
-        <DialogTitle>Confirm Delete</DialogTitle>
+      <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)} PaperProps={{ className: 'ad-dlg' }}>
+        <div className="ad-dlg-h">
+          <h2 className={styles.dialogTitle}>Delete event?</h2>
+        </div>
         <DialogContent>
-          Are you sure you want to delete {eventToDelete?.name}? This will also delete all associated teams, matches, and other data.
+          <p style={{ margin: 0, color: 'var(--pc-ink-2)' }}>
+            Are you sure you want to delete {eventToDelete?.name}? This will also delete all associated teams,
+            matches, and other data.
+          </p>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteConfirmOpen(false)}>Cancel</Button>
-          <Button onClick={confirmDelete} color="error" variant="contained">Delete</Button>
-        </DialogActions>
+        <div className="ad-dlg-f">
+          <span style={{ flex: 1 }} />
+          <button type="button" className="pc-d-actionbtn" onClick={() => setDeleteConfirmOpen(false)}>
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="pc-d-actionbtn"
+            data-primary="true"
+            style={{ background: 'var(--pc-team-a)', borderColor: 'var(--pc-team-a)' }}
+            onClick={confirmDelete}
+          >
+            Delete
+          </button>
+        </div>
       </Dialog>
-    </Box>
+    </div>
   );
 }
