@@ -1,35 +1,21 @@
 'use client';
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Paper from '@mui/material/Paper';
-import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
 import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
 import TextField from '@mui/material/TextField';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
-import Chip from '@mui/material/Chip';
 import Alert from '@mui/material/Alert';
 import Checkbox from '@mui/material/Checkbox';
 import FormControlLabel from '@mui/material/FormControlLabel';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import AddIcon from '@mui/icons-material/Add';
-import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
 import type { Event, Player, EventParticipant } from '@/types/database';
+import AdminHead from '@/components/admin/AdminHead';
+import AdminName from '@/components/admin/AdminName';
+import { AIcon } from '@/components/admin/AdminIcons';
+import styles from './page.module.css';
 
 type ParticipantWithPlayer = EventParticipant & {
   players: Player;
@@ -50,10 +36,7 @@ export default function EventParticipantsPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
   const fetchEvents = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('events')
-      .select('*')
-      .order('year', { ascending: false });
+    const { data, error } = await supabase.from('events').select('*').order('year', { ascending: false });
 
     if (error) {
       setError(error.message);
@@ -66,11 +49,7 @@ export default function EventParticipantsPage() {
   }, [supabase]);
 
   const fetchPlayers = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('players')
-      .select('*')
-      .eq('status', 'active')
-      .order('last_name');
+    const { data, error } = await supabase.from('players').select('*').eq('status', 'active').order('last_name');
 
     if (error) {
       setError(error.message);
@@ -115,14 +94,11 @@ export default function EventParticipantsPage() {
       player_id: formData.get('player_id') as string,
       handicap_at_event: formData.get('handicap_at_event') ? Number(formData.get('handicap_at_event')) : null,
       is_confirmed: formData.get('is_confirmed') === 'true',
-      notes: formData.get('notes') as string || null,
+      notes: (formData.get('notes') as string) || null,
     };
 
     if (editingParticipant) {
-      const { error } = await supabase
-        .from('event_participants')
-        .update(participantData)
-        .eq('id', editingParticipant.id);
+      const { error } = await supabase.from('event_participants').update(participantData).eq('id', editingParticipant.id);
 
       if (error) {
         setError(error.message);
@@ -197,136 +173,153 @@ export default function EventParticipantsPage() {
   const currentEvent = events.find((e) => e.id === selectedEvent);
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, color: 'var(--text)' }}>
-          Event Participants
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button
-            variant="outlined"
-            startIcon={<PersonAddIcon />}
-            onClick={() => setBulkDialogOpen(true)}
-            disabled={availablePlayers.length === 0}
-          >
-            Bulk Add
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setDialogOpen(true)}
-            disabled={availablePlayers.length === 0}
-          >
-            Add Participant
-          </Button>
-        </Box>
-      </Box>
+    <div>
+      <AdminHead
+        crumb="Participants"
+        title="Participants"
+        sub={
+          currentEvent
+            ? `${participants.length} participant${participants.length === 1 ? '' : 's'} · ${participants.filter((p) => p.is_confirmed).length} confirmed`
+            : undefined
+        }
+        actions={
+          <>
+            <FormControl size="small" className={styles.eventFilter}>
+              <InputLabel>Event</InputLabel>
+              <Select value={selectedEvent} label="Event" onChange={(e) => setSelectedEvent(e.target.value)}>
+                {events.map((event) => (
+                  <MenuItem key={event.id} value={event.id}>
+                    {event.name} ({event.year})
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <button
+              type="button"
+              className="pc-d-actionbtn"
+              disabled={availablePlayers.length === 0}
+              onClick={() => setBulkDialogOpen(true)}
+            >
+              <AIcon name="participants" size={14} />
+              <span>Bulk Add</span>
+            </button>
+            <button
+              type="button"
+              className="pc-d-actionbtn"
+              data-primary="true"
+              disabled={availablePlayers.length === 0}
+              onClick={() => setDialogOpen(true)}
+            >
+              <AIcon name="plus" size={14} />
+              <span>Add Participant</span>
+            </button>
+          </>
+        }
+      />
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+        <Alert severity="error" className={styles.alert} onClose={() => setError(null)}>
           {error}
         </Alert>
       )}
 
-      <Box sx={{ mb: 3, display: 'flex', gap: 2, alignItems: 'center' }}>
-        <FormControl sx={{ minWidth: 200 }}>
-          <InputLabel>Event</InputLabel>
-          <Select
-            value={selectedEvent}
-            label="Event"
-            onChange={(e) => setSelectedEvent(e.target.value)}
-          >
-            {events.map((event) => (
-              <MenuItem key={event.id} value={event.id}>
-                {event.name} ({event.year})
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        {currentEvent && (
-          <Typography variant="body2" sx={{ color: 'var(--text-muted)' }}>
-            {participants.length} participants | {participants.filter((p) => p.is_confirmed).length} confirmed
-          </Typography>
+      <div className="ad-card" style={{ overflow: 'hidden' }}>
+        <div className={`ad-row head ${styles.participantGrid}`}>
+          <span className="ad-th">Player</span>
+          <span className="ad-th">Email</span>
+          <span className="ad-th" style={{ textAlign: 'right' }}>Handicap</span>
+          <span className="ad-th">Status</span>
+          <span className="ad-th">Notes</span>
+          <span className="ad-th" />
+        </div>
+        {loading ? (
+          [0, 1, 2].map((i) => (
+            <div key={i} className={`ad-row ${styles.participantGrid}`}>
+              {[50, 55, 20, 30, 35, 0].map((w, j) => (
+                <div key={j} className="ad-sk" style={{ width: w ? `${w}%` : 0, marginLeft: j === 2 ? 'auto' : 0, animationDelay: `${i * 0.12}s` }} />
+              ))}
+            </div>
+          ))
+        ) : participants.length === 0 ? (
+          <div className={styles.emptyState}>No participants for this event</div>
+        ) : (
+          participants.map((participant) => (
+            <div key={participant.id} className={`ad-row hover ${styles.participantGrid}`}>
+              <AdminName
+                firstName={participant.players.first_name}
+                lastName={participant.players.last_name}
+                profileImageUrl={participant.players.profile_image_url}
+              />
+              <span style={{ fontSize: 13, color: 'var(--pc-ink-2)' }}>{participant.players.email}</span>
+              <span className="ad-num">{participant.handicap_at_event ?? '—'}</span>
+              <span>
+                <button
+                  type="button"
+                  className="ad-chip"
+                  data-on={participant.is_confirmed}
+                  onClick={() => handleToggleConfirmed(participant)}
+                >
+                  {participant.is_confirmed ? 'Confirmed' : 'Pending'}
+                </button>
+              </span>
+              <span style={{ fontSize: 13, color: 'var(--pc-ink-2)' }}>{participant.notes || '—'}</span>
+              <span style={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+                <button
+                  type="button"
+                  className="ad-ib"
+                  onClick={() => {
+                    setEditingParticipant(participant);
+                    setDialogOpen(true);
+                  }}
+                  aria-label="Edit participant"
+                >
+                  <AIcon name="edit" size={16} />
+                </button>
+                <button type="button" className="ad-ib" onClick={() => handleDelete(participant.id)} aria-label="Remove participant">
+                  <AIcon name="trash" size={16} />
+                </button>
+              </span>
+            </div>
+          ))
         )}
-      </Box>
+      </div>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow sx={{ backgroundColor: 'var(--text)' }}>
-              <TableCell sx={{ fontWeight: 600, color: 'var(--bg)' }}>Player</TableCell>
-              <TableCell sx={{ fontWeight: 600, color: 'var(--bg)' }}>Email</TableCell>
-              <TableCell sx={{ fontWeight: 600, color: 'var(--bg)' }}>Handicap at Event</TableCell>
-              <TableCell sx={{ fontWeight: 600, color: 'var(--bg)' }}>Status</TableCell>
-              <TableCell sx={{ fontWeight: 600, color: 'var(--bg)' }}>Notes</TableCell>
-              <TableCell sx={{ fontWeight: 600, color: 'var(--bg)' }} align="right">
-                Actions
-              </TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={6} align="center">
-                  Loading...
-                </TableCell>
-              </TableRow>
-            ) : participants.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} align="center">
-                  No participants for this event
-                </TableCell>
-              </TableRow>
-            ) : (
-              participants.map((participant) => (
-                <TableRow key={participant.id} hover>
-                  <TableCell>
-                    {participant.players.first_name} {participant.players.last_name}
-                  </TableCell>
-                  <TableCell>{participant.players.email}</TableCell>
-                  <TableCell>{participant.handicap_at_event ?? '-'}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={participant.is_confirmed ? 'Confirmed' : 'Pending'}
-                      size="small"
-                      color={participant.is_confirmed ? 'success' : 'warning'}
-                      onClick={() => handleToggleConfirmed(participant)}
-                      sx={{ cursor: 'pointer' }}
-                    />
-                  </TableCell>
-                  <TableCell>{participant.notes || '-'}</TableCell>
-                  <TableCell align="right">
-                    <IconButton
-                      size="small"
-                      onClick={() => {
-                        setEditingParticipant(participant);
-                        setDialogOpen(true);
-                      }}
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton size="small" color="error" onClick={() => handleDelete(participant.id)}>
-                      <DeleteIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
-      {/* Add/Edit Dialog */}
-      <Dialog open={dialogOpen} onClose={() => {setDialogOpen(false); setEditingParticipant(null);}} maxWidth="sm" fullWidth>
+      {/* Add/Edit */}
+      <Dialog
+        open={dialogOpen}
+        onClose={() => {
+          setDialogOpen(false);
+          setEditingParticipant(null);
+        }}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ className: 'ad-dlg' }}
+      >
         <form
           onSubmit={(e) => {
             e.preventDefault();
             handleSave(new FormData(e.currentTarget));
           }}
         >
-          <DialogTitle>{editingParticipant ? 'Edit Participant' : 'Add Participant'}</DialogTitle>
+          <div className="ad-dlg-h">
+            <div>
+              <div className="ad-crumb">Participants</div>
+              <h2 className={styles.dialogTitle}>{editingParticipant ? 'Edit participant' : 'Add participant'}</h2>
+            </div>
+            <button
+              type="button"
+              className="ad-ib"
+              onClick={() => {
+                setDialogOpen(false);
+                setEditingParticipant(null);
+              }}
+              aria-label="Close"
+            >
+              <AIcon name="x" size={18} />
+            </button>
+          </div>
           <DialogContent>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+            <div className={styles.formFields}>
               {!editingParticipant && (
                 <FormControl fullWidth required>
                   <InputLabel>Player</InputLabel>
@@ -342,9 +335,11 @@ export default function EventParticipantsPage() {
               {editingParticipant && (
                 <>
                   <input type="hidden" name="player_id" value={editingParticipant.player_id} />
-                  <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                    {editingParticipant.players.first_name} {editingParticipant.players.last_name}
-                  </Typography>
+                  <AdminName
+                    firstName={editingParticipant.players.first_name}
+                    lastName={editingParticipant.players.last_name}
+                    profileImageUrl={editingParticipant.players.profile_image_url}
+                  />
                 </>
               )}
               <TextField
@@ -356,39 +351,64 @@ export default function EventParticipantsPage() {
               />
               <FormControl fullWidth>
                 <InputLabel>Confirmed</InputLabel>
-                <Select
-                  name="is_confirmed"
-                  label="Confirmed"
-                  defaultValue={editingParticipant?.is_confirmed ? 'true' : 'false'}
-                >
+                <Select name="is_confirmed" label="Confirmed" defaultValue={editingParticipant?.is_confirmed ? 'true' : 'false'}>
                   <MenuItem value="false">Pending</MenuItem>
                   <MenuItem value="true">Confirmed</MenuItem>
                 </Select>
               </FormControl>
-              <TextField
-                name="notes"
-                label="Notes"
-                multiline
-                rows={2}
-                defaultValue={editingParticipant?.notes || ''}
-              />
-            </Box>
+              <TextField name="notes" label="Notes" multiline rows={2} defaultValue={editingParticipant?.notes || ''} />
+            </div>
           </DialogContent>
-          <DialogActions>
-            <Button onClick={() => {setDialogOpen(false); setEditingParticipant(null);}}>Cancel</Button>
-            <Button type="submit" variant="contained">Save</Button>
-          </DialogActions>
+          <div className="ad-dlg-f">
+            <span style={{ flex: 1 }} />
+            <button
+              type="button"
+              className="pc-d-actionbtn"
+              onClick={() => {
+                setDialogOpen(false);
+                setEditingParticipant(null);
+              }}
+            >
+              Cancel
+            </button>
+            <button type="submit" className="pc-d-actionbtn" data-primary="true">
+              Save participant
+            </button>
+          </div>
         </form>
       </Dialog>
 
-      {/* Bulk Add Dialog */}
-      <Dialog open={bulkDialogOpen} onClose={() => {setBulkDialogOpen(false); setSelectedPlayers([]);}} maxWidth="sm" fullWidth>
-        <DialogTitle>Bulk Add Participants</DialogTitle>
+      {/* Bulk add */}
+      <Dialog
+        open={bulkDialogOpen}
+        onClose={() => {
+          setBulkDialogOpen(false);
+          setSelectedPlayers([]);
+        }}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ className: 'ad-dlg' }}
+      >
+        <div className="ad-dlg-h">
+          <div>
+            <div className="ad-crumb">Participants</div>
+            <h2 className={styles.dialogTitle}>Bulk add participants</h2>
+            <p className="ad-sub">Select players to add to {currentEvent?.name}. Their current handicap becomes the event handicap.</p>
+          </div>
+          <button
+            type="button"
+            className="ad-ib"
+            onClick={() => {
+              setBulkDialogOpen(false);
+              setSelectedPlayers([]);
+            }}
+            aria-label="Close"
+          >
+            <AIcon name="x" size={18} />
+          </button>
+        </div>
         <DialogContent>
-          <Typography variant="body2" sx={{ mb: 2, color: '#666' }}>
-            Select players to add to {currentEvent?.name}. Their current handicap will be used as the event handicap.
-          </Typography>
-          <Box sx={{ maxHeight: 400, overflow: 'auto' }}>
+          <div className={styles.bulkList}>
             {availablePlayers.map((player) => (
               <FormControlLabel
                 key={player.id}
@@ -405,22 +425,28 @@ export default function EventParticipantsPage() {
                   />
                 }
                 label={`${player.first_name} ${player.last_name} (Hdcp: ${player.current_handicap ?? 'N/A'})`}
-                sx={{ display: 'block' }}
+                className={styles.bulkItem}
               />
             ))}
-          </Box>
+          </div>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => {setBulkDialogOpen(false); setSelectedPlayers([]);}}>Cancel</Button>
-          <Button
-            variant="contained"
-            onClick={handleBulkAdd}
-            disabled={selectedPlayers.length === 0}
+        <div className="ad-dlg-f">
+          <span style={{ flex: 1 }} />
+          <button
+            type="button"
+            className="pc-d-actionbtn"
+            onClick={() => {
+              setBulkDialogOpen(false);
+              setSelectedPlayers([]);
+            }}
           >
+            Cancel
+          </button>
+          <button type="button" className="pc-d-actionbtn" data-primary="true" disabled={selectedPlayers.length === 0} onClick={handleBulkAdd}>
             Add {selectedPlayers.length} Player{selectedPlayers.length !== 1 ? 's' : ''}
-          </Button>
-        </DialogActions>
+          </button>
+        </div>
       </Dialog>
-    </Box>
+    </div>
   );
 }

@@ -1,0 +1,56 @@
+.alert {
+  margin-bottom: 16px;
+}
+
+.eventFilter {
+  min-width: 180px;
+}
+
+.participantGrid {
+  grid-template-columns: 1.3fr 1.5fr 90px 120px 1.2fr 72px;
+}
+
+.emptyState {
+  padding: 36px 24px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--pc-ink-3);
+}
+
+.dialogTitle {
+  font-family: var(--pc-font-serif);
+  font-weight: 500;
+  font-size: 24px;
+  margin: 4px 0 0;
+  color: var(--pc-ink);
+}
+
+.formFields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 4px;
+}
+
+.bulkList {
+  max-height: 400px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.bulkItem {
+  display: flex !important;
+}
+
+@media (max-width: 900px) {
+  .participantGrid {
+    grid-template-columns: 1.3fr 120px 50px;
+  }
+
+  .participantGrid > *:nth-child(2),
+  .participantGrid > *:nth-child(3),
+  .participantGrid > *:nth-child(5) {
+    display: none;
+  }
+}
