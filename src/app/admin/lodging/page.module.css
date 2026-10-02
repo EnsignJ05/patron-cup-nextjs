@@ -1,0 +1,62 @@
+.alert {
+  margin-bottom: 16px;
+}
+
+.eventFilter {
+  min-width: 180px;
+  margin-bottom: 16px;
+}
+
+.lodgingGrid {
+  grid-template-columns: 1.4fr 1fr 60px 70px 1fr 1.2fr 96px;
+}
+
+.slotGrid {
+  grid-template-columns: 50px 1.4fr 1fr 110px 56px;
+}
+
+.emptyState {
+  padding: 36px 24px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--pc-ink-3);
+}
+
+.dialogTitle {
+  font-family: var(--pc-font-serif);
+  font-weight: 500;
+  font-size: 24px;
+  margin: 4px 0 0;
+  color: var(--pc-ink);
+}
+
+.formFields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 4px;
+}
+
+@media (max-width: 900px) {
+  .lodgingGrid {
+    grid-template-columns: 1.4fr 1fr 72px;
+  }
+
+  .lodgingGrid > *:nth-child(3),
+  .lodgingGrid > *:nth-child(4),
+  .lodgingGrid > *:nth-child(5),
+  .lodgingGrid > *:nth-child(6) {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .slotGrid {
+    grid-template-columns: 30px 1fr 56px;
+  }
+
+  .slotGrid > *:nth-child(3),
+  .slotGrid > *:nth-child(4) {
+    display: none;
+  }
+}

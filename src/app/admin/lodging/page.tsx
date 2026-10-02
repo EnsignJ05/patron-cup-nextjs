@@ -1,34 +1,19 @@
 'use client';
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import Paper from '@mui/material/Paper';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
-import IconButton from '@mui/material/IconButton';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import AddIcon from '@mui/icons-material/Add';
-import PeopleIcon from '@mui/icons-material/People';
 import Alert from '@mui/material/Alert';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import FormHelperText from '@mui/material/FormHelperText';
-import Chip from '@mui/material/Chip';
 import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
 import type { Lodging, LodgingAssignment, Event, Player } from '@/types/database';
+import AdminHead from '@/components/admin/AdminHead';
+import { AIcon } from '@/components/admin/AdminIcons';
+import styles from './page.module.css';
 
 export default function LodgingAdminPage() {
   type SlotDraft = {
@@ -50,23 +35,22 @@ export default function LodgingAdminPage() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [lodgingToDelete, setLodgingToDelete] = useState<Lodging | null>(null);
   const [selectedEventId, setSelectedEventId] = useState<string>('');
-  
+
   // Assignments dialog
   const [assignmentsDialogOpen, setAssignmentsDialogOpen] = useState(false);
   const [selectedLodging, setSelectedLodging] = useState<Lodging | null>(null);
-  const [assignments, setAssignments] = useState<(LodgingAssignment & { player?: Player })[]>([]);
+  const [, setAssignments] = useState<(LodgingAssignment & { player?: Player })[]>([]);
   const [slotDrafts, setSlotDrafts] = useState<SlotDraft[]>([]);
   const [initialSlotDrafts, setInitialSlotDrafts] = useState<SlotDraft[]>([]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    
+
     const [lodgingsRes, eventsRes, playersRes] = await Promise.all([
-      supabase
-        .from('lodging')
-        .select('*, event:events(*)')
-        .order('building_name'),
+      supabase.from('lodging').select('*, event:events(*)').order('building_name'),
       supabase.from('events').select('*').order('year', { ascending: false }),
+      // NOTE: is_active, not status -- same known split-brain bug as admin/travel (Part IV
+      // Task H3), unchanged here, out of scope for a visual redesign.
       supabase.from('players').select('*').eq('is_active', true).order('last_name'),
     ]);
 
@@ -75,7 +59,7 @@ export default function LodgingAdminPage() {
 
     if (eventsRes.data) setEvents(eventsRes.data);
     if (playersRes.data) setPlayers(playersRes.data);
-    
+
     setLoading(false);
   }, [supabase]);
 
@@ -84,8 +68,8 @@ export default function LodgingAdminPage() {
   }, [fetchData]);
 
   const handleAdd = () => {
-    const activeEvent = events.find(e => e.is_active) || events[0];
-    setEditingLodging({ 
+    const activeEvent = events.find((e) => e.is_active) || events[0];
+    setEditingLodging({
       event_id: selectedEventId || activeEvent?.id,
     });
     setDialogOpen(true);
@@ -103,11 +87,8 @@ export default function LodgingAdminPage() {
 
   const confirmDelete = async () => {
     if (!lodgingToDelete) return;
-    
-    const { error } = await supabase
-      .from('lodging')
-      .delete()
-      .eq('id', lodgingToDelete.id);
+
+    const { error } = await supabase.from('lodging').delete().eq('id', lodgingToDelete.id);
 
     if (error) {
       setError(error.message);
@@ -140,10 +121,7 @@ export default function LodgingAdminPage() {
     };
 
     if (editingLodging.id) {
-      const { error } = await supabase
-        .from('lodging')
-        .update(lodgingData)
-        .eq('id', editingLodging.id);
+      const { error } = await supabase.from('lodging').update(lodgingData).eq('id', editingLodging.id);
 
       if (error) {
         setError(error.message);
@@ -151,9 +129,7 @@ export default function LodgingAdminPage() {
       }
       setSuccess('Lodging updated successfully');
     } else {
-      const { error } = await supabase
-        .from('lodging')
-        .insert([lodgingData]);
+      const { error } = await supabase.from('lodging').insert([lodgingData]);
 
       if (error) {
         setError(error.message);
@@ -171,11 +147,8 @@ export default function LodgingAdminPage() {
   const openAssignmentsDialog = async (lodging: Lodging) => {
     setSelectedLodging(lodging);
     setAssignmentsDialogOpen(true);
-    
-    const { data, error } = await supabase
-      .from('lodging_assignments')
-      .select('*, player:players(*)')
-      .eq('lodging_id', lodging.id);
+
+    const { data, error } = await supabase.from('lodging_assignments').select('*, player:players(*)').eq('lodging_id', lodging.id);
 
     if (error) {
       setError(error.message);
@@ -209,11 +182,7 @@ export default function LodgingAdminPage() {
     const draft = slotDrafts[slotIndex];
     if (!draft) return;
     setSlotDrafts((prev) =>
-      prev.map((slot, index) =>
-        index === slotIndex
-          ? { ...slot, assignmentId: null, playerId: '', confirmationNum: '', isPrimary: false }
-          : slot
-      )
+      prev.map((slot, index) => (index === slotIndex ? { ...slot, assignmentId: null, playerId: '', confirmationNum: '', isPrimary: false } : slot)),
     );
   };
 
@@ -236,10 +205,7 @@ export default function LodgingAdminPage() {
         is_primary: slot.isPrimary,
       }));
 
-    const { error: deleteError } = await supabase
-      .from('lodging_assignments')
-      .delete()
-      .eq('lodging_id', selectedLodging.id);
+    const { error: deleteError } = await supabase.from('lodging_assignments').delete().eq('lodging_id', selectedLodging.id);
 
     if (deleteError) {
       setError(deleteError.message);
@@ -247,9 +213,7 @@ export default function LodgingAdminPage() {
     }
 
     if (payload.length > 0) {
-      const { error: insertError } = await supabase
-        .from('lodging_assignments')
-        .insert(payload);
+      const { error: insertError } = await supabase.from('lodging_assignments').insert(payload);
       if (insertError) {
         setError(insertError.message);
         return;
@@ -261,31 +225,23 @@ export default function LodgingAdminPage() {
   };
 
   const togglePrimary = (slotIndex: number) => {
-    setSlotDrafts((prev) =>
-      prev.map((slot, index) =>
-        index === slotIndex
-          ? { ...slot, isPrimary: !slot.isPrimary }
-          : slot
-      )
-    );
+    setSlotDrafts((prev) => prev.map((slot, index) => (index === slotIndex ? { ...slot, isPrimary: !slot.isPrimary } : slot)));
   };
 
-  const filteredLodgings = selectedEventId 
-    ? lodgings.filter(l => l.event_id === selectedEventId)
-    : lodgings;
+  const filteredLodgings = selectedEventId ? lodgings.filter((l) => l.event_id === selectedEventId) : lodgings;
 
   const getSelectablePlayersForSlot = (slotIndex: number) => {
     const takenPlayerIds = new Set(
       slotDrafts
         .filter((_, index) => index !== slotIndex)
         .map((slot) => slot.playerId)
-        .filter(Boolean)
+        .filter(Boolean),
     );
     return players.filter((player) => !takenPlayerIds.has(player.id));
   };
 
   const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return '-';
+    if (!dateStr) return '—';
     return new Date(dateStr).toLocaleDateString();
   };
 
@@ -326,32 +282,34 @@ export default function LodgingAdminPage() {
   }, [slotDrafts, initialSlotDrafts]);
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, color: 'var(--text)' }}>
-          Lodging Management
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleAdd}
-          sx={{ bgcolor: 'var(--text)', color: 'var(--bg)' }}
-        >
-          Add Room
-        </Button>
-      </Box>
+    <div>
+      <AdminHead
+        crumb="Lodging"
+        title="Lodging"
+        sub="Rooms, roommates, and confirmations."
+        actions={
+          <button type="button" className="pc-d-actionbtn" data-primary="true" onClick={handleAdd}>
+            <AIcon name="plus" size={14} />
+            <span>Add Room</span>
+          </button>
+        }
+      />
 
-      {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
-      {success && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>{success}</Alert>}
+      {error && (
+        <Alert severity="error" className={styles.alert} onClose={() => setError('')}>
+          {error}
+        </Alert>
+      )}
+      {success && (
+        <Alert severity="success" className={styles.alert} onClose={() => setSuccess('')}>
+          {success}
+        </Alert>
+      )}
 
-      <FormControl sx={{ mb: 3, minWidth: 200 }}>
-        <InputLabel>Filter by Event</InputLabel>
-        <Select
-          value={selectedEventId}
-          label="Filter by Event"
-          onChange={(e) => setSelectedEventId(e.target.value)}
-        >
-          <MenuItem value="">All Events</MenuItem>
+      <FormControl size="small" className={styles.eventFilter}>
+        <InputLabel>Event</InputLabel>
+        <Select value={selectedEventId} label="Event" onChange={(e) => setSelectedEventId(e.target.value)}>
+          <MenuItem value="">All events</MenuItem>
           {events.map((event) => (
             <MenuItem key={event.id} value={event.id}>
               {event.name} ({event.year})
@@ -360,68 +318,71 @@ export default function LodgingAdminPage() {
         </Select>
       </FormControl>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow sx={{ bgcolor: 'var(--text)' }}>
-              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Building</TableCell>
-              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Room #</TableCell>
-              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Type</TableCell>
-              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Bedrooms</TableCell>
-              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>People</TableCell>
-              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Event</TableCell>
-              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Dates</TableCell>
-              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Notes</TableCell>
-              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }} align="right">Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={9} align="center">Loading...</TableCell>
-              </TableRow>
-            ) : filteredLodgings.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={9} align="center">No lodging found</TableCell>
-              </TableRow>
-            ) : (
-              filteredLodgings.map((lodging) => (
-                <TableRow key={lodging.id} hover>
-                  <TableCell sx={{ fontWeight: 600 }}>{lodging.building_name || '-'}</TableCell>
-                  <TableCell>{lodging.room_number || '-'}</TableCell>
-                  <TableCell>{lodging.room_type || '-'}</TableCell>
-                  <TableCell>{lodging.bedrooms ?? '-'}</TableCell>
-                  <TableCell>{lodging.num_of_people ?? '-'}</TableCell>
-                  <TableCell>{lodging.event?.name || '-'}</TableCell>
-                  <TableCell>
-                    {formatDate(lodging.check_in_date)} - {formatDate(lodging.check_out_date)}
-                  </TableCell>
-                  <TableCell>{lodging.notes || '-'}</TableCell>
-                  <TableCell align="right">
-                    <IconButton onClick={() => openAssignmentsDialog(lodging)} size="small" color="primary" title="Manage Guests">
-                      <PeopleIcon />
-                    </IconButton>
-                    <IconButton onClick={() => handleEdit(lodging)} size="small">
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton onClick={() => handleDelete(lodging)} size="small" color="error">
-                      <DeleteIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <div className="ad-card" style={{ overflow: 'hidden' }}>
+        <div className={`ad-row head ${styles.lodgingGrid}`}>
+          <span className="ad-th">Building / Room</span>
+          <span className="ad-th">Type</span>
+          <span className="ad-th" style={{ textAlign: 'right' }}>Beds</span>
+          <span className="ad-th" style={{ textAlign: 'right' }}>People</span>
+          <span className="ad-th">Event</span>
+          <span className="ad-th">Dates</span>
+          <span className="ad-th" />
+        </div>
+        {loading ? (
+          [0, 1, 2].map((i) => (
+            <div key={i} className={`ad-row ${styles.lodgingGrid}`}>
+              {[55, 35, 20, 20, 35, 45, 0].map((w, j) => (
+                <div key={j} className="ad-sk" style={{ width: w ? `${w}%` : 0, marginLeft: j === 2 || j === 3 ? 'auto' : 0, animationDelay: `${i * 0.12}s` }} />
+              ))}
+            </div>
+          ))
+        ) : filteredLodgings.length === 0 ? (
+          <div className={styles.emptyState}>No lodging found</div>
+        ) : (
+          filteredLodgings.map((lodging) => (
+            <div key={lodging.id} className={`ad-row hover ${styles.lodgingGrid}`}>
+              <span style={{ fontSize: 13, fontWeight: 600 }}>
+                {lodging.building_name || '—'}
+                {lodging.room_number ? ` · ${lodging.room_number}` : ''}
+              </span>
+              <span style={{ fontSize: 13, color: 'var(--pc-ink-2)' }}>{lodging.room_type || '—'}</span>
+              <span className="ad-num">{lodging.bedrooms ?? '—'}</span>
+              <span className="ad-num">{lodging.num_of_people ?? '—'}</span>
+              <span>
+                <span className="ad-badge">{lodging.event?.name || '—'}</span>
+              </span>
+              <span style={{ fontSize: 12, color: 'var(--pc-ink-3)', fontFamily: 'var(--pc-font-mono)' }}>
+                {formatDate(lodging.check_in_date)} – {formatDate(lodging.check_out_date)}
+              </span>
+              <span style={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+                <button type="button" className="ad-ib" onClick={() => openAssignmentsDialog(lodging)} aria-label="Manage guests">
+                  <AIcon name="participants" size={16} />
+                </button>
+                <button type="button" className="ad-ib" onClick={() => handleEdit(lodging)} aria-label="Edit room">
+                  <AIcon name="edit" size={16} />
+                </button>
+                <button type="button" className="ad-ib" onClick={() => handleDelete(lodging)} aria-label="Delete room">
+                  <AIcon name="trash" size={16} />
+                </button>
+              </span>
+            </div>
+          ))
+        )}
+      </div>
 
-      {/* Edit/Add Dialog */}
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {editingLodging?.id ? 'Edit Room' : 'Add Room'}
-        </DialogTitle>
+      {/* Add/Edit Room */}
+      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth PaperProps={{ className: 'ad-dlg' }}>
+        <div className="ad-dlg-h">
+          <div>
+            <div className="ad-crumb">Lodging</div>
+            <h2 className={styles.dialogTitle}>{editingLodging?.id ? 'Edit room' : 'Add room'}</h2>
+          </div>
+          <button type="button" className="ad-ib" onClick={() => setDialogOpen(false)} aria-label="Close">
+            <AIcon name="x" size={18} />
+          </button>
+        </div>
         <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+          <div className={styles.formFields}>
             <FormControl fullWidth required error={Boolean(validationErrors.event_id)}>
               <InputLabel>Event</InputLabel>
               <Select
@@ -461,10 +422,12 @@ export default function LodgingAdminPage() {
               label="Bedrooms"
               type="number"
               value={editingLodging?.bedrooms ?? ''}
-              onChange={(e) => setEditingLodging({
-                ...editingLodging,
-                bedrooms: e.target.value === '' ? null : Number(e.target.value),
-              })}
+              onChange={(e) =>
+                setEditingLodging({
+                  ...editingLodging,
+                  bedrooms: e.target.value === '' ? null : Number(e.target.value),
+                })
+              }
               fullWidth
               required
               error={Boolean(validationErrors.bedrooms)}
@@ -475,10 +438,12 @@ export default function LodgingAdminPage() {
               label="Number of People"
               type="number"
               value={editingLodging?.num_of_people ?? ''}
-              onChange={(e) => setEditingLodging({
-                ...editingLodging,
-                num_of_people: e.target.value === '' ? null : Number(e.target.value),
-              })}
+              onChange={(e) =>
+                setEditingLodging({
+                  ...editingLodging,
+                  num_of_people: e.target.value === '' ? null : Number(e.target.value),
+                })
+              }
               fullWidth
               required
               error={Boolean(validationErrors.num_of_people)}
@@ -509,148 +474,152 @@ export default function LodgingAdminPage() {
               multiline
               rows={2}
             />
-          </Box>
+          </div>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
-          <Button
-            onClick={handleSave}
-            variant="contained"
-            disabled={hasValidationErrors}
-            sx={{ bgcolor: 'var(--text)', color: 'var(--bg)' }}
-          >
-            Save
-          </Button>
-        </DialogActions>
+        <div className="ad-dlg-f">
+          <span style={{ flex: 1 }} />
+          <button type="button" className="pc-d-actionbtn" onClick={() => setDialogOpen(false)}>
+            Cancel
+          </button>
+          <button type="button" className="pc-d-actionbtn" data-primary="true" disabled={hasValidationErrors} onClick={handleSave}>
+            Save room
+          </button>
+        </div>
       </Dialog>
 
-      {/* Assignments Dialog */}
-      <Dialog open={assignmentsDialogOpen} onClose={() => setAssignmentsDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>
-          Room Assignments - {selectedLodging?.building_name} {selectedLodging?.room_number}
-        </DialogTitle>
+      {/* Assignments */}
+      <Dialog
+        open={assignmentsDialogOpen}
+        onClose={() => setAssignmentsDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{ className: 'ad-dlg' }}
+      >
+        <div className="ad-dlg-h">
+          <div>
+            <div className="ad-crumb">Lodging</div>
+            <h2 className={styles.dialogTitle}>
+              {selectedLodging?.building_name} {selectedLodging?.room_number}
+            </h2>
+            <p className="ad-sub">
+              Guests ({slotDrafts.filter((slot) => Boolean(slot.playerId)).length}/{selectedLodging?.num_of_people ?? 0})
+            </p>
+          </div>
+          <button type="button" className="ad-ib" onClick={() => setAssignmentsDialogOpen(false)} aria-label="Close">
+            <AIcon name="x" size={18} />
+          </button>
+        </div>
         <DialogContent>
-          <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-            Guests ({slotDrafts.filter((slot) => Boolean(slot.playerId)).length}/{selectedLodging?.num_of_people ?? 0})
-          </Typography>
-          
-          <TableContainer component={Paper} variant="outlined">
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Slot</TableCell>
-                  <TableCell>Player</TableCell>
-                  <TableCell>Confirmation #</TableCell>
-                  <TableCell>Primary</TableCell>
-                  <TableCell align="right">Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {slotDrafts.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} align="center">This room has zero slots. Increase People on the room first.</TableCell>
-                  </TableRow>
-                ) : (
-                  slotDrafts.map((slot, slotIndex) => (
-                    <TableRow key={slot.assignmentId ?? `slot-${slotIndex}`}>
-                      <TableCell>{slotIndex + 1}</TableCell>
-                      <TableCell>
-                        <FormControl size="small" fullWidth>
-                          <InputLabel>Player</InputLabel>
-                          <Select
-                            value={slot.playerId}
-                            label="Player"
-                            onChange={(e) =>
-                              setSlotDrafts((prev) =>
-                                prev.map((currentSlot, index) =>
-                                  index === slotIndex
-                                    ? { ...currentSlot, playerId: e.target.value }
-                                    : currentSlot
-                                )
-                              )
-                            }
-                          >
-                            <MenuItem value="">
-                              <em>Empty slot</em>
-                            </MenuItem>
-                            {getSelectablePlayersForSlot(slotIndex).map((player) => (
-                              <MenuItem key={player.id} value={player.id}>
-                                {player.first_name} {player.last_name}
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
-                      </TableCell>
-                      <TableCell>
-                        <TextField
-                          size="small"
-                          label="Confirmation #"
-                          value={slot.confirmationNum}
-                          placeholder="Optional"
-                          onChange={(e) =>
-                            setSlotDrafts((prev) =>
-                              prev.map((currentSlot, index) =>
-                                index === slotIndex
-                                  ? { ...currentSlot, confirmationNum: e.target.value }
-                                  : currentSlot
-                              )
-                            )
-                          }
-                        />
-                      </TableCell>
-                      <TableCell>
-                        {slot.playerId ? (
-                          <Chip
-                            label={slot.isPrimary ? 'Primary' : 'Guest'}
-                            size="small"
-                            color={slot.isPrimary ? 'primary' : 'default'}
-                            onClick={() => togglePrimary(slotIndex)}
-                            sx={{ cursor: 'pointer' }}
-                          />
-                        ) : (
-                          '-'
-                        )}
-                      </TableCell>
-                      <TableCell align="right">
-                        <IconButton 
-                          size="small" 
-                          color="error"
-                          onClick={() => clearSlotAssignment(slotIndex)}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+          {slotDrafts.length === 0 ? (
+            <p style={{ color: 'var(--pc-ink-3)', fontSize: 13 }}>This room has zero slots. Increase People on the room first.</p>
+          ) : (
+            <div className="ad-card" style={{ overflow: 'hidden' }}>
+              <div className={`ad-row head ${styles.slotGrid}`}>
+                <span className="ad-th">Slot</span>
+                <span className="ad-th">Player</span>
+                <span className="ad-th">Confirmation #</span>
+                <span className="ad-th">Primary</span>
+                <span className="ad-th" />
+              </div>
+              {slotDrafts.map((slot, slotIndex) => (
+                <div key={slot.assignmentId ?? `slot-${slotIndex}`} className={`ad-row ${styles.slotGrid}`}>
+                  <span className="ad-num" style={{ textAlign: 'left' }}>{slotIndex + 1}</span>
+                  <FormControl size="small" fullWidth>
+                    <InputLabel>Player</InputLabel>
+                    <Select
+                      value={slot.playerId}
+                      label="Player"
+                      onChange={(e) =>
+                        setSlotDrafts((prev) =>
+                          prev.map((currentSlot, index) => (index === slotIndex ? { ...currentSlot, playerId: e.target.value } : currentSlot)),
+                        )
+                      }
+                    >
+                      <MenuItem value="">
+                        <em>Empty slot</em>
+                      </MenuItem>
+                      {getSelectablePlayersForSlot(slotIndex).map((player) => (
+                        <MenuItem key={player.id} value={player.id}>
+                          {player.first_name} {player.last_name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  <TextField
+                    size="small"
+                    placeholder="Optional"
+                    value={slot.confirmationNum}
+                    onChange={(e) =>
+                      setSlotDrafts((prev) =>
+                        prev.map((currentSlot, index) => (index === slotIndex ? { ...currentSlot, confirmationNum: e.target.value } : currentSlot)),
+                      )
+                    }
+                  />
+                  <span>
+                    {slot.playerId ? (
+                      <button
+                        type="button"
+                        className="ad-chip"
+                        data-on={slot.isPrimary}
+                        onClick={() => togglePrimary(slotIndex)}
+                      >
+                        {slot.isPrimary ? 'Primary' : 'Guest'}
+                      </button>
+                    ) : (
+                      <span style={{ color: 'var(--pc-ink-3)' }}>—</span>
+                    )}
+                  </span>
+                  <span style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <button type="button" className="ad-ib" onClick={() => clearSlotAssignment(slotIndex)} aria-label="Clear slot">
+                      <AIcon name="trash" size={16} />
+                    </button>
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={saveAllAssignments}
-            variant="contained"
+        <div className="ad-dlg-f">
+          <span style={{ flex: 1 }} />
+          <button type="button" className="pc-d-actionbtn" onClick={() => setAssignmentsDialogOpen(false)}>
+            Close
+          </button>
+          <button
+            type="button"
+            className="pc-d-actionbtn"
+            data-primary="true"
             disabled={!hasUnsavedAssignmentChanges}
-            sx={{ bgcolor: 'var(--text)', color: 'var(--bg)' }}
+            onClick={saveAllAssignments}
           >
-            Save Changes
-          </Button>
-          <Button onClick={() => setAssignmentsDialogOpen(false)}>Close</Button>
-        </DialogActions>
+            Save changes
+          </button>
+        </div>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)}>
-        <DialogTitle>Confirm Delete</DialogTitle>
+      {/* Delete confirmation */}
+      <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)} PaperProps={{ className: 'ad-dlg' }}>
+        <div className="ad-dlg-h">
+          <h2 className={styles.dialogTitle}>Delete room?</h2>
+        </div>
         <DialogContent>
-          Are you sure you want to delete this room?
+          <p style={{ margin: 0, color: 'var(--pc-ink-2)' }}>Are you sure you want to delete this room?</p>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteConfirmOpen(false)}>Cancel</Button>
-          <Button onClick={confirmDelete} color="error" variant="contained">Delete</Button>
-        </DialogActions>
+        <div className="ad-dlg-f">
+          <span style={{ flex: 1 }} />
+          <button type="button" className="pc-d-actionbtn" onClick={() => setDeleteConfirmOpen(false)}>
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="pc-d-actionbtn"
+            data-primary="true"
+            style={{ background: 'var(--pc-team-a)', borderColor: 'var(--pc-team-a)' }}
+            onClick={confirmDelete}
+          >
+            Delete
+          </button>
+        </div>
       </Dialog>
-    </Box>
+    </div>
   );
 }
