@@ -579,7 +579,11 @@ a {
   padding: 3px;
 }
 
-.ad-seg > span {
+/* Segment items: a <span> for a purely visual/decorative tab (read-only displays), a real
+   <button> wherever the segment is clickable -- prefer button for anything interactive, for
+   keyboard/screen-reader support that a styled span can't provide. */
+.ad-seg > span,
+.ad-seg > button {
   padding: 7px 16px;
   border-radius: 6px;
   font: 600 12px var(--pc-font-sans);
@@ -588,9 +592,12 @@ a {
   display: flex;
   align-items: center;
   gap: 8px;
+  border: none;
+  background: none;
 }
 
-.ad-seg > span[data-on='true'] {
+.ad-seg > span[data-on='true'],
+.ad-seg > button[data-on='true'] {
   background: var(--pc-ink);
   color: var(--pc-bg);
 }
