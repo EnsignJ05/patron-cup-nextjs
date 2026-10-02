@@ -2489,7 +2489,7 @@ per 17a's note that this isn't ready-made). Extend `AGENTS.md`'s "Design system"
 spirit as R1 — a page migrated after this point should need only this doc plus one finished
 admin page as reference, not a re-read of the mockup.
 
-### Task RA2 `admin/dashboard`
+### Task RA2 (done 2026-10-01, commit `6b36a63`) `admin/dashboard`
 The hub page. Render `AD_GROUPS` as real tiles linking to the other 16 routes (replace any
 placeholder counts/labels with real ones — e.g. route counts per group, not the mockup's
 placeholder "sixteen tools" copy if that becomes stale).
