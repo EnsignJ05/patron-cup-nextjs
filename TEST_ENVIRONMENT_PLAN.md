@@ -2479,7 +2479,7 @@ small-to-large and simple-pattern-to-complex, same reasoning as the public-page 
 sequence (establish shared components and the simplest worked pattern first; save the
 highest-risk page — the one with real drag-and-drop business logic — for last).
 
-### Task RA1 Admin design-system foundation
+### Task RA1 (done 2026-10-01, commit `6431b3b`) Admin design-system foundation
 Add `--pc-chip-bg` and `--pc-shadow-strong` to `globals.css`. Port the `ad-*` utility CSS and
 the `AIcon`/`AGrip`/`AdminHead`/`AField`/`AName`/`AScrim` components (desktop) plus
 `MWrap`/`MHead`/`Sheet`/`MName` (mobile) from the decoded mockup into real shared files (e.g.
