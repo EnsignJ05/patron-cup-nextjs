@@ -2500,7 +2500,7 @@ generic `HiAdminAccountForm` pattern directly. `reset-password` uses the richer 
 variant (player search, generate-or-type password with a strength meter) — don't flatten it to
 the generic form, it's a deliberately different page in the mockup.
 
-### Task RA4 Simple CRUD tables — `courses`, `events`, `rerounds`, `players`
+### Task RA4 (done 2026-10-01, commits `67eaa5c`+`d3eadfb`+`218c657`+`6559a5f`) Simple CRUD tables — `courses`, `events`, `rerounds`, `players`
 `courses` is the mockup's literal worked example (table + add/edit dialog + explicit
 loading/empty states) — build it first as the reference, then apply the same shape to
 `events` and `rerounds` (no worked example, same pattern per 17a). `players` already has a CSS
