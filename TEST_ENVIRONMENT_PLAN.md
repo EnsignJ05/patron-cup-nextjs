@@ -2343,22 +2343,19 @@ Form-heavy page plus the smallest page (29 lines, uses `GalleryImage`). Migrate
 `gallery/GalleryImage.tsx` with the latter. `/gallery` also consumes the legacy
 `--gallery-bg` variable — replace with a `--pc-*` equivalent or retire the variable.
 
-### Task R11 (Agent) Legacy variable sunset — updated 2026-10-01: full sunset, not scoped
-16.4's final answer is a full sunset now that `/admin` is also migrating to `--pc-*` tokens —
-nothing permanently depends on the legacy set anymore, so there's no "admin-only" carve-out
-to preserve. This task runs **last**, after every page (public and admin) has migrated,
-since it's only safe once nothing references a given legacy variable anywhere:
-```bash
-for v in text text-muted surface border divider gallery-bg progress-track; do
-  echo "--$v: $(grep -rn "var(--$v)" src --include="*.css" --include="*.tsx" | wc -l)"
-done
-```
-Delete any variable that reaches zero references anywhere (not "outside admin" — everywhere).
-Expect this to fully empty out the legacy set by the time Task R12 runs, assuming every page
-has actually migrated by then; if a handful of variables still have a real admin-page
-reference at this point, that's a sign R2–R10 didn't finish migrating something, not a reason
-to keep a legacy variable around on purpose. **Acceptance:** zero legacy variables remain
-with any reference anywhere in `src/`; `globals.css` contains only `--pc-*` tokens.
+### Task R11 (done 2026-10-02, commit `5283bce`) Legacy variable sunset — full sunset, not scoped
+A sitewide grep (not just admin/public page CSS modules) found 3 consumers the page-by-page
+R-series tasks hadn't touched: `layout.module.css` (mobile AppBar + an admin-sidebar logout
+button that had used `--accent-red` since RA1 without anyone noticing), `Card.module.css`, and
+`AddToCalendar.module.css`. The largest piece was `globals.css`'s own global MUI-component
+reset (`.MuiPaper-root`, `.MuiOutlinedInput-*`, `.MuiChip-deleteIcon`, etc.) — genuinely
+load-bearing for every MUI component sitewide, not dead code, so each rule was mapped to its
+`--pc-*` equivalent (same mapping convention as commit `1161d3a`) rather than deleted. With
+every consumer migrated, deleted both legacy `:root` blocks outright (~40 variables, most
+already fully dead), folding their `color-scheme` declarations into the `--pc-*` theme blocks.
+**Acceptance met:** a full sitewide grep for every legacy variable name returns zero `var()`
+references anywhere in `src/`; `globals.css` now contains only `--pc-*` tokens plus the MUI
+reset (now itself `--pc-*`-based). Full suite verified clean (jest/tsc/build/lint/Storybook).
 
 ### Task R12 (Agent) Final verification
 Walk every public route in both themes at 375px and at desktop width:
@@ -2375,9 +2372,9 @@ Walk every public route in both themes at 375px and at desktop width:
 Do this on `test.patron-cup.com` once Part I is live, so it runs against seeded data in a
 production-like build rather than `next dev`.
 
-**R11 cannot run until the admin tasks below are done** (its whole point is "zero references
-anywhere, admin included"), and R12's walk should be extended to include every admin route
-once those exist. Treat Phase R-Admin below as sitting between R10 and R11, not after R12.
+R11 is now done (2026-10-02, see above). R12's walk should be extended to include every admin
+route, not just the public ones listed above — only R12 (and the still-outstanding real-browser
+half of RA7) remains before Part III closes out entirely.
 
 ---
 
