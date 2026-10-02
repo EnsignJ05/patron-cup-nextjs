@@ -1,0 +1,65 @@
+.alert {
+  margin-bottom: 16px;
+}
+
+.eventFilter {
+  min-width: 180px;
+}
+
+.teamGrid {
+  grid-template-columns: 1.3fr 1.3fr 1fr 96px;
+}
+
+.colorDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.emptyState {
+  padding: 36px 24px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--pc-ink-3);
+}
+
+.dialogTitle {
+  font-family: var(--pc-font-serif);
+  font-weight: 500;
+  font-size: 24px;
+  margin: 4px 0 0;
+  color: var(--pc-ink);
+}
+
+.formFields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 4px;
+}
+
+.addRow {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  align-items: flex-start;
+}
+
+.rosterGrid {
+  grid-template-columns: 1.3fr 90px 140px 56px;
+}
+
+@media (max-width: 700px) {
+  .addRow {
+    flex-direction: column;
+  }
+
+  .rosterGrid {
+    grid-template-columns: 1.1fr 110px 44px;
+  }
+
+  .rosterGrid > *:nth-child(2) {
+    display: none;
+  }
+}

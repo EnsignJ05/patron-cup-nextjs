@@ -1,33 +1,19 @@
 'use client';
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import Paper from '@mui/material/Paper';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
-import IconButton from '@mui/material/IconButton';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import AddIcon from '@mui/icons-material/Add';
-import GroupIcon from '@mui/icons-material/Group';
 import Alert from '@mui/material/Alert';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
-import Chip from '@mui/material/Chip';
 import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
 import type { Team, Event, Player, TeamRoster } from '@/types/database';
+import AdminHead from '@/components/admin/AdminHead';
+import AdminName from '@/components/admin/AdminName';
+import { AIcon } from '@/components/admin/AdminIcons';
+import styles from './page.module.css';
 
 export default function TeamsAdminPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
@@ -42,23 +28,23 @@ export default function TeamsAdminPage() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [teamToDelete, setTeamToDelete] = useState<Team | null>(null);
   const [selectedEventId, setSelectedEventId] = useState<string>('');
-  
+
   // Roster management
   const [rosterDialogOpen, setRosterDialogOpen] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [roster, setRoster] = useState<(TeamRoster & { player: Player })[]>([]);
+  const [captainPlayerIds, setCaptainPlayerIds] = useState<Set<string>>(new Set());
   const [selectedPlayerId, setSelectedPlayerId] = useState('');
   const [handicapAtEvent, setHandicapAtEvent] = useState('');
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    
+
     const [teamsRes, eventsRes, playersRes] = await Promise.all([
-      supabase
-        .from('teams')
-        .select('*, event:events(*)')
-        .order('created_at', { ascending: false }),
+      supabase.from('teams').select('*, event:events(*)').order('created_at', { ascending: false }),
       supabase.from('events').select('*').order('year', { ascending: false }),
+      // NOTE: is_active, not status -- same known split-brain bug as admin/travel and
+      // admin/lodging (Part IV Task H3), unchanged here.
       supabase.from('players').select('*').eq('is_active', true).order('last_name'),
     ]);
 
@@ -67,7 +53,7 @@ export default function TeamsAdminPage() {
 
     if (eventsRes.data) setEvents(eventsRes.data);
     if (playersRes.data) setPlayers(playersRes.data);
-    
+
     setLoading(false);
   }, [supabase]);
 
@@ -92,11 +78,8 @@ export default function TeamsAdminPage() {
 
   const confirmDelete = async () => {
     if (!teamToDelete) return;
-    
-    const { error } = await supabase
-      .from('teams')
-      .delete()
-      .eq('id', teamToDelete.id);
+
+    const { error } = await supabase.from('teams').delete().eq('id', teamToDelete.id);
 
     if (error) {
       setError(error.message);
@@ -120,10 +103,7 @@ export default function TeamsAdminPage() {
     };
 
     if (editingTeam.id) {
-      const { error } = await supabase
-        .from('teams')
-        .update(teamData)
-        .eq('id', editingTeam.id);
+      const { error } = await supabase.from('teams').update(teamData).eq('id', editingTeam.id);
 
       if (error) {
         setError(error.message);
@@ -131,9 +111,7 @@ export default function TeamsAdminPage() {
       }
       setSuccess('Team updated successfully');
     } else {
-      const { error } = await supabase
-        .from('teams')
-        .insert([teamData]);
+      const { error } = await supabase.from('teams').insert([teamData]);
 
       if (error) {
         setError(error.message);
@@ -151,29 +129,30 @@ export default function TeamsAdminPage() {
   const openRosterDialog = async (team: Team) => {
     setSelectedTeam(team);
     setRosterDialogOpen(true);
-    
-    const { data, error } = await supabase
-      .from('team_rosters')
-      .select('*, player:players(*)')
-      .eq('team_id', team.id);
 
-    if (error) {
-      setError(error.message);
+    const [rosterRes, captainsRes] = await Promise.all([
+      supabase.from('team_rosters').select('*, player:players(*)').eq('team_id', team.id),
+      supabase.from('team_captains').select('player_id').eq('team_id', team.id),
+    ]);
+
+    if (rosterRes.error) {
+      setError(rosterRes.error.message);
     } else {
-      setRoster(data || []);
+      setRoster(rosterRes.data || []);
     }
+    setCaptainPlayerIds(new Set((captainsRes.data || []).map((c: { player_id: string }) => c.player_id)));
   };
 
   const addToRoster = async () => {
     if (!selectedTeam || !selectedPlayerId) return;
 
-    const { error } = await supabase
-      .from('team_rosters')
-      .insert([{
+    const { error } = await supabase.from('team_rosters').insert([
+      {
         team_id: selectedTeam.id,
         player_id: selectedPlayerId,
         handicap_at_event: handicapAtEvent ? parseFloat(handicapAtEvent) : null,
-      }]);
+      },
+    ]);
 
     if (error) {
       setError(error.message);
@@ -185,121 +164,148 @@ export default function TeamsAdminPage() {
     }
   };
 
-  const removeFromRoster = async (rosterId: string) => {
-    const { error } = await supabase
-      .from('team_rosters')
-      .delete()
-      .eq('id', rosterId);
+  const removeFromRoster = async (rosterEntry: TeamRoster & { player: Player }) => {
+    const { error } = await supabase.from('team_rosters').delete().eq('id', rosterEntry.id);
 
     if (error) {
       setError(error.message);
-    } else {
-      setSuccess('Player removed from roster');
-      if (selectedTeam) openRosterDialog(selectedTeam);
+      return;
     }
+
+    // Also drop any captain designation -- a player off the roster can't stay captain.
+    if (selectedTeam && captainPlayerIds.has(rosterEntry.player_id)) {
+      await supabase.from('team_captains').delete().eq('team_id', selectedTeam.id).eq('player_id', rosterEntry.player_id);
+    }
+
+    setSuccess('Player removed from roster');
+    if (selectedTeam) openRosterDialog(selectedTeam);
   };
 
-  const filteredTeams = selectedEventId 
-    ? teams.filter(t => t.event_id === selectedEventId)
-    : teams;
+  const toggleCaptain = async (playerId: string) => {
+    if (!selectedTeam) return;
+    setError('');
 
-  const availablePlayers = players.filter(
-    p => !roster.some(r => r.player_id === p.id)
-  );
+    if (captainPlayerIds.has(playerId)) {
+      const { error } = await supabase.from('team_captains').delete().eq('team_id', selectedTeam.id).eq('player_id', playerId);
+      if (error) {
+        setError(error.message);
+        return;
+      }
+    } else {
+      const { error } = await supabase.from('team_captains').insert({ team_id: selectedTeam.id, player_id: playerId, is_primary: false });
+      if (error) {
+        setError(error.message);
+        return;
+      }
+    }
+
+    setCaptainPlayerIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(playerId)) next.delete(playerId);
+      else next.add(playerId);
+      return next;
+    });
+  };
+
+  const filteredTeams = selectedEventId ? teams.filter((t) => t.event_id === selectedEventId) : teams;
+
+  const availablePlayers = players.filter((p) => !roster.some((r) => r.player_id === p.id));
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, color: 'var(--text)' }}>
-          Teams Management
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleAdd}
-          sx={{ bgcolor: 'var(--text)', color: 'var(--bg)' }}
-        >
-          Add Team
-        </Button>
-      </Box>
+    <div>
+      <AdminHead
+        crumb="Teams"
+        title="Teams"
+        sub="Rosters and captains."
+        actions={
+          <>
+            <FormControl size="small" className={styles.eventFilter}>
+              <InputLabel>Event</InputLabel>
+              <Select value={selectedEventId} label="Event" onChange={(e) => setSelectedEventId(e.target.value)}>
+                <MenuItem value="">All events</MenuItem>
+                {events.map((event) => (
+                  <MenuItem key={event.id} value={event.id}>
+                    {event.name} ({event.year})
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <button type="button" className="pc-d-actionbtn" data-primary="true" onClick={handleAdd}>
+              <AIcon name="plus" size={14} />
+              <span>Add Team</span>
+            </button>
+          </>
+        }
+      />
 
-      {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
-      {success && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>{success}</Alert>}
+      {error && (
+        <Alert severity="error" className={styles.alert} onClose={() => setError('')}>
+          {error}
+        </Alert>
+      )}
+      {success && (
+        <Alert severity="success" className={styles.alert} onClose={() => setSuccess('')}>
+          {success}
+        </Alert>
+      )}
 
-      <FormControl sx={{ mb: 3, minWidth: 200 }}>
-        <InputLabel>Filter by Event</InputLabel>
-        <Select
-          value={selectedEventId}
-          label="Filter by Event"
-          onChange={(e) => setSelectedEventId(e.target.value)}
-        >
-          <MenuItem value="">All Events</MenuItem>
-          {events.map((event) => (
-            <MenuItem key={event.id} value={event.id}>
-              {event.name} ({event.year})
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+      <div className="ad-card" style={{ overflow: 'hidden' }}>
+        <div className={`ad-row head ${styles.teamGrid}`}>
+          <span className="ad-th">Team</span>
+          <span className="ad-th">Event</span>
+          <span className="ad-th">Color</span>
+          <span className="ad-th" />
+        </div>
+        {loading ? (
+          [0, 1, 2].map((i) => (
+            <div key={i} className={`ad-row ${styles.teamGrid}`}>
+              {[45, 40, 30, 0].map((w, j) => (
+                <div key={j} className="ad-sk" style={{ width: w ? `${w}%` : 0, animationDelay: `${i * 0.12}s` }} />
+              ))}
+            </div>
+          ))
+        ) : filteredTeams.length === 0 ? (
+          <div className={styles.emptyState}>No teams found</div>
+        ) : (
+          filteredTeams.map((team) => (
+            <div key={team.id} className={`ad-row hover ${styles.teamGrid}`}>
+              <span style={{ fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+                {team.color && <span className={styles.colorDot} style={{ background: team.color }} />}
+                {team.name}
+              </span>
+              <span style={{ fontSize: 13, color: 'var(--pc-ink-2)' }}>
+                {team.event?.name} ({team.event?.year})
+              </span>
+              <span style={{ fontSize: 13, color: 'var(--pc-ink-3)' }}>{team.color || '—'}</span>
+              <span style={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+                <button type="button" className="ad-ib" onClick={() => openRosterDialog(team)} aria-label={`Manage roster for ${team.name}`}>
+                  <AIcon name="teams" size={16} />
+                </button>
+                <button type="button" className="ad-ib" onClick={() => handleEdit(team)} aria-label={`Edit ${team.name}`}>
+                  <AIcon name="edit" size={16} />
+                </button>
+                <button type="button" className="ad-ib" onClick={() => handleDelete(team)} aria-label={`Delete ${team.name}`}>
+                  <AIcon name="trash" size={16} />
+                </button>
+              </span>
+            </div>
+          ))
+        )}
+      </div>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow sx={{ bgcolor: 'var(--text)' }}>
-              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Team Name</TableCell>
-              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Event</TableCell>
-              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Color</TableCell>
-              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }} align="right">Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={4} align="center">Loading...</TableCell>
-              </TableRow>
-            ) : filteredTeams.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={4} align="center">No teams found</TableCell>
-              </TableRow>
-            ) : (
-              filteredTeams.map((team) => (
-                <TableRow key={team.id} hover>
-                  <TableCell sx={{ fontWeight: 600 }}>{team.name}</TableCell>
-                  <TableCell>{team.event?.name} ({team.event?.year})</TableCell>
-                  <TableCell>
-                    {team.color ? (
-                      <Chip 
-                        label={team.color} 
-                        size="small" 
-                        sx={{ bgcolor: team.color.toLowerCase(), color: 'white' }}
-                      />
-                    ) : '-'}
-                  </TableCell>
-                  <TableCell align="right">
-                    <IconButton onClick={() => openRosterDialog(team)} size="small" color="primary" title="Manage Roster">
-                      <GroupIcon />
-                    </IconButton>
-                    <IconButton onClick={() => handleEdit(team)} size="small">
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton onClick={() => handleDelete(team)} size="small" color="error">
-                      <DeleteIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
-      {/* Edit/Add Team Dialog */}
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {editingTeam?.id ? 'Edit Team' : 'Add Team'}
-        </DialogTitle>
+      {/* Add/Edit team */}
+      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth PaperProps={{ className: 'ad-dlg' }}>
+        <div className="ad-dlg-h">
+          <div>
+            <div className="ad-crumb">Teams</div>
+            <h2 className={styles.dialogTitle}>{editingTeam?.id ? 'Edit team' : 'Add team'}</h2>
+          </div>
+          <button type="button" className="ad-ib" onClick={() => setDialogOpen(false)} aria-label="Close">
+            <AIcon name="x" size={18} />
+          </button>
+        </div>
         <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+          <div className={styles.formFields}>
             <FormControl fullWidth required>
               <InputLabel>Event</InputLabel>
               <Select
@@ -327,7 +333,7 @@ export default function TeamsAdminPage() {
               value={editingTeam?.color || ''}
               onChange={(e) => setEditingTeam({ ...editingTeam, color: e.target.value })}
               fullWidth
-              placeholder="e.g., Blue, Red, Green"
+              placeholder="e.g., Blue, Red, #c1272d"
             />
             <TextField
               label="Logo URL"
@@ -335,34 +341,36 @@ export default function TeamsAdminPage() {
               onChange={(e) => setEditingTeam({ ...editingTeam, logo_url: e.target.value })}
               fullWidth
             />
-          </Box>
+          </div>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleSave} variant="contained" sx={{ bgcolor: 'var(--text)', color: 'var(--bg)' }}>
-            Save
-          </Button>
-        </DialogActions>
+        <div className="ad-dlg-f">
+          <span style={{ flex: 1 }} />
+          <button type="button" className="pc-d-actionbtn" onClick={() => setDialogOpen(false)}>
+            Cancel
+          </button>
+          <button type="button" className="pc-d-actionbtn" data-primary="true" onClick={handleSave}>
+            Save team
+          </button>
+        </div>
       </Dialog>
 
-      {/* Roster Management Dialog */}
-      <Dialog open={rosterDialogOpen} onClose={() => setRosterDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>
-          Roster - {selectedTeam?.name}
-        </DialogTitle>
+      {/* Roster management */}
+      <Dialog open={rosterDialogOpen} onClose={() => setRosterDialogOpen(false)} maxWidth="md" fullWidth PaperProps={{ className: 'ad-dlg' }}>
+        <div className="ad-dlg-h">
+          <div>
+            <div className="ad-crumb">Teams</div>
+            <h2 className={styles.dialogTitle}>Roster — {selectedTeam?.name}</h2>
+            <p className="ad-sub">Tap a player&apos;s badge to toggle captain.</p>
+          </div>
+          <button type="button" className="ad-ib" onClick={() => setRosterDialogOpen(false)} aria-label="Close">
+            <AIcon name="x" size={18} />
+          </button>
+        </div>
         <DialogContent>
-          <Typography variant="subtitle2" sx={{ mb: 2, color: 'var(--text-muted)' }}>
-            Add players to this team&apos;s roster
-          </Typography>
-          
-          <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-            <FormControl sx={{ flex: 2 }}>
+          <div className={styles.addRow}>
+            <FormControl size="small" style={{ flex: 2 }}>
               <InputLabel>Select Player</InputLabel>
-              <Select
-                value={selectedPlayerId}
-                label="Select Player"
-                onChange={(e) => setSelectedPlayerId(e.target.value)}
-              >
+              <Select value={selectedPlayerId} label="Select Player" onChange={(e) => setSelectedPlayerId(e.target.value)}>
                 {availablePlayers.map((player) => (
                   <MenuItem key={player.id} value={player.id}>
                     {player.first_name} {player.last_name} (HCP: {player.current_handicap ?? 'N/A'})
@@ -371,78 +379,91 @@ export default function TeamsAdminPage() {
               </Select>
             </FormControl>
             <TextField
+              size="small"
               label="Handicap at Event"
               type="number"
               inputProps={{ step: 0.1 }}
               value={handicapAtEvent}
               onChange={(e) => setHandicapAtEvent(e.target.value)}
-              sx={{ flex: 1 }}
+              style={{ flex: 1 }}
             />
-            <Button
-              variant="contained"
-              onClick={addToRoster}
-              disabled={!selectedPlayerId}
-              sx={{ bgcolor: 'var(--text)', color: 'var(--bg)' }}
-            >
+            <button type="button" className="pc-d-actionbtn" data-primary="true" disabled={!selectedPlayerId} onClick={addToRoster}>
               Add
-            </Button>
-          </Box>
+            </button>
+          </div>
 
-          <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-            Current Roster ({roster.length} players)
-          </Typography>
-          
-          <TableContainer component={Paper} variant="outlined">
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Player</TableCell>
-                  <TableCell>Handicap at Event</TableCell>
-                  <TableCell align="right">Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {roster.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={3} align="center">No players on roster</TableCell>
-                  </TableRow>
-                ) : (
-                  roster.map((r) => (
-                    <TableRow key={r.id}>
-                      <TableCell>{r.player?.first_name} {r.player?.last_name}</TableCell>
-                      <TableCell>{r.handicap_at_event ?? r.player?.current_handicap ?? '-'}</TableCell>
-                      <TableCell align="right">
-                        <IconButton 
-                          size="small" 
-                          color="error"
-                          onClick={() => removeFromRoster(r.id)}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+          <p className="ad-th" style={{ marginBottom: 8 }}>
+            Current roster ({roster.length})
+          </p>
+
+          {roster.length === 0 ? (
+            <p style={{ color: 'var(--pc-ink-3)', fontSize: 13 }}>No players on roster.</p>
+          ) : (
+            <div className="ad-card" style={{ overflow: 'hidden' }}>
+              <div className={`ad-row head ${styles.rosterGrid}`}>
+                <span className="ad-th">Player</span>
+                <span className="ad-th" style={{ textAlign: 'right' }}>Handicap</span>
+                <span className="ad-th">Captain</span>
+                <span className="ad-th" />
+              </div>
+              {roster.map((r) => (
+                <div key={r.id} className={`ad-row ${styles.rosterGrid}`}>
+                  <AdminName firstName={r.player?.first_name} lastName={r.player?.last_name} profileImageUrl={r.player?.profile_image_url} />
+                  <span className="ad-num">{r.handicap_at_event ?? r.player?.current_handicap ?? '—'}</span>
+                  <span>
+                    <button
+                      type="button"
+                      className="ad-chip"
+                      data-on={captainPlayerIds.has(r.player_id)}
+                      onClick={() => toggleCaptain(r.player_id)}
+                    >
+                      {captainPlayerIds.has(r.player_id) ? '★ Captain' : 'Make captain'}
+                    </button>
+                  </span>
+                  <span style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <button type="button" className="ad-ib" onClick={() => removeFromRoster(r)} aria-label="Remove from roster">
+                      <AIcon name="trash" size={16} />
+                    </button>
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setRosterDialogOpen(false)}>Close</Button>
-        </DialogActions>
+        <div className="ad-dlg-f">
+          <span style={{ flex: 1 }} />
+          <button type="button" className="pc-d-actionbtn" onClick={() => setRosterDialogOpen(false)}>
+            Close
+          </button>
+        </div>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)}>
-        <DialogTitle>Confirm Delete</DialogTitle>
+      {/* Delete confirmation */}
+      <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)} PaperProps={{ className: 'ad-dlg' }}>
+        <div className="ad-dlg-h">
+          <h2 className={styles.dialogTitle}>Delete team?</h2>
+        </div>
         <DialogContent>
-          Are you sure you want to delete {teamToDelete?.name}? This will also remove all roster assignments.
+          <p style={{ margin: 0, color: 'var(--pc-ink-2)' }}>
+            Are you sure you want to delete {teamToDelete?.name}? This will also remove all roster assignments.
+          </p>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteConfirmOpen(false)}>Cancel</Button>
-          <Button onClick={confirmDelete} color="error" variant="contained">Delete</Button>
-        </DialogActions>
+        <div className="ad-dlg-f">
+          <span style={{ flex: 1 }} />
+          <button type="button" className="pc-d-actionbtn" onClick={() => setDeleteConfirmOpen(false)}>
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="pc-d-actionbtn"
+            data-primary="true"
+            style={{ background: 'var(--pc-team-a)', borderColor: 'var(--pc-team-a)' }}
+            onClick={confirmDelete}
+          >
+            Delete
+          </button>
+        </div>
       </Dialog>
-    </Box>
+    </div>
   );
 }
