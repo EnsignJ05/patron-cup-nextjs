@@ -2375,6 +2375,161 @@ Walk every public route in both themes at 375px and at desktop width:
 Do this on `test.patron-cup.com` once Part I is live, so it runs against seeded data in a
 production-like build rather than `next dev`.
 
+**R11 cannot run until the admin tasks below are done** (its whole point is "zero references
+anywhere, admin included"), and R12's walk should be extended to include every admin route
+once those exist. Treat Phase R-Admin below as sitting between R10 and R11, not after R12.
+
+---
+
+## 17a. Admin redesign — findings from the Hi-Fi v3 design artifact (2026-10-01)
+
+Both of 16.6's prerequisites are now satisfied: the admin audit (15.11) and a Claude-Design
+canvas artifact ("Hi-Fi v3") that includes real admin design direction, not a port of the
+public-page spec. The artifact is a bundler-wrapped React canvas — reading it directly only
+surfaces loader boilerplate; the actual component source has to be decoded from its manifest
+(gzip+base64 per-asset blobs). Already done once this session; see
+[[patron-cup-hifi-redesign]] for the decoded file UUIDs if it needs re-reading.
+
+**The 17 real admin routes**, grouped exactly as the mockup's own `AD_GROUPS` nav taxonomy
+groups them (this taxonomy is itself new content the admin dashboard page should render, not
+just a planning convenience):
+
+| Group | Routes |
+|---|---|
+| Competition | `events`, `courses`, `matches`, `matches/setup`, `scores`, `handicaps`, `rerounds`, `award-nominations` |
+| People | `players`, `teams`, `participants` |
+| Trip | `travel`, `lodging` |
+| Accounts | `invite`, `reset-password`, `change-username` |
+
+(`dashboard` itself is the 17th route — the hub page that renders these 16 as tiles, matching
+the mockup's own "Four areas, sixteen tools" copy exactly.)
+
+**Current-state cross-check against 15.11, confirmed by direct inspection 2026-10-01:**
+`courses`, `handicaps`, `lodging`, `matches`, `participants`, `rerounds`, `scores`, `teams`,
+`travel`, `award-nominations` have **zero** CSS modules (pure inline `sx`) — 10 routes,
+matching 15.11 exactly. The other 7 (`change-username`, `dashboard`, `events`, `invite`,
+`matches/setup`, `players`, `reset-password`) already have one. Page sizes range from 88 lines
+(`change-username`) to 656 (`lodging`, the largest admin page by far) — `matches/setup` (526
+lines) carries real `@dnd-kit` logic per 15.11, untouched by any of this.
+
+**The mockup supplies a complete, reusable admin design system, not just visual references for
+a handful of pages** — decoded in full, not just skimmed:
+- **New CSS utility classes** (desktop): `.ad-card`, `.ad-row` (+ `.head`/`.hover`/`.sel`
+  variants), `.ad-th`, `.ad-num`, `.ad-badge`, `.ad-ib` (icon button), `.ad-dlg`/`.ad-dlg-h`/
+  `.ad-dlg-f` (modal dialog), `.ad-seg` (segmented control), `.ad-sk` (loading skeleton),
+  `.ad-gcard` (dashboard tile), `.ad-pcard` (draggable player card), `.ad-slot` (drag target),
+  `.ad-crumb`, `.ad-sub`, `.ad-in` (text input), `.ad-lab` (field label), `.ad-scrim`.
+- **Mobile equivalents**: `.ad-sheet`/`.ad-grab` (bottom sheet replacing the dialog), `.ad-btn`,
+  `.ad-chip`, `.ad-m-sticky` (sticky action bar).
+- **Reusable components** (desktop): `AIcon` (~25 named icon paths incl. one per nav item),
+  `AGrip` (drag handle), `AdminHead` (breadcrumb + title + actions), `AField` (labeled input
+  wrapper), `AName` (avatar + team chip + name), `AScrim`, `PCDesktop`/`PCDesktopSidebar`
+  (sidebar+topbar shell), `PCDeskBtn`, `PCDeskH`.
+- **Mobile equivalents**: `MWrap` (top bar + tab bar shell), `MHead`, `Sheet` (bottom-sheet
+  equivalent of a dialog), `MName`.
+- **Two new design tokens needed**, referenced by the above but not yet in `globals.css`:
+  `--pc-chip-bg` (badge background) and `--pc-shadow-strong` (dialog/sheet shadow, heavier than
+  `--pc-shadow`). Add both before building anything that uses `.ad-badge` or `.ad-dlg`/`.ad-sheet`.
+- **Worked full-page examples**, each establishing the canonical pattern for a category of
+  admin page rather than being usable verbatim:
+  - `HiAdminDashboard`/`MAdminDashboard` — the nav-tile hub (uses `AD_GROUPS` directly).
+  - `HiAdminCourses`/`MAdminCourses`(+`MAdminCourseStates`) — simple CRUD table + edit dialog,
+    plus explicit loading-skeleton and empty states.
+  - `HiAdminHandicaps`/`MAdminHandicaps` — sortable, searchable, team-filterable table with a
+    computed column (index change vs. previous). Confirms 15.11's finding that hand-rolled
+    sorting (no DataGrid) is the established, working precedent here.
+  - `HiAdminMatchSetup`/`MAdminMatchSetup` — the drag-and-drop groups board. **Re-skin only**:
+    `AGrip`/`.ad-pcard`/`.ad-slot` are visual, the actual `@dnd-kit` wiring in the current
+    `TeeTimeBoard.tsx` is untouched.
+  - `HiAdminAccountForm`/`MAdminInvite` — single-purpose action form (icon + heading + fields +
+    one primary button). Generic enough for `invite` and `username` as-is; `MAdminReset` is a
+    **richer variant** of the same pattern (player search, generate-or-type password, strength
+    meter) — use that one specifically for `reset-password`, not the generic form.
+  - `HiAdminRelational`/`MAdminTravel` — table + detail dialog/sheet, with a `Travel`/`Lodging`
+    segmented toggle **combining both into one UI** in the mockup. The real app has these as
+    two separate routes today. **Open design question, not resolved here:** keep them as two
+    routes sharing the same visual pattern (lower risk, no routing change), or actually merge
+    them behind the toggle as drawn. Decide this at the start of the task that touches either,
+    don't default silently to the riskier merge.
+  - `MAdminAwards` — nomination review/tally list (sorted by vote count, quoted reasons). This
+    is the **admin-side** nominee review, distinct from the player-facing nomination form at
+    `/dashboard/award-nominations` already redesigned in R10 — don't confuse the two when
+    reading "award-nominations" in a route list.
+- **Not covered by a worked example — closest analog only, exact layout is an implementation
+  decision**: `events` and `rerounds` → follow the Courses CRUD pattern; `matches` (the main
+  list, not `/setup`) and `participants` → follow the Travel/Lodging table+detail pattern;
+  `scores` → closest to Handicaps' sortable table, since "review and confirm" implies
+  per-row actions more than per-row editing; `teams` → roster/captain assignment has no
+  worked example at all (neither the drag-board nor a plain table clearly fits) — expect to
+  make a real design call here, not just reskin.
+- **The admin desktop shell is a synthesis, not a ready-made component**: `PCDesktop`'s own
+  `DESK_TABS` array is the *public*-site nav (Home/FAQ/Matches/Roster/Dashboard) — the mockup
+  never actually swaps in `AD_GROUPS` as the sidebar's nav model for admin routes, it just
+  renders each admin page with `active="dash"` as a placeholder. Building a real admin
+  sidebar nav means combining `PCDesktopSidebar`'s visual mechanics with `AD_GROUPS`' grouped
+  content yourself — a reasonable, small synthesis, but call it out as a decision made during
+  implementation, not something copied verbatim from the artifact.
+
+---
+
+## 17b. Phase R-Admin — Admin redesign completion tasks
+
+Same bar as Phase R: mobile-first, both themes, `npm test` green before any PR. Batched
+small-to-large and simple-pattern-to-complex, same reasoning as the public-page R2→R10
+sequence (establish shared components and the simplest worked pattern first; save the
+highest-risk page — the one with real drag-and-drop business logic — for last).
+
+### Task RA1 Admin design-system foundation
+Add `--pc-chip-bg` and `--pc-shadow-strong` to `globals.css`. Port the `ad-*` utility CSS and
+the `AIcon`/`AGrip`/`AdminHead`/`AField`/`AName`/`AScrim` components (desktop) plus
+`MWrap`/`MHead`/`Sheet`/`MName` (mobile) from the decoded mockup into real shared files (e.g.
+`src/components/admin/`). Build the real admin desktop shell (sidebar nav from `AD_GROUPS`,
+per 17a's note that this isn't ready-made). Extend `AGENTS.md`'s "Design system" section
+(written in R1) with an admin subsection covering these new classes/tokens/components, same
+spirit as R1 — a page migrated after this point should need only this doc plus one finished
+admin page as reference, not a re-read of the mockup.
+
+### Task RA2 `admin/dashboard`
+The hub page. Render `AD_GROUPS` as real tiles linking to the other 16 routes (replace any
+placeholder counts/labels with real ones — e.g. route counts per group, not the mockup's
+placeholder "sixteen tools" copy if that becomes stale).
+
+### Task RA3 Account-action forms — `invite`, `reset-password`, `change-username`
+Three small, already-CSS-moduled pages (88-138 lines). `invite` and `change-username` fit the
+generic `HiAdminAccountForm` pattern directly. `reset-password` uses the richer `MAdminReset`
+variant (player search, generate-or-type password with a strength meter) — don't flatten it to
+the generic form, it's a deliberately different page in the mockup.
+
+### Task RA4 Simple CRUD tables — `courses`, `events`, `rerounds`, `players`
+`courses` is the mockup's literal worked example (table + add/edit dialog + explicit
+loading/empty states) — build it first as the reference, then apply the same shape to
+`events` and `rerounds` (no worked example, same pattern per 17a). `players` already has a CSS
+module; reconcile its existing styling into tokens rather than a ground-up rebuild.
+
+### Task RA5 Relational and review pages — `travel`+`lodging`, `participants`, `teams`, `award-nominations` (admin side)
+Resolve the Travel/Lodging separate-vs-combined question (17a) before writing either page.
+`participants` follows the same table+detail pattern. `teams` has no worked example — expect a
+real design decision (roster/captain assignment), not a reskin. `award-nominations` here is
+the **admin tally/review view** (`MAdminAwards` pattern: sorted by vote count, quoted reasons)
+— not the player-facing form R10 already redesigned.
+
+### Task RA6 Complex and high-risk pages — `handicaps`, `scores`, `matches`, `matches/setup`
+`handicaps` is a worked example (sortable/searchable/filterable table with a computed column) —
+build it using the existing hand-rolled-sort code already there (15.11 confirmed this works,
+don't introduce DataGrid). `scores` has no worked example; closest analog is Handicaps' table
+shape but with per-row review actions instead of inline editing. `matches` (the main list) has
+no worked example either; follow the table+detail pattern. **`matches/setup` last and most
+carefully**: re-skin `TeeTimeBoard.tsx`'s visuals only (`AGrip`/`.ad-pcard`/`.ad-slot` styling),
+never touch the `@dnd-kit` drag logic itself — this is the one admin page where a mistake
+breaks real functionality, not just looks.
+
+### Task RA7 Admin final verification, then close out R11/R12
+Walk all 17 real admin routes in both themes, mobile and desktop. Confirm the two
+account-action-form variants both still work end-to-end (invite sends an email, reset actually
+changes a password, username actually renames). Only after this: run R11 (legacy variable
+sunset — now actually safe to check "zero references anywhere, admin included") and re-run
+R12's walk extended to cover every admin route, not just public ones.
+
 ---
 
 ## 18. Risks specific to Part III
