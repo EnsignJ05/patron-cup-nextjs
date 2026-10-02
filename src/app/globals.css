@@ -40,7 +40,6 @@
   --chip-blue-border: rgba(52, 152, 219, 0.2);
   --chip-red-border: rgba(231, 76, 60, 0.2);
   --progress-track: #e0e0e0;
-  --gallery-bg: #181f1b;
   --input-bg: #ffffff;
   --input-border: rgba(0, 0, 0, 0.23);
   --input-border-hover: rgba(0, 0, 0, 0.4);
@@ -79,7 +78,6 @@
   --chip-red-border: rgba(231, 76, 60, 0.35);
   --accent-slate: #5d6d7e;
   --progress-track: #2b3340;
-  --gallery-bg: #141a16;
   --input-bg: #1f1f1f;
   --input-border: rgba(255, 255, 255, 0.24);
   --input-border-hover: rgba(255, 255, 255, 0.4);
