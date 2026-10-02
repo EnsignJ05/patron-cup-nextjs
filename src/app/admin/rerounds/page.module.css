@@ -1,0 +1,80 @@
+.alert {
+  margin-bottom: 16px;
+}
+
+.eventFilter {
+  min-width: 180px;
+}
+
+.dateGroup {
+  margin-bottom: 28px;
+}
+
+.dateHeading {
+  font-family: var(--pc-font-serif);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--pc-ink);
+  margin: 0 0 10px;
+}
+
+.reroundGrid {
+  grid-template-columns: 90px 1.2fr 1.6fr 72px;
+}
+
+.emptyState {
+  padding: 36px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+}
+
+.emptyIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: var(--pc-fill);
+  color: var(--pc-ink-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.emptyTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--pc-ink);
+}
+
+.emptyBody {
+  font-size: 13px;
+  color: var(--pc-ink-3);
+}
+
+.dialogTitle {
+  font-family: var(--pc-font-serif);
+  font-weight: 500;
+  font-size: 24px;
+  margin: 4px 0 0;
+  color: var(--pc-ink);
+}
+
+.formFields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 4px;
+}
+
+@media (max-width: 700px) {
+  .reroundGrid {
+    grid-template-columns: 70px 1fr 56px;
+  }
+
+  .reroundGrid > span:nth-child(3) {
+    display: none;
+  }
+}

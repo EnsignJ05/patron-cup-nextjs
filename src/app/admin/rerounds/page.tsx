@@ -1,35 +1,22 @@
 'use client';
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Paper from '@mui/material/Paper';
-import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
 import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
 import TextField from '@mui/material/TextField';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import Alert from '@mui/material/Alert';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import AddIcon from '@mui/icons-material/Add';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { format } from 'date-fns';
 import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
 import type { Event, Player, Course, Reround } from '@/types/database';
+import AdminHead from '@/components/admin/AdminHead';
+import { AIcon } from '@/components/admin/AdminIcons';
+import styles from './page.module.css';
 
 type ReroundWithRelations = Reround & {
   courses: Course;
@@ -51,10 +38,7 @@ export default function ReroundsPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
   const fetchEvents = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('events')
-      .select('*')
-      .order('year', { ascending: false });
+    const { data, error } = await supabase.from('events').select('*').order('year', { ascending: false });
 
     if (error) {
       setError(error.message);
@@ -67,11 +51,7 @@ export default function ReroundsPage() {
   }, [supabase]);
 
   const fetchPlayers = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('players')
-      .select('*')
-      .eq('status', 'active')
-      .order('last_name');
+    const { data, error } = await supabase.from('players').select('*').eq('status', 'active').order('last_name');
 
     if (error) {
       setError(error.message);
@@ -135,7 +115,7 @@ export default function ReroundsPage() {
       event_id: selectedEvent,
       course_id: formData.get('course_id') as string,
       reround_date: formData.get('reround_date') as string,
-      reround_time: formData.get('reround_time') as string || null,
+      reround_time: (formData.get('reround_time') as string) || null,
       player1_id: (formData.get('player1_id') as string) || null,
       player2_id: (formData.get('player2_id') as string) || null,
       player3_id: (formData.get('player3_id') as string) || null,
@@ -143,10 +123,7 @@ export default function ReroundsPage() {
     };
 
     if (editingReround) {
-      const { error } = await supabase
-        .from('rerounds')
-        .update(reroundData)
-        .eq('id', editingReround.id);
+      const { error } = await supabase.from('rerounds').update(reroundData).eq('id', editingReround.id);
 
       if (error) {
         setError(error.message);
@@ -206,138 +183,150 @@ export default function ReroundsPage() {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, color: 'var(--text)' }}>
-          Re-rounds
-        </Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)}>
-          Add Re-round
-        </Button>
-      </Box>
+    <div>
+      <AdminHead
+        crumb="Re-rounds"
+        title="Re-rounds"
+        sub={`${rerounds.length} re-round${rerounds.length === 1 ? '' : 's'} scheduled.`}
+        actions={
+          <>
+            <FormControl size="small" className={styles.eventFilter}>
+              <InputLabel>Event</InputLabel>
+              <Select value={selectedEvent} label="Event" onChange={(e) => setSelectedEvent(e.target.value)}>
+                {events.map((event) => (
+                  <MenuItem key={event.id} value={event.id}>
+                    {event.name} ({event.year})
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <button type="button" className="pc-d-actionbtn" data-primary="true" onClick={() => setDialogOpen(true)}>
+              <AIcon name="plus" size={14} />
+              <span>Add Re-round</span>
+            </button>
+          </>
+        }
+      />
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+        <Alert severity="error" className={styles.alert} onClose={() => setError(null)}>
           {error}
         </Alert>
       )}
 
-      <Box sx={{ mb: 3, display: 'flex', gap: 2, alignItems: 'center' }}>
-        <FormControl sx={{ minWidth: 200 }}>
-          <InputLabel>Event</InputLabel>
-          <Select
-            value={selectedEvent}
-            label="Event"
-            onChange={(e) => setSelectedEvent(e.target.value)}
-          >
-            {events.map((event) => (
-              <MenuItem key={event.id} value={event.id}>
-                {event.name} ({event.year})
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        <Typography variant="body2" sx={{ color: 'var(--text-muted)' }}>
-          {rerounds.length} re-round{rerounds.length !== 1 ? 's' : ''} scheduled
-        </Typography>
-      </Box>
-
       {Object.entries(reroundsByDate).map(([date, dateRerounds]) => (
-        <Box key={date} sx={{ mb: 4 }}>
-          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: 'var(--text)' }}>
+        <div key={date} className={styles.dateGroup}>
+          <h2 className={styles.dateHeading}>
             {new Date(date + 'T00:00:00').toLocaleDateString('en-US', {
               weekday: 'long',
               month: 'long',
               day: 'numeric',
               year: 'numeric',
             })}
-          </Typography>
-          <TableContainer component={Paper}>
-            <Table size="small">
-              <TableHead>
-                <TableRow sx={{ backgroundColor: 'var(--surface-muted)' }}>
-                  <TableCell sx={{ fontWeight: 600 }}>Time</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Course</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Players</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }} align="right">
-                    Actions
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {dateRerounds.map((reround) => (
-                  <TableRow key={reround.id} hover>
-                    <TableCell>
-                      {reround.reround_time
-                        ? new Date(`2000-01-01T${reround.reround_time}`).toLocaleTimeString('en-US', {
-                            hour: 'numeric',
-                            minute: '2-digit',
-                          })
-                        : 'TBD'}
-                    </TableCell>
-                    <TableCell>{reround.courses.name}</TableCell>
-                    <TableCell>
-                      {[reround.player1_id, reround.player2_id, reround.player3_id, reround.player4_id]
-                        .map((playerId) => getPlayerName(playerId))
-                        .join(', ')}
-                    </TableCell>
-                    <TableCell align="right">
-                      <IconButton
-                        size="small"
-                        onClick={() => {
-                          setEditingReround(reround);
-                          setDialogOpen(true);
-                        }}
-                      >
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton size="small" color="error" onClick={() => handleDelete(reround.id)}>
-                        <DeleteIcon />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Box>
+          </h2>
+          <div className="ad-card" style={{ overflow: 'hidden' }}>
+            <div className={`ad-row head ${styles.reroundGrid}`}>
+              <span className="ad-th">Time</span>
+              <span className="ad-th">Course</span>
+              <span className="ad-th">Players</span>
+              <span className="ad-th" />
+            </div>
+            {dateRerounds.map((reround) => (
+              <div key={reround.id} className={`ad-row hover ${styles.reroundGrid}`}>
+                <span className="ad-num" style={{ textAlign: 'left' }}>
+                  {reround.reround_time
+                    ? new Date(`2000-01-01T${reround.reround_time}`).toLocaleTimeString('en-US', {
+                        hour: 'numeric',
+                        minute: '2-digit',
+                      })
+                    : 'TBD'}
+                </span>
+                <span style={{ fontSize: 13, fontWeight: 600 }}>{reround.courses.name}</span>
+                <span style={{ fontSize: 13, color: 'var(--pc-ink-2)' }}>
+                  {[reround.player1_id, reround.player2_id, reround.player3_id, reround.player4_id]
+                    .map((playerId) => getPlayerName(playerId))
+                    .join(', ')}
+                </span>
+                <span style={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+                  <button
+                    type="button"
+                    className="ad-ib"
+                    onClick={() => {
+                      setEditingReround(reround);
+                      setDialogOpen(true);
+                    }}
+                    aria-label="Edit re-round"
+                  >
+                    <AIcon name="edit" size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    className="ad-ib"
+                    onClick={() => handleDelete(reround.id)}
+                    aria-label="Delete re-round"
+                  >
+                    <AIcon name="trash" size={16} />
+                  </button>
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
       ))}
 
       {!loading && rerounds.length === 0 && (
-        <Paper sx={{ p: 4, textAlign: 'center' }}>
-          <Typography variant="body1" sx={{ color: '#666' }}>
-            No re-rounds scheduled for this event
-          </Typography>
-        </Paper>
+        <div className={`ad-card ${styles.emptyState}`}>
+          <div className={styles.emptyIcon}>
+            <AIcon name="rerounds" size={24} />
+          </div>
+          <div className={styles.emptyTitle}>No re-rounds scheduled</div>
+          <div className={styles.emptyBody}>Add a re-round for this event to get started.</div>
+        </div>
       )}
 
-      {/* Add/Edit Dialog */}
-      <Dialog open={dialogOpen} onClose={() => {setDialogOpen(false); setEditingReround(null);}} maxWidth="sm" fullWidth>
+      <Dialog
+        open={dialogOpen}
+        onClose={() => {
+          setDialogOpen(false);
+          setEditingReround(null);
+        }}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ className: 'ad-dlg' }}
+      >
         <form
           onSubmit={(e) => {
             e.preventDefault();
             handleSave(new FormData(e.currentTarget));
           }}
         >
-          <DialogTitle>{editingReround ? 'Edit Re-round' : 'Add Re-round'}</DialogTitle>
+          <div className="ad-dlg-h">
+            <div>
+              <div className="ad-crumb">Re-rounds</div>
+              <h2 className={styles.dialogTitle}>{editingReround ? 'Edit re-round' : 'Add re-round'}</h2>
+            </div>
+            <button
+              type="button"
+              className="ad-ib"
+              onClick={() => {
+                setDialogOpen(false);
+                setEditingReround(null);
+              }}
+              aria-label="Close"
+            >
+              <AIcon name="x" size={18} />
+            </button>
+          </div>
           <DialogContent>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+            <div className={styles.formFields}>
               <FormControl fullWidth required>
                 <InputLabel>Course</InputLabel>
                 <Select name="course_id" label="Course" defaultValue={editingReround?.course_id || ''}>
-                  {eventCourses.length > 0 ? (
-                    eventCourses.map((course) => (
-                      <MenuItem key={course.id} value={course.id}>
-                        {course.name}
-                      </MenuItem>
-                    ))
-                  ) : (
-                    courses.map((course) => (
-                      <MenuItem key={course.id} value={course.id}>
-                        {course.name}
-                      </MenuItem>
-                    ))
-                  )}
+                  {(eventCourses.length > 0 ? eventCourses : courses).map((course) => (
+                    <MenuItem key={course.id} value={course.id}>
+                      {course.name}
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
               <input type="hidden" name="reround_date" value={reroundDateValue} />
@@ -386,15 +375,26 @@ export default function ReroundsPage() {
                   </Select>
                 </FormControl>
               ))}
-            </Box>
+            </div>
           </DialogContent>
-          <DialogActions>
-            <Button onClick={() => {setDialogOpen(false); setEditingReround(null);}}>Cancel</Button>
-            <Button type="submit" variant="contained">Save</Button>
-          </DialogActions>
+          <div className="ad-dlg-f">
+            <span style={{ flex: 1 }} />
+            <button
+              type="button"
+              className="pc-d-actionbtn"
+              onClick={() => {
+                setDialogOpen(false);
+                setEditingReround(null);
+              }}
+            >
+              Cancel
+            </button>
+            <button type="submit" className="pc-d-actionbtn" data-primary="true">
+              Save re-round
+            </button>
+          </div>
         </form>
       </Dialog>
-
-    </Box>
+    </div>
   );
 }
