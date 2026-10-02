@@ -65,7 +65,8 @@ for the full admin redesign plan).
   `.ad-dlg-h`/`.ad-dlg-f` (desktop dialog) and `.ad-sheet`/`.ad-grab` (its mobile bottom-sheet
   equivalent), `.ad-scrim`/`.ad-scrim.sheet`, `.ad-in`(+`.mono`/`.lg`/`.focus`), `.ad-lab`,
   `.ad-btn`(+`.p`/`.ok`/`.lg`, mobile), `.ad-chip` (mobile), `.ad-m-sticky` (mobile sticky
-  action bar), `.ad-head`/`.ad-head-title`/`.ad-head-actions`/`.ad-crumb`.
+  action bar), `.ad-head`/`.ad-head-title`/`.ad-head-actions`/`.ad-crumb`,
+  `.pc-d-actionbtn`(+`[data-primary='true']`, desktop action buttons like "Add Course"/"Save").
 - **Shared components**, `src/components/admin/`: `AdminIcons.tsx` (`AIcon`/`AGrip`),
   `AdminHead.tsx` (breadcrumb + title + actions), `AdminField.tsx`, `AdminName.tsx`
   (avatar + team chip + name, for tables), `AdminScrim.tsx`. One responsive component per

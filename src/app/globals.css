@@ -792,4 +792,42 @@ a {
   gap: 8px;
 }
 
+/* Desktop action button -- "Add Course", "Save", "Recalculate", etc. Missed in RA1's initial
+   port; added here since RA4 needs it immediately and every later admin page will too. */
+.pc-d-actionbtn {
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid var(--pc-rule-2);
+  background: var(--pc-card);
+  color: var(--pc-ink);
+  font-family: var(--pc-font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pc-d-actionbtn:hover {
+  background: var(--pc-fill);
+}
+
+.pc-d-actionbtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pc-d-actionbtn[data-primary='true'] {
+  background: var(--pc-ink);
+  color: var(--pc-bg);
+  border-color: var(--pc-ink);
+}
+
+.pc-d-actionbtn[data-primary='true']:hover {
+  background: var(--pc-ink-2);
+}
+
 
