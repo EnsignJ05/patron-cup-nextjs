@@ -1,24 +1,8 @@
 'use client';
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import Paper from '@mui/material/Paper';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
-import IconButton from '@mui/material/IconButton';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import AddIcon from '@mui/icons-material/Add';
 import Alert from '@mui/material/Alert';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
@@ -26,9 +10,12 @@ import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import Switch from '@mui/material/Switch';
 import FormControlLabel from '@mui/material/FormControlLabel';
-import Chip from '@mui/material/Chip';
 import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
 import type { TravelInfo, Event, Player } from '@/types/database';
+import AdminHead from '@/components/admin/AdminHead';
+import AdminName from '@/components/admin/AdminName';
+import { AIcon } from '@/components/admin/AdminIcons';
+import styles from './page.module.css';
 
 export default function TravelAdminPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
@@ -47,13 +34,12 @@ export default function TravelAdminPage() {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    
+
     const [travelRes, eventsRes, playersRes] = await Promise.all([
-      supabase
-        .from('travel_info')
-        .select('*, event:events(*), player:players(*)')
-        .order('arrival_date', { ascending: true }),
+      supabase.from('travel_info').select('*, event:events(*), player:players(*)').order('arrival_date', { ascending: true }),
       supabase.from('events').select('*').order('year', { ascending: false }),
+      // NOTE: is_active, not status -- a known split-brain bug (Part IV Task H3), unchanged
+      // here since fixing it is out of scope for a visual redesign.
       supabase.from('players').select('*').eq('is_active', true).order('last_name'),
     ]);
 
@@ -62,7 +48,7 @@ export default function TravelAdminPage() {
 
     if (eventsRes.data) setEvents(eventsRes.data);
     if (playersRes.data) setPlayers(playersRes.data);
-    
+
     setLoading(false);
   }, [supabase]);
 
@@ -71,8 +57,8 @@ export default function TravelAdminPage() {
   }, [fetchData]);
 
   const handleAdd = () => {
-    const activeEvent = events.find(e => e.is_active) || events[0];
-    setEditingTravel({ 
+    const activeEvent = events.find((e) => e.is_active) || events[0];
+    setEditingTravel({
       event_id: selectedEventId || activeEvent?.id,
       needs_transportation: false,
     });
@@ -91,11 +77,8 @@ export default function TravelAdminPage() {
 
   const confirmDelete = async () => {
     if (!travelToDelete) return;
-    
-    const { error } = await supabase
-      .from('travel_info')
-      .delete()
-      .eq('id', travelToDelete.id);
+
+    const { error } = await supabase.from('travel_info').delete().eq('id', travelToDelete.id);
 
     if (error) {
       setError(error.message);
@@ -132,10 +115,7 @@ export default function TravelAdminPage() {
     };
 
     if (editingTravel.id) {
-      const { error } = await supabase
-        .from('travel_info')
-        .update(travelData)
-        .eq('id', editingTravel.id);
+      const { error } = await supabase.from('travel_info').update(travelData).eq('id', editingTravel.id);
 
       if (error) {
         setError(error.message);
@@ -143,9 +123,7 @@ export default function TravelAdminPage() {
       }
       setSuccess('Travel info updated successfully');
     } else {
-      const { error } = await supabase
-        .from('travel_info')
-        .insert([travelData]);
+      const { error } = await supabase.from('travel_info').insert([travelData]);
 
       if (error) {
         setError(error.message);
@@ -161,56 +139,58 @@ export default function TravelAdminPage() {
 
   let filteredTravel = travelInfo;
   if (selectedEventId) {
-    filteredTravel = filteredTravel.filter(t => t.event_id === selectedEventId);
+    filteredTravel = filteredTravel.filter((t) => t.event_id === selectedEventId);
   }
   if (searchTerm) {
-    filteredTravel = filteredTravel.filter(t => 
-      `${t.player?.first_name} ${t.player?.last_name}`.toLowerCase().includes(searchTerm.toLowerCase())
+    filteredTravel = filteredTravel.filter((t) =>
+      `${t.player?.first_name} ${t.player?.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()),
     );
   }
 
   const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return '-';
+    if (!dateStr) return '—';
     return new Date(dateStr).toLocaleDateString();
   };
 
   const formatTime = (timeStr: string | null) => {
     if (!timeStr) return '';
     const [hours, minutes] = timeStr.split(':');
-    const hour = parseInt(hours);
+    const hour = parseInt(hours, 10);
     const ampm = hour >= 12 ? 'PM' : 'AM';
     const hour12 = hour % 12 || 12;
     return `${hour12}:${minutes} ${ampm}`;
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, color: 'var(--text)' }}>
-          Travel Management
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleAdd}
-          sx={{ bgcolor: 'var(--text)', color: 'var(--bg)' }}
-        >
-          Add Travel Info
-        </Button>
-      </Box>
+    <div>
+      <AdminHead
+        crumb="Travel"
+        title="Travel"
+        sub="Arrivals, departures, and how everyone is getting there."
+        actions={
+          <button type="button" className="pc-d-actionbtn" data-primary="true" onClick={handleAdd}>
+            <AIcon name="plus" size={14} />
+            <span>Add Travel Info</span>
+          </button>
+        }
+      />
 
-      {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
-      {success && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>{success}</Alert>}
+      {error && (
+        <Alert severity="error" className={styles.alert} onClose={() => setError('')}>
+          {error}
+        </Alert>
+      )}
+      {success && (
+        <Alert severity="success" className={styles.alert} onClose={() => setSuccess('')}>
+          {success}
+        </Alert>
+      )}
 
-      <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
-        <FormControl sx={{ minWidth: 200 }}>
-          <InputLabel>Filter by Event</InputLabel>
-          <Select
-            value={selectedEventId}
-            label="Filter by Event"
-            onChange={(e) => setSelectedEventId(e.target.value)}
-          >
-            <MenuItem value="">All Events</MenuItem>
+      <div className={styles.filterRow}>
+        <FormControl size="small" className={styles.eventFilter}>
+          <InputLabel>Event</InputLabel>
+          <Select value={selectedEventId} label="Event" onChange={(e) => setSelectedEventId(e.target.value)}>
+            <MenuItem value="">All events</MenuItem>
             {events.map((event) => (
               <MenuItem key={event.id} value={event.id}>
                 {event.name} ({event.year})
@@ -219,90 +199,96 @@ export default function TravelAdminPage() {
           </Select>
         </FormControl>
         <TextField
+          size="small"
           placeholder="Search by player name..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          sx={{ flex: 1, minWidth: 200 }}
+          className={styles.searchField}
         />
-      </Box>
+      </div>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow sx={{ bgcolor: 'var(--text)' }}>
-              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Player</TableCell>
-              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Event</TableCell>
-              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Arrival</TableCell>
-              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Departure</TableCell>
-              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Transport</TableCell>
-              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }} align="right">Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={6} align="center">Loading...</TableCell>
-              </TableRow>
-            ) : filteredTravel.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} align="center">No travel info found</TableCell>
-              </TableRow>
-            ) : (
-              filteredTravel.map((travel) => (
-                <TableRow key={travel.id} hover>
-                  <TableCell sx={{ fontWeight: 600 }}>
-                    {travel.player?.first_name} {travel.player?.last_name}
-                  </TableCell>
-                  <TableCell>{travel.event?.name || '-'}</TableCell>
-                  <TableCell>
-                    <Box>
-                      <Typography variant="body2">{formatDate(travel.arrival_date)} {formatTime(travel.arrival_time)}</Typography>
-                      {travel.arrival_flight_number && (
-                        <Typography variant="caption" color="textSecondary">
-                          {travel.arrival_airline} {travel.arrival_flight_number}
-                        </Typography>
-                      )}
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Box>
-                      <Typography variant="body2">{formatDate(travel.departure_date)} {formatTime(travel.departure_time)}</Typography>
-                      {travel.departure_flight_number && (
-                        <Typography variant="caption" color="textSecondary">
-                          {travel.departure_airline} {travel.departure_flight_number}
-                        </Typography>
-                      )}
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Chip 
-                      label={travel.needs_transportation ? 'Needs Ride' : 'Self'} 
-                      size="small" 
-                      color={travel.needs_transportation ? 'warning' : 'default'}
-                    />
-                  </TableCell>
-                  <TableCell align="right">
-                    <IconButton onClick={() => handleEdit(travel)} size="small">
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton onClick={() => handleDelete(travel)} size="small" color="error">
-                      <DeleteIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <div className="ad-card" style={{ overflow: 'hidden' }}>
+        <div className={`ad-row head ${styles.travelGrid}`}>
+          <span className="ad-th">Player</span>
+          <span className="ad-th">Event</span>
+          <span className="ad-th">Arrival</span>
+          <span className="ad-th">Departure</span>
+          <span className="ad-th">Transport</span>
+          <span className="ad-th" />
+        </div>
+        {loading ? (
+          [0, 1, 2].map((i) => (
+            <div key={i} className={`ad-row ${styles.travelGrid}`}>
+              {[45, 30, 50, 50, 30, 0].map((w, j) => (
+                <div key={j} className="ad-sk" style={{ width: w ? `${w}%` : 0, animationDelay: `${i * 0.12}s` }} />
+              ))}
+            </div>
+          ))
+        ) : filteredTravel.length === 0 ? (
+          <div className={styles.emptyState}>No travel info found</div>
+        ) : (
+          filteredTravel.map((travel) => (
+            <div key={travel.id} className={`ad-row hover ${styles.travelGrid}`}>
+              {travel.player ? (
+                <AdminName firstName={travel.player.first_name} lastName={travel.player.last_name} profileImageUrl={travel.player.profile_image_url} />
+              ) : (
+                <span style={{ color: 'var(--pc-ink-3)' }}>—</span>
+              )}
+              <span>
+                <span className="ad-badge">{travel.event?.name || '—'}</span>
+              </span>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600 }}>
+                  {formatDate(travel.arrival_date)} {formatTime(travel.arrival_time)}
+                </div>
+                {travel.arrival_flight_number && (
+                  <div style={{ fontSize: 11, color: 'var(--pc-ink-3)', fontFamily: 'var(--pc-font-mono)' }}>
+                    {travel.arrival_airline} {travel.arrival_flight_number}
+                  </div>
+                )}
+              </div>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600 }}>
+                  {formatDate(travel.departure_date)} {formatTime(travel.departure_time)}
+                </div>
+                {travel.departure_flight_number && (
+                  <div style={{ fontSize: 11, color: 'var(--pc-ink-3)', fontFamily: 'var(--pc-font-mono)' }}>
+                    {travel.departure_airline} {travel.departure_flight_number}
+                  </div>
+                )}
+              </div>
+              <span>
+                {travel.needs_transportation ? (
+                  <span className={styles.badgeWarning}>Needs Ride</span>
+                ) : (
+                  <span className="ad-badge">Self</span>
+                )}
+              </span>
+              <span style={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+                <button type="button" className="ad-ib" onClick={() => handleEdit(travel)} aria-label="Edit travel info">
+                  <AIcon name="edit" size={16} />
+                </button>
+                <button type="button" className="ad-ib" onClick={() => handleDelete(travel)} aria-label="Delete travel info">
+                  <AIcon name="trash" size={16} />
+                </button>
+              </span>
+            </div>
+          ))
+        )}
+      </div>
 
-      {/* Edit/Add Dialog */}
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>
-          {editingTravel?.id ? 'Edit Travel Info' : 'Add Travel Info'}
-        </DialogTitle>
+      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="md" fullWidth PaperProps={{ className: 'ad-dlg' }}>
+        <div className="ad-dlg-h">
+          <div>
+            <div className="ad-crumb">Travel</div>
+            <h2 className={styles.dialogTitle}>{editingTravel?.id ? 'Edit travel info' : 'Add travel info'}</h2>
+          </div>
+          <button type="button" className="ad-ib" onClick={() => setDialogOpen(false)} aria-label="Close">
+            <AIcon name="x" size={18} />
+          </button>
+        </div>
         <DialogContent>
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, mt: 1 }}>
+          <div className={styles.formGrid}>
             <FormControl fullWidth required>
               <InputLabel>Player</InputLabel>
               <Select
@@ -332,10 +318,8 @@ export default function TravelAdminPage() {
               </Select>
             </FormControl>
 
-            <Typography variant="subtitle1" sx={{ gridColumn: '1 / -1', fontWeight: 600, mt: 2, borderBottom: '1px solid #ddd', pb: 1 }}>
-              Arrival Information
-            </Typography>
-            
+            <h3 className={styles.sectionHeading}>Arrival</h3>
+
             <TextField
               label="Arrival Date"
               type="date"
@@ -378,10 +362,8 @@ export default function TravelAdminPage() {
               fullWidth
             />
 
-            <Typography variant="subtitle1" sx={{ gridColumn: '1 / -1', fontWeight: 600, mt: 2, borderBottom: '1px solid #ddd', pb: 1 }}>
-              Departure Information
-            </Typography>
-            
+            <h3 className={styles.sectionHeading}>Departure</h3>
+
             <TextField
               label="Departure Date"
               type="date"
@@ -424,18 +406,17 @@ export default function TravelAdminPage() {
               fullWidth
             />
 
-            <Typography variant="subtitle1" sx={{ gridColumn: '1 / -1', fontWeight: 600, mt: 2, borderBottom: '1px solid #ddd', pb: 1 }}>
-              Transportation
-            </Typography>
+            <h3 className={styles.sectionHeading}>Transportation</h3>
 
             <FormControlLabel
+              className={styles.fieldWide}
               control={
                 <Switch
                   checked={editingTravel?.needs_transportation || false}
                   onChange={(e) => setEditingTravel({ ...editingTravel, needs_transportation: e.target.checked })}
                 />
               }
-              label="Needs Transportation"
+              label="Needs transportation"
             />
             <TextField
               label="Rental Car Info"
@@ -450,29 +431,44 @@ export default function TravelAdminPage() {
               fullWidth
               multiline
               rows={2}
-              sx={{ gridColumn: { md: '1 / -1' } }}
+              className={styles.fieldWide}
             />
-          </Box>
+          </div>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleSave} variant="contained" sx={{ bgcolor: 'var(--text)', color: 'var(--bg)' }}>
-            Save
-          </Button>
-        </DialogActions>
+        <div className="ad-dlg-f">
+          <span style={{ flex: 1 }} />
+          <button type="button" className="pc-d-actionbtn" onClick={() => setDialogOpen(false)}>
+            Cancel
+          </button>
+          <button type="button" className="pc-d-actionbtn" data-primary="true" onClick={handleSave}>
+            Save travel info
+          </button>
+        </div>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)}>
-        <DialogTitle>Confirm Delete</DialogTitle>
+      <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)} PaperProps={{ className: 'ad-dlg' }}>
+        <div className="ad-dlg-h">
+          <h2 className={styles.dialogTitle}>Delete travel info?</h2>
+        </div>
         <DialogContent>
-          Are you sure you want to delete this travel info?
+          <p style={{ margin: 0, color: 'var(--pc-ink-2)' }}>Are you sure you want to delete this travel info?</p>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteConfirmOpen(false)}>Cancel</Button>
-          <Button onClick={confirmDelete} color="error" variant="contained">Delete</Button>
-        </DialogActions>
+        <div className="ad-dlg-f">
+          <span style={{ flex: 1 }} />
+          <button type="button" className="pc-d-actionbtn" onClick={() => setDeleteConfirmOpen(false)}>
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="pc-d-actionbtn"
+            data-primary="true"
+            style={{ background: 'var(--pc-team-a)', borderColor: 'var(--pc-team-a)' }}
+            onClick={confirmDelete}
+          >
+            Delete
+          </button>
+        </div>
       </Dialog>
-    </Box>
+    </div>
   );
 }
