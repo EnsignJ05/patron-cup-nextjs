@@ -3140,7 +3140,7 @@ union all select 'hole_scores', count(*) from public.hole_scores;
 **Acceptance:** section 24 filled in; query 7's output saved verbatim into the H1 migration;
 every `[VERIFY]` item above resolved to a yes/no.
 
-### Task H1 (migration written 2026-10-03, not yet applied) Put the RLS helper functions in version control
+### Task H1 (applied to test 2026-10-03) Put the RLS helper functions in version control
 Take `is_admin()` and `is_committee_or_admin()` from H0 query 7 and commit them as a
 migration, matching `current_player_id()`'s pattern (`STABLE SECURITY DEFINER`, explicit
 `search_path`). No behavior change — this is purely making thirty policies reproducible, and
@@ -3153,9 +3153,9 @@ session (no `psql`/`supabase` CLI, no direct Postgres connection string in `.env
 **user runs Phase H migrations via the Supabase SQL editor**, not the agent, going forward.
 
 **Acceptance:** applying the baseline + H1 to the test project yields working committee
-writes. Not yet verified — awaiting the user running it against test.
+writes. **Applied to test 2026-10-03** by the user via the Supabase SQL editor.
 
-### Task H2 (items 1-2 done via Part II Task S5 2026-10-01; item 3 migration written 2026-10-03, not yet applied)
+### Task H2 (items 1-2 done via Part II Task S5 2026-10-01; item 3 applied to test 2026-10-03)
 Three changes that are small, independent, and currently exploitable:
 1. ~~Drop `"Records Update Policy"` on `records_bandon` and `"Match Bandon Update"` on
    `match_bandon` (20.5.3). No app impact.~~ **Done** — Part II Task S5 shipped this exact
@@ -3176,14 +3176,14 @@ Three changes that are small, independent, and currently exploitable:
    they've been silently no-op'ing (RLS denies, Supabase returns no error on 0 rows affected),
    not secretly working around the missing policy some other way.
 
-**Acceptance:** item 1/2 verified on test and production already. Item 3 not yet verified —
-awaiting the user running the migration against test, then confirming each of the 9 delete
-buttons actually removes a row for an admin account, and separately that a player-role account
-still gets denied (no test for the committee-vs-admin split specifically; `events`/`players`
-being admin-only is new behavior worth a specific check with a committee-role account, not just
-admin and player).
+**Acceptance:** item 1/2 verified on test and production already. **Item 3 migration applied
+to test 2026-10-03** by the user. Still worth a manual check when convenient: each of the 9
+delete buttons actually removes a row for an admin account, and a player-role account still
+gets denied — no automated test covers the committee-vs-admin split specifically, and
+`events`/`players` being admin-only (not committee) is new behavior worth confirming with a
+committee-role account too, not just admin and player.
 
-### Task H3 (code done 2026-10-03, migration written, not yet applied) Fix `players.is_active`/`status` split-brain — standardized on `is_active`
+### Task H3 (code + migration applied to test 2026-10-03) Fix `players.is_active`/`status` split-brain — standardized on `is_active`
 **Direction reversed from this task's original draft** (which said "standardize on
 `status`, drop `is_active`") — user decided 2026-10-03 to go the other way, matching what
 Part III's admin redesign had already done across 5 pages (`travel`, `lodging`, `teams`,
@@ -3206,19 +3206,34 @@ original 20.5.1 finding), re-grants anon `SELECT` on `is_active` before `status`
 under it (anon could read `players.status` for the public roster/players listings), drops
 `status`, then adds `NOT NULL DEFAULT true` to `is_active`.
 
-**Acceptance:** not yet verified — this environment has no DB connection, so per the user's
-standing instruction (set during H1/H2), they apply every Phase H migration themselves via the
-Supabase SQL editor. Once applied to test: confirm the regression test from the original
-finding still holds (a newly-admin-deactivated player disappears from `travel`/`lodging`/
-`teams`/`matches/setup`/`participants`'s pickers immediately, not just on the next trip), and
-that the public `/roster` and `/players` pages still load for an anonymous visitor (the anon
-column grant actually matters here, not just RLS).
+**Acceptance:** migration **applied to test 2026-10-03** by the user via the Supabase SQL
+editor. Still worth a manual check when convenient: a newly-admin-deactivated player
+disappears from `travel`/`lodging`/`teams`/`matches/setup`/`participants`'s pickers
+immediately (the original 20.5.1 regression test), and the public `/roster` and `/players`
+pages still load for an anonymous visitor (the anon column grant actually matters here, not
+just RLS).
 
-### Task H4 (Agent) Type corrections
+### Task H4 (migration written 2026-10-03, not yet applied) Type corrections
 `ghin_number` `int8` → `text` (20.6.1); `players.country` nullability reconciled with
 `src/types/database.ts:16` (20.6.2); `match_results_pending.status` `text` → the
 `match_pending_status` enum (20.6.4). Update `src/types/database.ts` in the same commit and
 re-run `npx tsc --noEmit`.
+
+`src/types/database.ts` already declares the post-fix shape for both `ghin_number`
+(`string | null`) and `country` (`string`, non-nullable) — no code change ships with this
+migration, only the database catches up to what TypeScript already expects. For 20.6.4: the
+enum turned out to be the stale side (missing `'cancelled'`, which the real `CHECK` constraint
+and the app's own `MatchResultsPendingStatus` type both already have), and it's unused as any
+column's type — `supabase/migrations/20261003140000_h4_type_corrections.sql` drops it outright
+rather than converting the column to match it, since the `CHECK` already does the job
+correctly and converting would be pure style with real migration risk for no gain. Confirmed
+via code read that no numeric/arithmetic handling of `ghin_number` exists anywhere (every
+site already treats it as an opaque string — `.localeCompare()`, `String(...)`, `?? ''`), so
+the `int8`→`text` column conversion is safe.
+
+**Acceptance:** not yet verified — awaiting the user applying this migration to test via the
+Supabase SQL editor, then `npx tsc --noEmit` confirming no new type errors (expected: none,
+since the types already matched the target shape).
 
 ### Task H5 (Agent) Uniqueness and CHECK constraints
 Everything in 20.7.1, 20.7.2, 20.7.3. Use `CREATE UNIQUE INDEX` / `ALTER TABLE … ADD
