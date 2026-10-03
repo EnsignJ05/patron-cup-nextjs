@@ -3140,16 +3140,22 @@ union all select 'hole_scores', count(*) from public.hole_scores;
 **Acceptance:** section 24 filled in; query 7's output saved verbatim into the H1 migration;
 every `[VERIFY]` item above resolved to a yes/no.
 
-### Task H1 (Agent) Put the RLS helper functions in version control
+### Task H1 (migration written 2026-10-03, not yet applied) Put the RLS helper functions in version control
 Take `is_admin()` and `is_committee_or_admin()` from H0 query 7 and commit them as a
 migration, matching `current_player_id()`'s pattern (`STABLE SECURITY DEFINER`, explicit
 `search_path`). No behavior change — this is purely making thirty policies reproducible, and
 it is what lets Part I task 3.3 build a working test project.
 
-**Acceptance:** applying the baseline + H1 to the test project yields working committee
-writes.
+`supabase/migrations/20261003120000_h1_version_control_rls_helpers.sql` — `CREATE OR REPLACE`
+on both functions, bodies captured verbatim from the H0 pg_dump, only the `STABLE`/
+`search_path` attributes added. No DB connection available in the agent's environment this
+session (no `psql`/`supabase` CLI, no direct Postgres connection string in `.env.local`) —
+**user runs Phase H migrations via the Supabase SQL editor**, not the agent, going forward.
 
-### Task H2 (items 1-2 done via Part II Task S5 2026-10-01; item 3 still open)
+**Acceptance:** applying the baseline + H1 to the test project yields working committee
+writes. Not yet verified — awaiting the user running it against test.
+
+### Task H2 (items 1-2 done via Part II Task S5 2026-10-01; item 3 migration written 2026-10-03, not yet applied)
 Three changes that are small, independent, and currently exploitable:
 1. ~~Drop `"Records Update Policy"` on `records_bandon` and `"Match Bandon Update"` on
    `match_bandon` (20.5.3). No app impact.~~ **Done** — Part II Task S5 shipped this exact
@@ -3160,17 +3166,37 @@ Three changes that are small, independent, and currently exploitable:
    `branson_roster`'s anon `SELECT` policy without dropping the table, since 21.3 (retire the
    2025 Bandon archive?) is still undecided. Revisit dropping the table itself once that
    decision is made.
-3. **Still open.** For each of the nine tables from 20.5.2, per H0 query 1: enable RLS if
-   disabled (already confirmed enabled everywhere, per Part II Task S0), and add
-   `DELETE … TO authenticated USING is_committee_or_admin()`.
+3. `supabase/migrations/20261003121000_h2_add_missing_delete_policies.sql` — one `DELETE`
+   policy per table, role level matching that table's existing INSERT/UPDATE policies rather
+   than a blanket `is_committee_or_admin()`: `events`/`players` use `is_admin()` (matching
+   their existing insert/update policies, which are admin-only, not committee), the other 7
+   (`teams`, `matches`, `courses`, `lodging`, `travel_info`, `rerounds`,
+   `event_participants`) use `is_committee_or_admin()`. Confirmed via code read that all 9
+   admin delete buttons issue a real client-side `.from(table).delete()` call today — meaning
+   they've been silently no-op'ing (RLS denies, Supabase returns no error on 0 rows affected),
+   not secretly working around the missing policy some other way.
 
-**Acceptance:** item 1/2 verified — an `anon` client cannot UPDATE `records_bandon` or
-`match_bandon`, and cannot `SELECT` `branson_roster`, on both test and production. Item 3 not
-yet done: each of the nine admin delete buttons still needs a policy added, then verified
-working for an admin account and rejected for a player account.
+**Acceptance:** item 1/2 verified on test and production already. Item 3 not yet verified —
+awaiting the user running the migration against test, then confirming each of the 9 delete
+buttons actually removes a row for an admin account, and separately that a player-role account
+still gets denied (no test for the committee-vs-admin split specifically; `events`/`players`
+being admin-only is new behavior worth a specific check with a committee-role account, not just
+admin and player).
 
-### Task H3 (Agent) Fix `players.is_active`
-Per 21.2, in one migration plus one code change:
+### Task H3 (Agent) — **direction needs re-deciding before this runs, see below** — fix `players.is_active`/`status` split-brain
+**This task's steps are written for "standardize on `status`, drop `is_active`," but Part
+III's admin redesign (2026-10-01/02) went the opposite direction without revisiting this
+plan section**: `admin/travel`, `admin/lodging`, `admin/teams`, `admin/matches/setup`, and
+(fixed live 2026-10-02, see [[patron-cup-hifi-redesign]]) `admin/participants` all now filter
+on `is_active = true`, not `status = 'active'`. Running steps 2-3 below as originally written
+would silently break all 5 of those pages' player pickers by dropping the column they
+actually read. **Before writing this migration, re-decide 21.2 given the code as it exists
+now** — either standardize on `is_active` instead (update step 2's target to be "drop
+`status`" and migrate `match_results_pending`/wherever else reads `status`, if anywhere) or
+confirm `status` is still correct and update all 5 of the pages above plus
+`admin/participants`'s already-landed fix. Don't execute the steps below until that's decided.
+
+Per 21.2 (original direction, now superseded above — kept for reference only):
 1. Reconcile rows (H0 query 8) — e.g. `UPDATE players SET status = 'inactive' WHERE is_active IS FALSE AND status = 'active'`, decided from the actual counts.
 2. Change `src/app/admin/teams/page.tsx:62` and
    `src/app/admin/matches/setup/page.tsx:105` from `.eq('is_active', true)` to
