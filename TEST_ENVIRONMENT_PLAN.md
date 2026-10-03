@@ -3367,7 +3367,7 @@ above still work exactly as before for a real player and a real committee/admin 
 same as how every other Phase H migration's acceptance has actually been verified this
 session.
 
-### Task H8 (migration written 2026-10-03, not yet applied) Drop unused tables and add audit-column defaults
+### Task H8 (applied to test 2026-10-03) Drop unused tables and add audit-column defaults
 Per 21.1/21.3 (decided 2026-10-01: retire) and 21.4 ignored here, unrelated: drop
 `team_bandon`, `branson_captains`, `branson_roster` (its anon-exposing policy was already
 dropped in Part II Task S5; the table itself is still unreferenced and unused — drop it too,
@@ -3416,6 +3416,31 @@ not reversible once committed.
 Only after the full Part I task 7.1 smoke test passes against the hardened test project.
 Apply H1–H8 to prod in the same order, one migration at a time, verifying between each.
 Take a fresh backup first. Re-run Part II's production curl checks afterward.
+
+**2026-10-03, after H1-H8 all applied to test: re-ran what's actually checkable from this
+agent's environment** (`vercel curl` against `test.patron-cup.com`, which bypasses
+Deployment Protection — no direct DB connection available, same limitation as every Phase H
+migration). `/`, `/faq`, `/roster`, `/matches`, `/itinerary`, `/teams`, `/login` all `200`;
+`/dashboard` and `/admin/dashboard` correctly `307` to login when unauthenticated; `/roster`'s
+response body inspected directly (not just status code) to rule out a Next.js error-boundary
+page rendering underneath a 200 — confirmed clean (`"error":null` in the RSC payload, not an
+actual exception). This re-confirms the exact same programmatic checks from Task 7.1 still
+pass post-Phase-H.
+
+**Still needs a human, before H9 can actually run**: Task 7.1's original backend/RLS checks
+(committee can write another player's row, a player can't write someone else's, the full
+`propose_match_result`→`finalize_match_result_from_pending` flow, avatar upload) were last
+verified 2026-10-01, **before any Phase H migration existed** — this agent has no test
+account passwords (deliberately never recorded anywhere, per [[project_invite_only_auth]]),
+so re-running those specific checks isn't possible from here. The user's own Part III
+passthrough (2026-10-02) already exercised much of this surface live and caught/fixed real
+bugs, but that was also before Phase H landed. Given H1-H7 are behavior-preserving by design
+and H8 only touched already-dead tables, residual risk is specifically "did a Phase H SQL
+statement itself have a mistake" (H5 already caught one) — not a full 7.1 re-run, but a
+**quick targeted pass worth doing before H9**: edit a player in `admin/players` and toggle
+Active/Inactive (H3), confirm `admin/participants`'s "+ Participant" still works (H3),
+confirm a GHIN number still displays/saves correctly in `admin/handicaps` (H4), and try one
+of the 9 delete buttons that got a new policy in H2 to confirm it actually removes a row now.
 
 ---
 
