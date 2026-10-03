@@ -3442,6 +3442,17 @@ Active/Inactive (H3), confirm `admin/participants`'s "+ Participant" still works
 confirm a GHIN number still displays/saves correctly in `admin/handicaps` (H4), and try one
 of the 9 delete buttons that got a new policy in H2 to confirm it actually removes a row now.
 
+**Done 2026-10-03 — passed, after fixing what it found.** The targeted pass surfaced the
+deploy-sequencing gap (H3's code fix for `admin/players` hadn't been pushed yet — fixed by
+pushing) and the `admin/participants` pre-existing `handicap_at_event`/`is_confirmed` bug
+(unrelated to Phase H, fixed same session — see [[patron-cup-hifi-redesign]]). Before pushing
+that fix, did a full proactive sweep of every table type and every insert/update payload
+against the real current schema and found one more live bug the targeted pass wouldn't have
+caught on its own: `/api/admin/invite/route.ts` still wrote `players.status`, meaning
+**inviting a new player was broken** from the moment H3 landed until this fix. All fixes
+pushed together in one batch; user confirmed afterward that everything is now working
+correctly. **H9 is unblocked — ready whenever the user wants to promote to production.**
+
 ---
 
 ## 23. Edits to make to Part I
