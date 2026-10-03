@@ -5,22 +5,25 @@
 -- real pg_dump baseline already captured in this repo shows 9 of them already do:
 -- team_rosters, match_players, team_captains, lodging_assignments, event_participants,
 -- reround_signups, course_holes, hole_scores, and ceremony_award_nominations all already
--- have one (see supabase/migrations/00000000000000_baseline_schema.sql). Only `matches`
--- and `teams` genuinely lack one -- those are the only two this migration adds.
+-- have one (see supabase/migrations/00000000000000_baseline_schema.sql).
 --
--- Not blindly deduping matches/teams first, unlike the plan's general guidance for this
--- task: both have children that CASCADE on delete (match_players, match_results_pending,
--- team_rosters, team_captains all reference matches/teams with ON DELETE CASCADE), so an
--- automatic "keep the earliest row" pick could silently destroy real scheduled-player or
--- roster data attached to whichever duplicate gets deleted. If either ADD CONSTRAINT below
--- fails, that means real duplicates exist -- investigate which rows and what's attached to
--- each before deciding which to keep, rather than re-running this with a guessed DELETE.
+-- Second correction, found only after a failed run against test: `teams` ALSO already has
+-- one (teams_event_id_name_key, baseline line ~1312) -- missed on the first pass because the
+-- search for it used a \b-word-boundary regex, and "teams" has no word boundary before the
+-- "_" in "teams_event_id_name_key" (underscore counts as a word character). Re-verified every
+-- other constraint/index name in this file directly against the baseline text (not a regex
+-- search) and confirmed none of the other 7 have the same problem. Only `matches
+-- (event_id, match_number)` genuinely lacks a uniqueness constraint.
+--
+-- Not blindly deduping matches first, unlike the plan's general guidance for this task: it
+-- has children that CASCADE on delete (match_players, match_results_pending), so an
+-- automatic "keep the earliest row" pick could silently destroy real scheduled-player data
+-- attached to whichever duplicate gets deleted. If the ADD CONSTRAINT below fails, that means
+-- a real duplicate exists -- investigate which rows and what's attached to each before
+-- deciding which to keep, rather than re-running this with a guessed DELETE.
 
 ALTER TABLE public.matches
   ADD CONSTRAINT matches_event_id_match_number_key UNIQUE (event_id, match_number);
-
-ALTER TABLE public.teams
-  ADD CONSTRAINT teams_event_id_name_key UNIQUE (event_id, name);
 
 -- 20.7.2: only one event should be active at a time (the home page's pre-trip/on-trip
 -- switch assumes a single row). Defensively collapse to one active event first in case

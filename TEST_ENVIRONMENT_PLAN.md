@@ -2880,13 +2880,14 @@ a style preference, not a correctness fix, once the enum is corrected or discard
 
 #### 20.7.1 [FIX] Missing uniqueness on join tables
 
-**Corrected 2026-10-03, while writing Task H5: wrong for 9 of these 11.** This was written
-from a hand-pasted dashboard export; the real `pg_dump` baseline shows `team_rosters`,
-`match_players`, `team_captains`, `lodging_assignments`, `event_participants`,
-`reround_signups`, `course_holes`, `hole_scores`, and `ceremony_award_nominations` all
-already had the constraint listed below. Only `matches` and `teams` genuinely didn't. Kept
-the original table as a historical record of what was checked; see Task H5 for what actually
-shipped.
+**Corrected 2026-10-03, while writing and then running Task H5: wrong for 10 of these 11.**
+This was written from a hand-pasted dashboard export; the real `pg_dump` baseline shows
+`team_rosters`, `match_players`, `team_captains`, `lodging_assignments`,
+`event_participants`, `reround_signups`, `course_holes`, `hole_scores`,
+`ceremony_award_nominations`, and (confirmed only after a failed run against test, not
+caught by the first text search) `teams` all already had the constraint listed below. Only
+`matches` genuinely didn't. Kept the original table as a historical record of what was
+checked; see Task H5 for what actually shipped.
 
 Nothing in the paste prevents duplicate rows in any junction table. Each of these should
 have a composite unique constraint, and today a double-click in the admin UI can create
@@ -3244,28 +3245,37 @@ the `int8`→`text` column conversion is safe.
 Supabase SQL editor, then `npx tsc --noEmit` confirming no new type errors (expected: none,
 since the types already matched the target shape).
 
-### Task H5 (migration written 2026-10-03, not yet applied) Uniqueness and CHECK constraints
+### Task H5 (migration written and corrected 2026-10-03, not yet applied) Uniqueness and CHECK constraints
 **Major correction found while writing this migration: the 20.7.1 audit was wrong about
 almost everything in its own table.** It was based on a hand-pasted dashboard export; the
 real `pg_dump` baseline already in this repo shows 9 of the 11 "missing" uniqueness
 constraints already exist — `team_rosters`, `match_players`, `team_captains`,
 `lodging_assignments`, `event_participants`, `reround_signups`, `course_holes`,
-`hole_scores`, and `ceremony_award_nominations` all already have one. Only `matches
-(event_id, match_number)` and `teams (event_id, name)` were genuinely missing.
+`hole_scores`, and `ceremony_award_nominations` all already have one.
 `course_holes`' and `hole_scores`' 20.7.3 range CHECKs (hole_number/par) were likewise
 already present — only `strokes`/`penalty_strokes` were actually missing from `hole_scores`.
+
+**Second correction, found only after a failed run against test:** the first version of this
+migration still tried to add `teams_event_id_name_key`, which — per the error Postgres
+returned (`42P07: relation "teams_event_id_name_key" already exists`) — already exists too.
+Missed on the first pass because the check used a `\b`-word-boundary regex, and "teams" has
+no word boundary before the `_` in `teams_event_id_name_key` (underscore counts as a word
+character, so `\bteams\b` never matched). Re-verified every other constraint/index name in
+the file directly against the baseline text afterward (not a regex search) and confirmed
+none of the other 7 have the same problem. **Only `matches (event_id, match_number)`
+genuinely lacks a uniqueness constraint** — the file now adds only that one.
 
 `supabase/migrations/20261003150000_h5_uniqueness_and_checks.sql` adds, confirmed safe via
 code read (both existing write paths —`propose_match_result` and
 `set_official_match_result` RPCs — already enforce the halved/winner exclusivity in
 application logic, and `admin/matches/page.tsx`'s edit form has no control that actually sets
 either field, just carries forward whatever a row already has):
-- `matches_event_id_match_number_key`, `teams_event_id_name_key` (20.7.1's 2 real gaps) —
-  **not** deduped automatically first, unlike this task's general guidance: both tables have
-  children that `ON DELETE CASCADE` (`match_players`, `team_rosters`, `team_captains`, etc.),
-  so an automatic "keep the earliest" pick on an actual duplicate could silently destroy real
-  scheduled-player or roster rows. If either `ADD CONSTRAINT` fails, that's a signal to go
-  look at the actual conflicting rows together, not to blindly re-run a guessed `DELETE`.
+- `matches_event_id_match_number_key` (20.7.1's one real gap) — **not** deduped
+  automatically first, unlike this task's general guidance: `matches` has children that
+  `ON DELETE CASCADE` (`match_players`, `match_results_pending`), so an automatic "keep the
+  earliest" pick on an actual duplicate could silently destroy real scheduled-player rows. If
+  the `ADD CONSTRAINT` fails, that's a signal to go look at the actual conflicting rows
+  together, not to blindly re-run a guessed `DELETE`.
 - `events_one_active` partial unique index (20.7.2), with a defensive `UPDATE` first that
   collapses to one active event (keeping whichever was most recently updated) in case more
   than one already is.
@@ -3284,10 +3294,10 @@ phrases and falls back to a generic default for anything else), and
 selectable option rather than rejecting it — a CHECK limited to the 2 standard values would
 break real, intentionally-supported data.
 
-**Acceptance:** not yet verified — awaiting the user applying this migration to test via the
-Supabase SQL editor. If `matches_event_id_match_number_key` or `teams_event_id_name_key`
-fails, that reveals a real duplicate worth investigating together before resolving, not a
-reason to add a dedup step after the fact without knowing what's attached to each row.
+**Acceptance:** not yet verified — awaiting the user re-applying the corrected migration to
+test via the Supabase SQL editor. If `matches_event_id_match_number_key` fails, that reveals
+a real duplicate worth investigating together before resolving, not a reason to add a dedup
+step after the fact without knowing what's attached to each row.
 
 ### Task H6 (Agent) Indexes
 All of 20.8.1, informed by H0 queries 3 and 4 — **skip any FK that already has a leading
