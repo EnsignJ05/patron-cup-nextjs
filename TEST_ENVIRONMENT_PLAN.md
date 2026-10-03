@@ -3183,30 +3183,36 @@ still gets denied (no test for the committee-vs-admin split specifically; `event
 being admin-only is new behavior worth a specific check with a committee-role account, not just
 admin and player).
 
-### Task H3 (Agent) — **direction needs re-deciding before this runs, see below** — fix `players.is_active`/`status` split-brain
-**This task's steps are written for "standardize on `status`, drop `is_active`," but Part
-III's admin redesign (2026-10-01/02) went the opposite direction without revisiting this
-plan section**: `admin/travel`, `admin/lodging`, `admin/teams`, `admin/matches/setup`, and
-(fixed live 2026-10-02, see [[patron-cup-hifi-redesign]]) `admin/participants` all now filter
-on `is_active = true`, not `status = 'active'`. Running steps 2-3 below as originally written
-would silently break all 5 of those pages' player pickers by dropping the column they
-actually read. **Before writing this migration, re-decide 21.2 given the code as it exists
-now** — either standardize on `is_active` instead (update step 2's target to be "drop
-`status`" and migrate `match_results_pending`/wherever else reads `status`, if anywhere) or
-confirm `status` is still correct and update all 5 of the pages above plus
-`admin/participants`'s already-landed fix. Don't execute the steps below until that's decided.
+### Task H3 (code done 2026-10-03, migration written, not yet applied) Fix `players.is_active`/`status` split-brain — standardized on `is_active`
+**Direction reversed from this task's original draft** (which said "standardize on
+`status`, drop `is_active`") — user decided 2026-10-03 to go the other way, matching what
+Part III's admin redesign had already done across 5 pages (`travel`, `lodging`, `teams`,
+`matches/setup`, `participants`) without anyone revisiting this plan section at the time.
 
-Per 21.2 (original direction, now superseded above — kept for reference only):
-1. Reconcile rows (H0 query 8) — e.g. `UPDATE players SET status = 'inactive' WHERE is_active IS FALSE AND status = 'active'`, decided from the actual counts.
-2. Change `src/app/admin/teams/page.tsx:62` and
-   `src/app/admin/matches/setup/page.tsx:105` from `.eq('is_active', true)` to
-   `.eq('status', 'active')`.
-3. `ALTER TABLE players DROP COLUMN is_active;`
-4. Add `CHECK (status IN ('active','inactive','pending'))` and `NOT NULL DEFAULT 'pending'`.
+Code changes (commit `b6ead61`): `types/database.ts`'s `Player.status` →
+`Player.is_active: boolean` (and the now-unused `PlayerStatus` type removed);
+`lib/playerColumns.ts`'s `PUBLIC_PLAYER_COLUMNS` swaps `'status'` for `'is_active'`; public
+pages (`roster`, `players`) and admin pages (`reset-password`, `rerounds`) that filtered on
+`status = 'active'` now filter on `is_active = true`; `admin/players` (the actual
+status-editing UI) got its 3-value Active/Inactive/Pending `Select` collapsed to a 2-value
+Active/Inactive one bound to the boolean — "pending" behaved identically to "inactive"
+everywhere that filtered on `status`, so nothing is lost except that one label. 4 test
+fixtures + `playerColumns.test.ts` updated to match.
 
-Ship the code change **before** the column drop. **Acceptance:** a newly invited player
-appears in the admin Team-builder immediately — this is the regression test for the bug in
-20.5.1, and it needs the Part I test environment plus a seeded admin (task 6.3) to verify.
+Migration `supabase/migrations/20261003130000_h3_standardize_on_is_active.sql`: reconciles
+`is_active` FROM `status` for every existing row first (`status` was the only column anything
+ever actually wrote — `is_active` just sat at its insert-time default forever, per the
+original 20.5.1 finding), re-grants anon `SELECT` on `is_active` before `status` disappears
+under it (anon could read `players.status` for the public roster/players listings), drops
+`status`, then adds `NOT NULL DEFAULT true` to `is_active`.
+
+**Acceptance:** not yet verified — this environment has no DB connection, so per the user's
+standing instruction (set during H1/H2), they apply every Phase H migration themselves via the
+Supabase SQL editor. Once applied to test: confirm the regression test from the original
+finding still holds (a newly-admin-deactivated player disappears from `travel`/`lodging`/
+`teams`/`matches/setup`/`participants`'s pickers immediately, not just on the next trip), and
+that the public `/roster` and `/players` pages still load for an anonymous visitor (the anon
+column grant actually matters here, not just RLS).
 
 ### Task H4 (Agent) Type corrections
 `ghin_number` `int8` → `text` (20.6.1); `players.country` nullability reconciled with
