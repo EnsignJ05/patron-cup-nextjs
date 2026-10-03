@@ -100,10 +100,10 @@ export async function POST(request: Request) {
   if (existingPlayer) {
     const { error: updateError } = await adminClient
       .from('players')
-      .update({ 
+      .update({
         auth_user_id: createdUser.user.id,
         role: role,
-        status: 'active',
+        is_active: true,
       })
       .eq('id', existingPlayer.id);
 
@@ -119,7 +119,7 @@ export async function POST(request: Request) {
       first_name: firstName || 'New',
       last_name: lastName || 'Player',
       role: role,
-      status: 'active',
+      is_active: true,
     });
 
     if (playerError) {

@@ -171,8 +171,6 @@ export interface MatchPlayer {
   player_id: string;
   team_id: string;
   handicap_used: number | null;
-  is_winner: boolean;
-  points_earned: number;
   created_at: string;
   // Joined data
   player?: Player;
@@ -316,16 +314,4 @@ export interface Reround {
   // Joined data
   event?: Event;
   course?: Course;
-}
-
-export interface ReroundSignup {
-  id: string;
-  reround_id: string;
-  player_id: string;
-  signup_date: string;
-  status: string;
-  created_at: string;
-  // Joined data
-  reround?: Reround;
-  player?: Player;
 }
