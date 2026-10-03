@@ -3327,7 +3327,7 @@ Written as plain `CREATE INDEX IF NOT EXISTS` for test, matching this task's own
 needs its own statement outside a transaction) — production has live traffic these indexes
 would otherwise briefly lock against; test doesn't, so plain `CREATE INDEX` there is fine.
 
-### Task H7 (migration written 2026-10-03, not yet applied) RLS performance rewrite
+### Task H7 (applied to test 2026-10-03) RLS performance rewrite
 20.8.2, 20.8.3, 20.8.4: wrap `auth.uid()` as `(SELECT auth.uid())` or replace whole clauses
 with `current_player_id()`; merge duplicate permissive policies; re-scope `public`-role
 policies to `authenticated`.
@@ -3367,7 +3367,7 @@ above still work exactly as before for a real player and a real committee/admin 
 same as how every other Phase H migration's acceptance has actually been verified this
 session.
 
-### Task H8 (Agent) Drop unused tables and add audit-column defaults
+### Task H8 (migration written 2026-10-03, not yet applied) Drop unused tables and add audit-column defaults
 Per 21.1/21.3 (decided 2026-10-01: retire) and 21.4 ignored here, unrelated: drop
 `team_bandon`, `branson_captains`, `branson_roster` (its anon-exposing policy was already
 dropped in Part II Task S5; the table itself is still unreferenced and unused — drop it too,
@@ -3379,6 +3379,38 @@ Then 20.7.5: `NOT NULL DEFAULT now()` on audit columns and one shared `set_updat
 trigger attached to every table with `updated_at`.
 
 `pg_dump` each table being dropped to a file stored outside the database first.
+
+**Code-side prerequisite confirmed already done**: a full source grep found zero
+references anywhere in `src/` to any of the 7 tables being dropped — Part III Task R0
+already removed every route/component that read them.
+
+**20.7.5's "missing trigger" half was wrong, corrected while writing this migration**
+(same pattern as H5/H6/20.7.1/20.8.1 — checked the real baseline directly instead of
+trusting the finding text): a shared `public.update_updated_at()` trigger already exists
+and is attached to all 10 tables that need one (`courses`, `event_participants`, `events`,
+`lodging`, `matches`, `players`, `rerounds`, `round_scores`, `teams`, `travel_info`).
+`match_results_pending` deliberately has no trigger — its `SECURITY DEFINER` RPCs already
+set `updated_at` explicitly, and its column is already `NOT NULL`. Nothing to add for
+triggers; `supabase/migrations/20261003180000_h8_drop_unused_tables_and_audit_columns.sql`
+only adds the genuinely-missing `NOT NULL` (the nullability half of 20.7.5 *was* real,
+verified directly: most `created_at`/`updated_at` columns have `DEFAULT now()` but still
+allow `NULL`) across `course_holes`, `courses`, `event_participants`, `events`,
+`hole_scores`, `lodging`, `lodging_assignments`, `match_players`, `matches`, `players`,
+`team_captains`, `team_rosters`, `teams`, `rerounds`, `round_scores`, and `travel_info` —
+each with a defensive `UPDATE ... WHERE ... IS NULL` first.
+
+Drop order in the migration respects the one real cross-dependency found: `records_bandon`
+and `team_bandon` both FK-reference `player(id)`, so they're dropped before `player`
+itself; everything else has zero inbound FKs from any other table (confirmed via a direct
+grep for `REFERENCES public.<table>` on each). Also confirmed `player_team_view` (a real,
+still-used view) references `public.players` (plural, the live table), not `public.player`
+(singular, the Bandon one being dropped) — no view breaks.
+
+**The `pg_dump`-each-table-first step is a manual, outside-this-file action** — it's a CLI
+backup step, not SQL, and this agent's environment has no `pg_dump`/DB connection available
+(same limitation noted since H1). The migration file includes the exact `pg_dump` command
+as a comment; **run that yourself before running the migration**, since `DROP TABLE` is
+not reversible once committed.
 
 ### Task H9 (Human + Agent) Promote to production
 Only after the full Part I task 7.1 smoke test passes against the hardened test project.
