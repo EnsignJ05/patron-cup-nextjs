@@ -15,7 +15,7 @@ export const PUBLIC_PLAYER_COLUMNS = [
   'city',
   'state',
   'profile_image_url',
-  'status',
+  'is_active',
 ] as const;
 
 export type PublicPlayerColumn = (typeof PUBLIC_PLAYER_COLUMNS)[number];

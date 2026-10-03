@@ -43,7 +43,7 @@ export default function AdminResetPasswordPage() {
       const { data } = await supabase
         .from('players')
         .select('id, first_name, last_name, email')
-        .eq('status', 'active')
+        .eq('is_active', true)
         .order('last_name', { ascending: true });
       if (!cancelled && data) setPlayers(data);
     })();

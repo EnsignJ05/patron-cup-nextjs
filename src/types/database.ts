@@ -1,7 +1,6 @@
 // Database types for the Patron Cup Golf application
 
 export type PlayerRole = 'player' | 'committee' | 'admin';
-export type PlayerStatus = 'active' | 'inactive' | 'pending';
 
 export interface Player {
   id: string;
@@ -19,7 +18,7 @@ export interface Player {
   profile_image_url: string | null;
   bio: string | null;
   role: PlayerRole;
-  status: PlayerStatus;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
 }

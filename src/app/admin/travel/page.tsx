@@ -38,8 +38,6 @@ export default function TravelAdminPage() {
     const [travelRes, eventsRes, playersRes] = await Promise.all([
       supabase.from('travel_info').select('*, event:events(*), player:players(*)').order('arrival_date', { ascending: true }),
       supabase.from('events').select('*').order('year', { ascending: false }),
-      // NOTE: is_active, not status -- a known split-brain bug (Part IV Task H3), unchanged
-      // here since fixing it is out of scope for a visual redesign.
       supabase.from('players').select('*').eq('is_active', true).order('last_name'),
     ]);
 

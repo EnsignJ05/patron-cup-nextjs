@@ -24,8 +24,8 @@ describe('PUBLIC_PLAYER_COLUMNS', () => {
   });
 
   it('keeps the columns public pages filter and sort on', () => {
-    // .eq('status', ...) and .order('last_name') need SELECT privilege on those columns.
-    expect(PUBLIC_PLAYER_COLUMNS).toContain('status');
+    // .eq('is_active', ...) and .order('last_name') need SELECT privilege on those columns.
+    expect(PUBLIC_PLAYER_COLUMNS).toContain('is_active');
     expect(PUBLIC_PLAYER_COLUMNS).toContain('last_name');
   });
 

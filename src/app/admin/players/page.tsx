@@ -107,7 +107,7 @@ export default function PlayersAdminPage() {
       current_handicap: editingPlayer.current_handicap,
       bio: editingPlayer.bio || null,
       role: editingPlayer.role || 'player',
-      status: editingPlayer.status || 'active',
+      is_active: editingPlayer.is_active !== false,
     };
 
     // address/shirt size/dietary/emergency-contact live in public.player_private (Task S6) --
@@ -209,8 +209,8 @@ export default function PlayersAdminPage() {
                 <span className={`ad-badge ${styles[ROLE_BADGE_CLASS[player.role]]}`}>{player.role}</span>
               </span>
               <span>
-                <span className={`ad-badge ${player.status === 'active' ? styles.badgeActive : ''}`}>
-                  {player.status === 'active' ? 'Active' : player.status === 'pending' ? 'Pending' : 'Inactive'}
+                <span className={`ad-badge ${player.is_active ? styles.badgeActive : ''}`}>
+                  {player.is_active ? 'Active' : 'Inactive'}
                 </span>
               </span>
               <span style={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
@@ -355,13 +355,12 @@ export default function PlayersAdminPage() {
             <FormControl fullWidth>
               <InputLabel>Status</InputLabel>
               <Select
-                value={editingPlayer?.status || 'active'}
+                value={editingPlayer?.is_active === false ? 'inactive' : 'active'}
                 label="Status"
-                onChange={(e) => setEditingPlayer({ ...editingPlayer, status: e.target.value as 'active' | 'inactive' | 'pending' })}
+                onChange={(e) => setEditingPlayer({ ...editingPlayer, is_active: e.target.value === 'active' })}
               >
                 <MenuItem value="active">Active</MenuItem>
                 <MenuItem value="inactive">Inactive</MenuItem>
-                <MenuItem value="pending">Pending</MenuItem>
               </Select>
             </FormControl>
             <TextField

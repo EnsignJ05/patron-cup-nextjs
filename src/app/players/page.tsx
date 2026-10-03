@@ -44,7 +44,7 @@ export default function PlayersPage() {
     const { data, error } = await supabase
       .from('players')
       .select<string, PublicPlayer>(PUBLIC_PLAYER_SELECT)
-      .eq('status', 'active')
+      .eq('is_active', true)
       .order('last_name', { ascending: true });
 
     if (!error && data) {

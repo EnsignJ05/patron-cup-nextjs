@@ -122,7 +122,7 @@ export default function RosterPage() {
 
     const entries: RosterEntry[] = rostersByTeam.flatMap(({ team, rows }) =>
       rows
-        .filter((row) => row.player && row.player.status === 'active')
+        .filter((row) => row.player && row.player.is_active)
         .map((row) => ({
           rosterId: row.id,
           player: row.player,

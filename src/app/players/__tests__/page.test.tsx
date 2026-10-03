@@ -24,7 +24,7 @@ jest.mock('@/lib/supabaseBrowser', () => ({
                     city: 'Austin',
                     state: 'TX',
                     profile_image_url: null,
-                    status: 'active',
+                    is_active: true,
                   },
                 ],
                 error: null,

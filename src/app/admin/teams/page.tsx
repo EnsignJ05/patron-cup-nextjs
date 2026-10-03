@@ -43,8 +43,6 @@ export default function TeamsAdminPage() {
     const [teamsRes, eventsRes, playersRes] = await Promise.all([
       supabase.from('teams').select('*, event:events(*)').order('created_at', { ascending: false }),
       supabase.from('events').select('*').order('year', { ascending: false }),
-      // NOTE: is_active, not status -- same known split-brain bug as admin/travel and
-      // admin/lodging (Part IV Task H3), unchanged here.
       supabase.from('players').select('*').eq('is_active', true).order('last_name'),
     ]);
 
