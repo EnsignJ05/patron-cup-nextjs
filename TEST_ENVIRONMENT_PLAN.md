@@ -3245,7 +3245,7 @@ the `int8`→`text` column conversion is safe.
 Supabase SQL editor, then `npx tsc --noEmit` confirming no new type errors (expected: none,
 since the types already matched the target shape).
 
-### Task H5 (migration written and corrected 2026-10-03, not yet applied) Uniqueness and CHECK constraints
+### Task H5 (applied to test 2026-10-03) Uniqueness and CHECK constraints
 **Major correction found while writing this migration: the 20.7.1 audit was wrong about
 almost everything in its own table.** It was based on a hand-pasted dashboard export; the
 real `pg_dump` baseline already in this repo shows 9 of the 11 "missing" uniqueness
@@ -3294,16 +3294,38 @@ phrases and falls back to a generic default for anything else), and
 selectable option rather than rejecting it — a CHECK limited to the 2 standard values would
 break real, intentionally-supported data.
 
-**Acceptance:** not yet verified — awaiting the user re-applying the corrected migration to
-test via the Supabase SQL editor. If `matches_event_id_match_number_key` fails, that reveals
-a real duplicate worth investigating together before resolving, not a reason to add a dedup
-step after the fact without knowing what's attached to each row.
+**Acceptance:** **applied to test 2026-10-03**, confirmed by the user — the corrected
+migration (just the one real `matches_event_id_match_number_key` constraint, plus the
+`events_one_active` index and the 5 CHECK constraints) ran clean, no duplicate-row failure.
 
-### Task H6 (Agent) Indexes
+### Task H6 (migration written 2026-10-03, not yet applied) Indexes
 All of 20.8.1, informed by H0 queries 3 and 4 — **skip any FK that already has a leading
 index**, and skip single-column indexes made redundant by an H5 composite unique. Use
 `CREATE INDEX IF NOT EXISTS`; on production prefer `CREATE INDEX CONCURRENTLY` (which cannot
 run inside a transaction, so it needs its own migration file or a manual step).
+
+Same lesson as H5: 20.8.1's own list assumed zero indexes exist beyond primary keys, which
+isn't true. Cross-checked every FK column in that list directly against the baseline dump
+(not a regex, after H5's word-boundary miss) before writing anything. Of 20.8.1's ~30 FK
+columns, most already have coverage — either an explicit `CREATE INDEX` already in the
+baseline, or a composite `UNIQUE` constraint's backing index, which covers lookups on its
+*leading* column only, not later ones (e.g. `teams(event_id, name)`'s unique constraint
+already covers `event_id` lookups). `supabase/migrations/
+20261003160000_h6_fk_indexes.sql` adds only the columns with no coverage at all: `team_captains
+.player_id`, `match_players.player_id`/`.team_id`, `round_scores.course_id`, `lodging.event_id`,
+`lodging_assignments.player_id`, `event_participants.player_id`, `courses.event_id`,
+`matches.course_id`/`.winner_team_id`, all 4 of `rerounds`' player columns plus its
+`event_id`/`course_id`, and 5 of `match_results_pending`'s player-FK columns (`winner_team_id`,
+`proposed_by_player_id`, `confirmed_by_player_id`, `rejected_by_player_id`,
+`superseded_by_proposal_id`) plus `ceremony_award_nominations`' `nominator_player_id`/
+`nominated_player_id`. Deliberately skipped `round_scores.tee_time_id` (no FK constraint
+exists — `tee_times` doesn't exist per 20.6.3, nothing to index) and `reround_signups.player_id`
+(the table itself is an H8 drop target, not yet executed — indexing it now is wasted work).
+
+Written as plain `CREATE INDEX IF NOT EXISTS` for test, matching this task's own guidance.
+**When H9 promotes to production, switch each to `CREATE INDEX CONCURRENTLY` instead** (each
+needs its own statement outside a transaction) — production has live traffic these indexes
+would otherwise briefly lock against; test doesn't, so plain `CREATE INDEX` there is fine.
 
 ### Task H7 (Agent) RLS performance rewrite
 20.8.2, 20.8.3, 20.8.4: wrap `auth.uid()` as `(SELECT auth.uid())` or replace whole clauses
