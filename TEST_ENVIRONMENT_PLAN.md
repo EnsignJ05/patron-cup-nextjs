@@ -2879,6 +2879,15 @@ a style preference, not a correctness fix, once the enum is corrected or discard
 ### 20.7 Data-integrity gaps
 
 #### 20.7.1 [FIX] Missing uniqueness on join tables
+
+**Corrected 2026-10-03, while writing Task H5: wrong for 9 of these 11.** This was written
+from a hand-pasted dashboard export; the real `pg_dump` baseline shows `team_rosters`,
+`match_players`, `team_captains`, `lodging_assignments`, `event_participants`,
+`reround_signups`, `course_holes`, `hole_scores`, and `ceremony_award_nominations` all
+already had the constraint listed below. Only `matches` and `teams` genuinely didn't. Kept
+the original table as a historical record of what was checked; see Task H5 for what actually
+shipped.
+
 Nothing in the paste prevents duplicate rows in any junction table. Each of these should
 have a composite unique constraint, and today a double-click in the admin UI can create
 duplicates:
@@ -3235,14 +3244,50 @@ the `int8`→`text` column conversion is safe.
 Supabase SQL editor, then `npx tsc --noEmit` confirming no new type errors (expected: none,
 since the types already matched the target shape).
 
-### Task H5 (Agent) Uniqueness and CHECK constraints
-Everything in 20.7.1, 20.7.2, 20.7.3. Use `CREATE UNIQUE INDEX` / `ALTER TABLE … ADD
-CONSTRAINT`, each `IF NOT EXISTS`-guarded where syntax allows. Expect some to **fail on
-production data** — duplicate `team_rosters` rows are likely. That is a finding, not an
-obstacle: dedupe first, in the same migration, and record what was found.
+### Task H5 (migration written 2026-10-03, not yet applied) Uniqueness and CHECK constraints
+**Major correction found while writing this migration: the 20.7.1 audit was wrong about
+almost everything in its own table.** It was based on a hand-pasted dashboard export; the
+real `pg_dump` baseline already in this repo shows 9 of the 11 "missing" uniqueness
+constraints already exist — `team_rosters`, `match_players`, `team_captains`,
+`lodging_assignments`, `event_participants`, `reround_signups`, `course_holes`,
+`hole_scores`, and `ceremony_award_nominations` all already have one. Only `matches
+(event_id, match_number)` and `teams (event_id, name)` were genuinely missing.
+`course_holes`' and `hole_scores`' 20.7.3 range CHECKs (hole_number/par) were likewise
+already present — only `strokes`/`penalty_strokes` were actually missing from `hole_scores`.
 
-Run this against the **test** project with real seeded data before prod, and write the seed
-script (Part I task 6.2) to satisfy these constraints.
+`supabase/migrations/20261003150000_h5_uniqueness_and_checks.sql` adds, confirmed safe via
+code read (both existing write paths —`propose_match_result` and
+`set_official_match_result` RPCs — already enforce the halved/winner exclusivity in
+application logic, and `admin/matches/page.tsx`'s edit form has no control that actually sets
+either field, just carries forward whatever a row already has):
+- `matches_event_id_match_number_key`, `teams_event_id_name_key` (20.7.1's 2 real gaps) —
+  **not** deduped automatically first, unlike this task's general guidance: both tables have
+  children that `ON DELETE CASCADE` (`match_players`, `team_rosters`, `team_captains`, etc.),
+  so an automatic "keep the earliest" pick on an actual duplicate could silently destroy real
+  scheduled-player or roster rows. If either `ADD CONSTRAINT` fails, that's a signal to go
+  look at the actual conflicting rows together, not to blindly re-run a guessed `DELETE`.
+- `events_one_active` partial unique index (20.7.2), with a defensive `UPDATE` first that
+  collapses to one active event (keeping whichever was most recently updated) in case more
+  than one already is.
+- `matches_halved_xor_winner`, `events_end_after_start`, `lodging_checkout_after_checkin`,
+  `hole_scores_strokes_positive`, `hole_scores_penalty_nonnegative`,
+  `round_scores_total_positive` (the genuinely-missing half of 20.7.3).
+
+**Deliberately not added, decided while writing this migration rather than applied blindly:**
+`players.status`'s CHECK is moot (column dropped in H3). `event_participants.status`/
+`payment_status` are completely unused columns — a full source grep found zero reads or
+writes of either — so there's no real call site defining valid values to encode; a CHECK
+here would invent a business rule, not capture one. `matches.match_type`'s premise was
+wrong: `matchFormatConfig.ts` doesn't define a closed set (it pattern-matches a few known
+phrases and falls back to a generic default for anything else), and
+`admin/matches/page.tsx`'s own UI explicitly keeps a non-standard existing `match_type` as a
+selectable option rather than rejecting it — a CHECK limited to the 2 standard values would
+break real, intentionally-supported data.
+
+**Acceptance:** not yet verified — awaiting the user applying this migration to test via the
+Supabase SQL editor. If `matches_event_id_match_number_key` or `teams_event_id_name_key`
+fails, that reveals a real duplicate worth investigating together before resolving, not a
+reason to add a dedup step after the fact without knowing what's attached to each row.
 
 ### Task H6 (Agent) Indexes
 All of 20.8.1, informed by H0 queries 3 and 4 — **skip any FK that already has a leading
