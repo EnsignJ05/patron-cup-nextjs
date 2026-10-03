@@ -289,8 +289,10 @@ export interface EventParticipant {
   id: string;
   event_id: string;
   player_id: string;
-  handicap_at_event: number | null;
-  is_confirmed: boolean;
+  registration_date: string | null;
+  status: string | null;
+  payment_status: string | null;
+  payment_amount: number | null;
   notes: string | null;
   created_at: string;
   updated_at: string;

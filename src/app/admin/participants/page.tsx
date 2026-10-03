@@ -92,8 +92,7 @@ export default function EventParticipantsPage() {
     const participantData = {
       event_id: selectedEvent,
       player_id: formData.get('player_id') as string,
-      handicap_at_event: formData.get('handicap_at_event') ? Number(formData.get('handicap_at_event')) : null,
-      is_confirmed: formData.get('is_confirmed') === 'true',
+      status: formData.get('status') as string,
       notes: (formData.get('notes') as string) || null,
     };
 
@@ -121,15 +120,11 @@ export default function EventParticipantsPage() {
   async function handleBulkAdd() {
     if (selectedPlayers.length === 0) return;
 
-    const newParticipants = selectedPlayers.map((playerId) => {
-      const player = players.find((p) => p.id === playerId);
-      return {
-        event_id: selectedEvent,
-        player_id: playerId,
-        handicap_at_event: player?.current_handicap || null,
-        is_confirmed: false,
-      };
-    });
+    const newParticipants = selectedPlayers.map((playerId) => ({
+      event_id: selectedEvent,
+      player_id: playerId,
+      status: 'registered',
+    }));
 
     const { error } = await supabase.from('event_participants').insert(newParticipants);
 
@@ -159,7 +154,7 @@ export default function EventParticipantsPage() {
   async function handleToggleConfirmed(participant: ParticipantWithPlayer) {
     const { error } = await supabase
       .from('event_participants')
-      .update({ is_confirmed: !participant.is_confirmed })
+      .update({ status: participant.status === 'confirmed' ? 'registered' : 'confirmed' })
       .eq('id', participant.id);
 
     if (error) {
@@ -179,7 +174,7 @@ export default function EventParticipantsPage() {
         title="Participants"
         sub={
           currentEvent
-            ? `${participants.length} participant${participants.length === 1 ? '' : 's'} · ${participants.filter((p) => p.is_confirmed).length} confirmed`
+            ? `${participants.length} participant${participants.length === 1 ? '' : 's'} · ${participants.filter((p) => p.status === 'confirmed').length} confirmed`
             : undefined
         }
         actions={
@@ -251,15 +246,15 @@ export default function EventParticipantsPage() {
                 profileImageUrl={participant.players.profile_image_url}
               />
               <span style={{ fontSize: 13, color: 'var(--pc-ink-2)' }}>{participant.players.email}</span>
-              <span className="ad-num">{participant.handicap_at_event ?? '—'}</span>
+              <span className="ad-num">{participant.players.current_handicap ?? '—'}</span>
               <span>
                 <button
                   type="button"
                   className="ad-chip"
-                  data-on={participant.is_confirmed}
+                  data-on={participant.status === 'confirmed'}
                   onClick={() => handleToggleConfirmed(participant)}
                 >
-                  {participant.is_confirmed ? 'Confirmed' : 'Pending'}
+                  {participant.status === 'confirmed' ? 'Confirmed' : 'Pending'}
                 </button>
               </span>
               <span style={{ fontSize: 13, color: 'var(--pc-ink-2)' }}>{participant.notes || '—'}</span>
@@ -342,18 +337,11 @@ export default function EventParticipantsPage() {
                   />
                 </>
               )}
-              <TextField
-                name="handicap_at_event"
-                label="Handicap at Event"
-                type="number"
-                inputProps={{ step: '0.1' }}
-                defaultValue={editingParticipant?.handicap_at_event || ''}
-              />
               <FormControl fullWidth>
-                <InputLabel>Confirmed</InputLabel>
-                <Select name="is_confirmed" label="Confirmed" defaultValue={editingParticipant?.is_confirmed ? 'true' : 'false'}>
-                  <MenuItem value="false">Pending</MenuItem>
-                  <MenuItem value="true">Confirmed</MenuItem>
+                <InputLabel>Status</InputLabel>
+                <Select name="status" label="Status" defaultValue={editingParticipant?.status || 'registered'}>
+                  <MenuItem value="registered">Pending</MenuItem>
+                  <MenuItem value="confirmed">Confirmed</MenuItem>
                 </Select>
               </FormControl>
               <TextField name="notes" label="Notes" multiline rows={2} defaultValue={editingParticipant?.notes || ''} />
@@ -393,7 +381,7 @@ export default function EventParticipantsPage() {
           <div>
             <div className="ad-crumb">Participants</div>
             <h2 className={styles.dialogTitle}>Bulk add participants</h2>
-            <p className="ad-sub">Select players to add to {currentEvent?.name}. Their current handicap becomes the event handicap.</p>
+            <p className="ad-sub">Select players to add to {currentEvent?.name}.</p>
           </div>
           <button
             type="button"
