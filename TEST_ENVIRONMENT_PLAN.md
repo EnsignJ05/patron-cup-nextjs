@@ -3298,7 +3298,7 @@ break real, intentionally-supported data.
 migration (just the one real `matches_event_id_match_number_key` constraint, plus the
 `events_one_active` index and the 5 CHECK constraints) ran clean, no duplicate-row failure.
 
-### Task H6 (migration written 2026-10-03, not yet applied) Indexes
+### Task H6 (applied to test 2026-10-03) Indexes
 All of 20.8.1, informed by H0 queries 3 and 4 — **skip any FK that already has a leading
 index**, and skip single-column indexes made redundant by an H5 composite unique. Use
 `CREATE INDEX IF NOT EXISTS`; on production prefer `CREATE INDEX CONCURRENTLY` (which cannot
@@ -3327,16 +3327,45 @@ Written as plain `CREATE INDEX IF NOT EXISTS` for test, matching this task's own
 needs its own statement outside a transaction) — production has live traffic these indexes
 would otherwise briefly lock against; test doesn't, so plain `CREATE INDEX` there is fine.
 
-### Task H7 (Agent) RLS performance rewrite
+### Task H7 (migration written 2026-10-03, not yet applied) RLS performance rewrite
 20.8.2, 20.8.3, 20.8.4: wrap `auth.uid()` as `(SELECT auth.uid())` or replace whole clauses
 with `current_player_id()`; merge duplicate permissive policies; re-scope `public`-role
 policies to `authenticated`.
 
-This rewrites ~15 policies, so it is the highest-regression task in Phase H. It must land
-**after** Part II's policy work (which rewrites `players` policies and adds column grants) to
-avoid two authors editing the same policies. **Acceptance:** Part II's RLS test suite
-(`npm run test:rls`, its task T-series) passes unchanged — the policies get faster, not
-different.
+This rewrites ~15 policies, so it is the highest-regression task in Phase H — Part II
+(already complete) lands first as planned, so no two-author collision risk. Unlike H5/H6,
+**every claim in 20.8.2/20.8.3/20.8.4 checked out exactly against the real baseline
+policies** when verified directly (not via regex this time) before writing anything — no
+corrections needed here, just confirmation.
+
+`supabase/migrations/20261003170000_h7_rls_performance.sql`: `ALTER POLICY` to rewrite
+`players_update_own` → folded into a merge (see below) rather than altered twice; the two
+`profiles` own-row policies and `reround_signups_insert_own`/`_delete_own` (no committee
+counterpart to merge with) get their bare `auth.uid()` wrapped or replaced with
+`current_player_id()`; `ceremony_award_nominations_select_committee` and
+`match_results_pending_select`'s first OR-branch get their inline committee/admin `EXISTS`
+re-derivation replaced with the already-`STABLE` `is_committee_or_admin()` helper (built in
+H1). Then `DROP`+`CREATE` to merge each redundant permissive-policy pair into one OR'd
+policy: `players` (UPDATE), `round_scores` (INSERT, UPDATE), `travel_info` (INSERT, UPDATE),
+`hole_scores` (INSERT). `events`/`matches`' anon+authenticated SELECT pair has the identical
+`USING (true)` already, so those just get `ALTER POLICY ... TO authenticated, anon` on the
+survivor and a `DROP` of the now-redundant anon-only one, rather than a full merge rewrite.
+Finally, `ALTER POLICY ... TO authenticated` on `match_results_pending`'s 4 policies and
+`ceremony_award_nominations`'s 2 (20.8.4) — no behavior change, since anon could never pass
+either table's `USING`/`WITH CHECK` anyway; this just stops anon from being evaluated against
+them at all.
+
+**This task's own acceptance criterion doesn't exist**: `npm run test:rls` isn't in
+`package.json`, and no RLS-specific test file exists anywhere in the repo — searched the
+whole tree. Whatever automated RLS verification Part II's text assumed either was never
+built or was done as an ad-hoc live check against the database rather than a committed test
+suite (consistent with how Part II's own acceptance was actually verified at the time — live
+queries against test/production, not a script). **Real acceptance, until/unless that script
+gets built**: applied to test, then a live check that round_scores/travel_info/hole_scores
+own-row insert/update, players own-row update, and committee/admin access to all of the
+above still work exactly as before for a real player and a real committee/admin account —
+same as how every other Phase H migration's acceptance has actually been verified this
+session.
 
 ### Task H8 (Agent) Drop unused tables and add audit-column defaults
 Per 21.1/21.3 (decided 2026-10-01: retire) and 21.4 ignored here, unrelated: drop
