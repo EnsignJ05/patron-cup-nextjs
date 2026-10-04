@@ -20,6 +20,21 @@
 - Prefer lightweight unit tests for shared logic and critical components.
 - Add regression tests when fixing bugs.
 
+### Browser-level (E2E) tests
+A Playwright suite in `e2e/` covers real browser behavior against the **test** environment
+(`test.patron-cup.com` by default, or a local server — see `e2e/README.md`) that Jest's
+jsdom-based unit tests can't reach: full page navigation, Supabase Auth sessions, and
+multi-step UI flows. It's on-demand only (`npm run test:e2e`), never auto-triggered.
+
+- **When you change UI-facing functionality** — a page's behavior, a form's validation, a
+  redirect/gating rule, a drag-and-drop interaction — add or update the corresponding spec
+  in `e2e/`, the same way the Testing section above expects a Jest test for logic changes.
+- **Never let an E2E test wipe or reset the whole test database.** Tests create their own
+  namespaced throwaway data (prefixed via `runSlug`, see `e2e/support/namespace.ts`) and
+  clean it up themselves; `supabase/seed/seed-test.sql` stays a separate, manual command.
+- See `e2e/README.md` for the full guide: directory layout, the dual deployed/local run
+  modes, auth setup, and the namespacing/cleanup convention.
+
 ## UI/UX Expectations
 - All new UI must work correctly in **both light and dark modes**; verify in both themes.
 - **Mobile functionality is critical**:

@@ -54,3 +54,9 @@ debug-storybook.log
 /storybook-static
 .env*
 !.env.example
+!.env.e2e.example
+
+# playwright (E2E)
+/playwright-report/
+/test-results/
+/playwright/.auth/
