@@ -16,6 +16,10 @@ setup('authenticate as admin', async ({ page }) => {
   await page.getByLabel('Password').fill(ADMIN_PASSWORD);
   await page.getByRole('button', { name: 'Sign in' }).click();
 
-  await expect(page).toHaveURL(/\/admin\/dashboard/);
+  // The login flow genuinely involves two sequential Supabase round trips (sign-in, then
+  // AuthContext's own role/must-change-password fetch) before the redirect fires -- the
+  // button deliberately stays in its "Signing in..." state for that whole window (see
+  // LoginClient.tsx). Playwright's default 5s assertion timeout isn't generous enough for it.
+  await expect(page).toHaveURL(/\/admin\/dashboard/, { timeout: 15_000 });
   await page.context().storageState({ path: authFile });
 });

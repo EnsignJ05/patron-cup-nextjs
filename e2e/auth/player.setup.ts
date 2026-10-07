@@ -50,6 +50,7 @@ setup('authenticate as player', async ({ page }) => {
     await page.goto('/dashboard');
   }
 
-  await expect(page).toHaveURL(/\/dashboard/);
+  // See admin.setup.ts for why this needs a longer-than-default timeout.
+  await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 });
   await page.context().storageState({ path: authFile });
 });

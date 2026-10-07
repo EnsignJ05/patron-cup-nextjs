@@ -14,6 +14,8 @@ setup('authenticate as committee', async ({ page }) => {
   await page.getByLabel('Password').fill(COMMITTEE_PASSWORD);
   await page.getByRole('button', { name: 'Sign in' }).click();
 
-  await expect(page).toHaveURL(/\/admin\/dashboard/);
+  // See admin.setup.ts for why this needs a longer-than-default timeout: the login flow
+  // genuinely involves two sequential Supabase round trips before the redirect fires.
+  await expect(page).toHaveURL(/\/admin\/dashboard/, { timeout: 15_000 });
   await page.context().storageState({ path: authFile });
 });
