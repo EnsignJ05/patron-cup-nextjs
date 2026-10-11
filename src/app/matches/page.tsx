@@ -8,6 +8,7 @@ import InputLabel from '@mui/material/InputLabel';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import Image from 'next/image';
+import Link from 'next/link';
 import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
 import type { Match, Event, Course, Team, Player, MatchPlayer, TeamRoster } from '@/types/database';
 import { getTeamTotals } from '@/lib/matchScoring';
@@ -19,6 +20,8 @@ import {
   type EventMatchHandicapStrokesCsvRow,
 } from '@/lib/exportEventMatchHandicapStrokesCsv';
 import { sanitizeFilenameSegment } from '@/lib/exportEventMatchesCsv';
+import { useLiveMatchScores } from '@/hooks/useLiveMatchScores';
+import type { MatchPlayStateWithAllocation } from '@/lib/scoring/matchPlay';
 import styles from './page.module.css';
 
 type MatchWithJoins = Match & { course?: Course; winner_team?: Team };
@@ -167,20 +170,55 @@ function RoundChip({
 }
 
 // ── Chevron match card ────────────────────────────────────────────────────────
+function LiveStatusRow({
+  liveState,
+  teamA,
+  teamB,
+}: {
+  liveState: MatchPlayStateWithAllocation;
+  teamA: { id: string; name: string; color: string };
+  teamB: { id: string; name: string; color: string };
+}) {
+  const leader = liveState.leaderTeamId === teamA.id ? teamA : liveState.leaderTeamId === teamB.id ? teamB : null;
+  const statusText = leader ? `${leader.name} ${liveState.resultLabel}` : liveState.resultLabel || 'All square';
+
+  return (
+    <div className={styles.liveStatusRow}>
+      <div className={styles.liveStrip}>
+        {liveState.holeResults.map((r) => (
+          <span
+            key={r.hole}
+            className={`${styles.liveStripCell} ${
+              r.wonBy === 'A' ? styles.liveStripA : r.wonBy === 'B' ? styles.liveStripB : r.wonBy === 'halved' ? styles.liveStripHalved : ''
+            }`}
+          />
+        ))}
+      </div>
+      <div className={styles.liveStatusText}>
+        <span>{statusText}</span>
+        <span>Thru {liveState.thru}</span>
+      </div>
+    </div>
+  );
+}
+
 function MatchChevCard({
   match,
   teamA,
   teamB,
   teamAPlayers,
   teamBPlayers,
+  liveState,
 }: {
   match: MatchWithJoins;
   teamA: { id: string; name: string; color: string };
   teamB: { id: string; name: string; color: string };
   teamAPlayers: PlayerCard[];
   teamBPlayers: PlayerCard[];
+  liveState?: MatchPlayStateWithAllocation;
 }) {
   const isFinished = !!match.winner_team_id || match.is_halved;
+  const isLive = !isFinished && liveState && (liveState.status === 'in_progress' || liveState.status === 'closed_out');
   const isWinA = match.winner_team_id === teamA.id;
   const isWinB = match.winner_team_id === teamB.id;
 
@@ -201,7 +239,13 @@ function MatchChevCard({
         <span className={styles.matchLabel}>MATCH {match.match_number}</span>
         {match.is_halved && <span className={styles.statusFinal}>HALVED</span>}
         {!match.is_halved && isFinished && <span className={styles.statusFinal}>FINAL</span>}
-        {!isFinished && <span className={styles.statusUpcoming}>UPCOMING</span>}
+        {isLive && (
+          <span className={styles.livePill}>
+            <i className={styles.liveDot} />
+            LIVE
+          </span>
+        )}
+        {!isFinished && !isLive && <span className={styles.statusUpcoming}>UPCOMING</span>}
       </div>
 
       <div className={styles.chevPair}>
@@ -243,6 +287,7 @@ function MatchChevCard({
           </div>
         </div>
       </div>
+      {isLive && liveState && <LiveStatusRow liveState={liveState} teamA={teamA} teamB={teamB} />}
     </div>
   );
 }
@@ -250,7 +295,7 @@ function MatchChevCard({
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function MatchesPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
-  const { role } = useAuth();
+  const { user, role } = useAuth();
   const [events, setEvents] = useState<Event[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [matches, setMatches] = useState<MatchWithJoins[]>([]);
@@ -391,6 +436,23 @@ export default function MatchesPage() {
     return getTeamTotals(matches, eventTeams.map((t) => t.id));
   }, [matches, eventTeams]);
 
+  const liveMatchIds = useMemo(() => matches.map((m) => m.id), [matches]);
+  const livePlayerRows = useMemo(
+    () =>
+      matchPlayers.map((mp) => ({
+        match_id: mp.match_id,
+        player_id: mp.player_id,
+        team_id: mp.team_id,
+        strokes_received: mp.strokes_received,
+      })),
+    [matchPlayers],
+  );
+  const { statesByMatchId: liveStatesByMatchId, isAuthorized: liveAuthorized } = useLiveMatchScores({
+    eventId: selectedEventId,
+    matchIds: liveMatchIds,
+    matchPlayers: livePlayerRows,
+  });
+
   const filteredMatches = useMemo(
     () =>
       resolvedCourseId
@@ -479,6 +541,15 @@ export default function MatchesPage() {
       <div className={styles.cupWrap}>
         <CupScore teams={eventTeams} totals={teamTotals} />
       </div>
+
+      {!user && (
+        <div className={styles.signInPrompt}>
+          <Link href="/login">Sign in</Link> to follow live scoring as it happens.
+        </div>
+      )}
+      {user && !liveAuthorized && (
+        <div className={styles.signInPrompt}>Loading live scoring…</div>
+      )}
 
       {error && (
         <Alert severity="error" sx={{ mx: 2, mb: 1 }} onClose={() => setError('')}>
@@ -595,6 +666,7 @@ export default function MatchesPage() {
                     teamB={teamB}
                     teamAPlayers={aBase.map(withMetrics)}
                     teamBPlayers={bBase.map(withMetrics)}
+                    liveState={liveStatesByMatchId.get(match.id)}
                   />
                 );
               })}
