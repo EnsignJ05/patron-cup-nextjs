@@ -1,60 +1,59 @@
-.container {
-  min-height: 100vh;
-  width: 100vw;
-  background: var(--bg);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  color: var(--text);
-  padding-top: 32px;
-  padding-left: 8px;
-  padding-right: 8px;
+.root {
+  min-height: calc(100vh - 64px);
+  background: var(--pc-bg);
+  color: var(--pc-ink);
 }
 
-.title {
-  margin-bottom: 8px;
-  font-weight: 700;
-  font-size: 2rem;
-  color: var(--text);
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px 16px 48px;
+}
+
+.label {
+  font-family: var(--pc-font-sans);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--pc-ink-3);
+}
+
+.displayHeading {
+  font-family: var(--pc-font-serif);
+  font-size: 36px;
+  font-weight: 500;
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  color: var(--pc-ink);
+  margin: 8px 0 4px;
 }
 
 .subtitle {
-  margin-bottom: 16px;
-  color: var(--text-muted);
-  font-size: 1rem;
+  font-size: 13px;
   font-style: italic;
+  color: var(--pc-ink-3);
+  margin-bottom: 20px;
 }
 
 .gridContainer {
   display: grid;
   grid-template-columns: 1fr;
   gap: 16px;
-  width: 100%;
-  max-width: 900px;
-  padding-left: 0;
-  padding-right: 0;
 }
 
-@media (min-width: 600px) {
+@media (min-width: 1024px) {
   .container {
-    padding-top: 64px;
-    padding-left: 16px;
-    padding-right: 16px;
+    padding: 40px 24px 72px;
   }
 
-  .title {
-    margin-bottom: 16px;
-    font-size: 2.5rem;
-  }
-
-  .subtitle {
-    margin-bottom: 32px;
-    font-size: 1.1rem;
+  .displayHeading {
+    font-size: 56px;
+    letter-spacing: -0.035em;
   }
 
   .gridContainer {
     grid-template-columns: 1fr 1fr;
-    gap: 32px;
+    gap: 24px;
   }
 }

@@ -1,7 +1,6 @@
 // Database types for the Patron Cup Golf application
 
 export type PlayerRole = 'player' | 'committee' | 'admin';
-export type PlayerStatus = 'active' | 'inactive' | 'pending';
 
 export interface Player {
   id: string;
@@ -19,7 +18,7 @@ export interface Player {
   profile_image_url: string | null;
   bio: string | null;
   role: PlayerRole;
-  status: PlayerStatus;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -172,8 +171,6 @@ export interface MatchPlayer {
   player_id: string;
   team_id: string;
   handicap_used: number | null;
-  is_winner: boolean;
-  points_earned: number;
   created_at: string;
   // Joined data
   player?: Player;
@@ -290,8 +287,10 @@ export interface EventParticipant {
   id: string;
   event_id: string;
   player_id: string;
-  handicap_at_event: number | null;
-  is_confirmed: boolean;
+  registration_date: string | null;
+  status: string | null;
+  payment_status: string | null;
+  payment_amount: number | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -315,16 +314,4 @@ export interface Reround {
   // Joined data
   event?: Event;
   course?: Course;
-}
-
-export interface ReroundSignup {
-  id: string;
-  reround_id: string;
-  player_id: string;
-  signup_date: string;
-  status: string;
-  created_at: string;
-  // Joined data
-  reround?: Reround;
-  player?: Player;
 }

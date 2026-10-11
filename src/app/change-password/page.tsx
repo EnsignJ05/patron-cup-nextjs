@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Box, Typography, TextField, Button, Paper, Alert } from '@mui/material';
+import { TextField, Button, Paper, Alert } from '@mui/material';
 import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
 import { useAuth } from '@/context/AuthContext';
 import styles from './page.module.css';
@@ -65,7 +65,14 @@ import styles from './page.module.css';
        }
  
        setSuccess('Password updated.');
-       router.replace('/dashboard');
+       // A hard navigation, not router.replace(): the sidebar's own "Dashboard" link has
+       // almost certainly already prefetched /dashboard while must_change_password was still
+       // true, and Next.js's client router cache serves that stale (redirect-to-
+       // /change-password) result instead of re-running middleware -- confirmed via direct
+       // testing, this leaves the user stuck on /change-password indefinitely even though the
+       // database write above already succeeded. A full page load bypasses the client router
+       // cache entirely and re-evaluates middleware fresh.
+       window.location.href = '/dashboard';
      } catch (err) {
        const message = err instanceof Error ? err.message : 'Unable to update password.';
        setError(message);
@@ -75,18 +82,11 @@ import styles from './page.module.css';
    };
  
    return (
-    <Box className={styles.pageRoot}>
-       <Paper
-         elevation={3}
-        className={styles.formCard}
-       >
-        <Typography variant="h4" component="h1" className={styles.title}>
-           Set a new password
-         </Typography>
-        <Typography variant="body2" className={styles.subtitle}>
-           Please update your temporary password to continue.
-         </Typography>
- 
+    <div className={styles.pageRoot}>
+      <Paper elevation={0} className={styles.formCard}>
+        <h1 className={styles.title}>Set a new password</h1>
+        <p className={styles.subtitle}>Please update your temporary password to continue.</p>
+
          {error && (
           <Alert severity="error" className={styles.alert}>
              {error}
@@ -97,9 +97,9 @@ import styles from './page.module.css';
              {success}
            </Alert>
          )}
- 
+
          <form onSubmit={handleSubmit}>
-          <Box className={styles.formFields}>
+          <div className={styles.formFields}>
              <TextField
                label="New password"
                type="password"
@@ -128,9 +128,9 @@ import styles from './page.module.css';
              >
                {submitting ? 'Updating...' : 'Update password'}
              </Button>
-           </Box>
+          </div>
          </form>
-       </Paper>
-     </Box>
+      </Paper>
+    </div>
    );
  }

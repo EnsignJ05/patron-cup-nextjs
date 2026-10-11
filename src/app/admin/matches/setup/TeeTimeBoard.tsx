@@ -21,7 +21,7 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import { AGrip } from '@/components/admin/AdminIcons';
 import { isSlotWithinCapacity, matchTimesEqual } from '@/lib/matchFormatConfig';
 import {
   buildTeeTimeBoardModel,
@@ -82,7 +82,7 @@ function DroppableColumn({ id, label, children }: DroppableColumnProps) {
         ref={setNodeRef}
         className={styles.columnBody}
         style={{
-          outline: isOver ? '2px dashed var(--accent-blue, #1976d2)' : undefined,
+          outline: isOver ? '2px dashed var(--pc-ink)' : undefined,
           outlineOffset: 2,
           borderRadius: 4,
         }}
@@ -121,7 +121,7 @@ function SortableMatchCard({ id, children }: SortableMatchCardProps) {
           {...attributes}
           {...listeners}
         >
-          <DragIndicatorIcon fontSize="small" />
+          <AGrip />
         </button>
         <div className={styles.cardContent}>{children}</div>
       </div>

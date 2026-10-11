@@ -1,0 +1,55 @@
+.eventFilter {
+  min-width: 200px;
+}
+
+.alert {
+  margin-bottom: 16px;
+}
+
+.emptyState {
+  padding: 36px 24px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--pc-ink-3);
+}
+
+.teamsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.playerChip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 6px 4px 10px;
+  border-radius: 999px;
+  background: var(--pc-chip-bg);
+  font-size: 12px;
+  color: var(--pc-ink);
+}
+
+.chipRemove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: none;
+  background: none;
+  color: var(--pc-ink-3);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.chipRemove:hover {
+  color: var(--pc-ink);
+}
+
+@media (max-width: 640px) {
+  .teamsGrid {
+    grid-template-columns: 1fr;
+  }
+}

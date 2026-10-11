@@ -1,8 +1,7 @@
 'use client';
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
 import Link from 'next/link';
+import Image from 'next/image';
 import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
 import type { Team, TeamRoster } from '@/types/database';
 import { PUBLIC_PLAYER_EMBED, type PublicPlayer } from '@/lib/playerColumns';
@@ -12,8 +11,37 @@ interface TeamWithPlayers extends Team {
   players: (TeamRoster & { player: PublicPlayer })[];
 }
 
+const getDefaultTeamColor = (index: number) =>
+  index === 0 ? 'var(--pc-team-a)' : 'var(--pc-team-b)';
+
+const getInitials = (first: string, last: string) =>
+  `${first[0] ?? ''}${last[0] ?? ''}`.toUpperCase();
+
+function PlayerAvatar({ player, size = 32 }: { player: PublicPlayer; size?: number }) {
+  const name = `${player.first_name} ${player.last_name}`;
+  if (player.profile_image_url) {
+    return (
+      <div className={styles.avatarImgWrap} style={{ width: size, height: size }}>
+        <Image
+          src={player.profile_image_url}
+          alt={name}
+          width={size}
+          height={size}
+          style={{ objectFit: 'cover' }}
+        />
+      </div>
+    );
+  }
+  return (
+    <div className={styles.avatar} style={{ width: size, height: size, fontSize: Math.round(size * 0.38) }}>
+      {getInitials(player.first_name, player.last_name)}
+    </div>
+  );
+}
+
 export default function TeamsPage() {
   const [teams, setTeams] = useState<TeamWithPlayers[]>([]);
+  const [captainIds, setCaptainIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -66,6 +94,17 @@ export default function TeamsPage() {
         })
       );
 
+      if (teamsWithPlayers.length > 0) {
+        const { data: captainsData } = await supabase
+          .from('team_captains')
+          .select('player_id')
+          .in(
+            'team_id',
+            teamsWithPlayers.map((t) => t.id),
+          );
+        setCaptainIds(new Set((captainsData || []).map((c: { player_id: string }) => c.player_id)));
+      }
+
       setTeams(teamsWithPlayers);
     } catch (err) {
       setError('Failed to load teams');
@@ -79,86 +118,60 @@ export default function TeamsPage() {
     fetchTeamsAndPlayers();
   }, [fetchTeamsAndPlayers]);
 
-  // Determine team colors dynamically or use defaults
-  const getTeamClass = (teamName: string, color?: string | null) => {
-    if (color === '#e74c3c') return styles.teamBurgess;
-    if (color === '#3498db') return styles.teamThompson;
-    if (teamName.toLowerCase().includes('thompson')) return styles.teamThompson;
-    if (teamName.toLowerCase().includes('berastegui')) return styles.teamBurgess;
-    return styles.teamThompson;
-  };
-
   return (
-    <Box className={styles.pageRoot}>
-      <Typography 
-        variant="h3" 
-        className={styles.pageTitle}
-      >
-        Teams
-      </Typography>
+    <div className={styles.root}>
+      <div className={styles.container}>
+        <div className={styles.hero}>
+          <span className={styles.label}>The Field</span>
+          <h1 className={styles.displayHeading}>Teams</h1>
+        </div>
 
-      <Typography 
-        variant="body2" 
-        className={styles.pageSubtitle}
-      >
-        Click on a player&apos;s name to view their match schedule and additional rounds
-      </Typography>
+        {loading && <p className={styles.emptyState}>Loading...</p>}
+        {error && <p className={styles.error}>{error}</p>}
 
-      {loading && <Typography>Loading...</Typography>}
-      {error && <Typography color="error">{error}</Typography>}
+        <div className={styles.teamGrid}>
+          {teams.map((team, index) => {
+            const color = team.color || getDefaultTeamColor(index);
+            const sortedPlayers = [...team.players].sort((a, b) =>
+              a.player.last_name.localeCompare(b.player.last_name),
+            );
 
-      <Box className={styles.teamGrid}>
-        {teams.map((team) => {
-          const teamClass = getTeamClass(team.name, team.color);
-          const sortedPlayers = [...team.players].sort((a, b) => 
-            a.player.last_name.localeCompare(b.player.last_name)
-          );
+            return (
+              <div key={team.id} className={styles.teamCard} style={{ borderTopColor: color }}>
+                <div className={styles.teamHeader}>
+                  <span className={styles.teamChip} style={{ background: color }} />
+                  <h2 className={styles.teamName}>{team.name}</h2>
+                  <span className={styles.teamCount}>{sortedPlayers.length}</span>
+                </div>
+                <div className={styles.playerList}>
+                  {sortedPlayers.map((roster) => {
+                    const player = roster.player;
+                    const handicap = roster.handicap_at_event ?? player.current_handicap;
+                    const isCaptain = captainIds.has(player.id);
 
-          return (
-            <Box 
-              key={team.id}
-              className={styles.teamCard}
-            >
-              <Typography 
-                variant="h4" 
-                className={`${styles.teamName} ${teamClass}`}
-              >
-                {team.name}
-              </Typography>
-              <Box className={styles.playerList}>
-                {sortedPlayers.map((roster) => {
-                  const player = roster.player;
-                  const handicap = roster.handicap_at_event ?? player.current_handicap;
-
-                  return (
-                    <Box
-                      key={roster.id}
-                      className={styles.playerItem}
-                    >
-                      <Link 
-                        href={`/players/${player.id}`}
-                        className={styles.playerLink}
-                      >
-                        <Typography
-                          component="span"
-                          className={styles.playerName}
-                        >
-                          {player.first_name} {player.last_name}
-                        </Typography>
-                        {handicap !== null && (
-                          <span className={styles.playerHandicap}>
-                            ({handicap})
-                          </span>
-                        )}
+                    return (
+                      <Link key={roster.id} href={`/players/${player.id}`} className={styles.playerRow}>
+                        <PlayerAvatar player={player} />
+                        <div className={styles.playerInfo}>
+                          <div className={styles.playerName}>
+                            {player.first_name} {player.last_name}
+                            {isCaptain && (
+                              <span className={styles.captBadge} style={{ color }}>
+                                CAPT
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        {handicap !== null && <div className={styles.handicapChip}>{handicap}</div>}
                       </Link>
-                    </Box>
-                  );
-                })}
-              </Box>
-            </Box>
-          );
-        })}
-      </Box>
-    </Box>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
   );
-} 
+}

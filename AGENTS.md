@@ -20,6 +20,21 @@
 - Prefer lightweight unit tests for shared logic and critical components.
 - Add regression tests when fixing bugs.
 
+### Browser-level (E2E) tests
+A Playwright suite in `e2e/` covers real browser behavior against the **test** environment
+(`test.patron-cup.com` by default, or a local server — see `e2e/README.md`) that Jest's
+jsdom-based unit tests can't reach: full page navigation, Supabase Auth sessions, and
+multi-step UI flows. It's on-demand only (`npm run test:e2e`), never auto-triggered.
+
+- **When you change UI-facing functionality** — a page's behavior, a form's validation, a
+  redirect/gating rule, a drag-and-drop interaction — add or update the corresponding spec
+  in `e2e/`, the same way the Testing section above expects a Jest test for logic changes.
+- **Never let an E2E test wipe or reset the whole test database.** Tests create their own
+  namespaced throwaway data (prefixed via `runSlug`, see `e2e/support/namespace.ts`) and
+  clean it up themselves; `supabase/seed/seed-test.sql` stays a separate, manual command.
+- See `e2e/README.md` for the full guide: directory layout, the dual deployed/local run
+  modes, auth setup, and the namespacing/cleanup convention.
+
 ## UI/UX Expectations
 - All new UI must work correctly in **both light and dark modes**; verify in both themes.
 - **Mobile functionality is critical**:
@@ -27,6 +42,61 @@
   - Avoid layouts or interactions that break on narrow widths.
 - Maintain consistent spacing, typography, and interaction patterns with existing UI.
 - Reuse existing layout patterns, components, and utility classes where possible.
+
+## Design system (Hi-Fi redesign)
+The Hi-Fi redesign (`TEST_ENVIRONMENT_PLAN.md` Part III) migrates pages to `--pc-*` tokens
+defined in `src/app/globals.css`, keyed on `[data-theme='light'|'dark']`. Reference
+implementations: `page.module.css`, `faq/page.module.css`, `matches/page.module.css`.
+
+- **Tokens:** `--pc-bg/card/card-2` (surfaces), `--pc-ink/ink-2/ink-3` (text, high→low
+  emphasis), `--pc-rule/rule-2` (borders), `--pc-fill/fill-2` (subtle backgrounds),
+  `--pc-team-a/team-b` (team colors), `--pc-live-bg/live-fg/live-dot` (live/in-progress
+  state), `--pc-radius/radius-sm/radius-lg`, `--pc-shadow`.
+- **Fonts:** `--pc-font-serif` (Newsreader) for display headings; `--pc-font-sans` (IBM Plex
+  Sans) for body text and UI chrome; `--pc-font-mono` (JetBrains Mono) for numbers, stats,
+  dates, and uppercase eyebrow/kicker labels.
+- **Legacy CSS variables** (the un-prefixed vars elsewhere in `globals.css`) are being fully
+  sunset, not kept as a permanent second system — delete each one once its last referencing
+  page (including `/admin`) migrates. Don't add new usages.
+- **MUI has no removal mandate.** Use MUI components wherever they're the pragmatic choice
+  (forms, data-dense admin UI); use custom `--pc-*`-styled markup elsewhere. Consistency comes
+  from the tokens, not from which library renders a piece of UI — reference them via a CSS
+  module or an MUI component's `sx` prop (e.g. `sx={{ color: 'var(--pc-ink)' }}`), never a
+  hardcoded value because the component happens to be MUI.
+- **No hardcoded hex values** in any page's CSS or `sx` styling — public or admin. If a color
+  isn't a token yet, add one; don't inline a hex value to work around it.
+
+### Admin design system (`/admin/**`)
+Admin has its own shared building blocks, global rather than per-page CSS modules since
+they're reused across all 17 real admin routes (see `TEST_ENVIRONMENT_PLAN.md` section 17a/17b
+for the full admin redesign plan).
+
+- **Two extra tokens, admin-only:** `--pc-chip-bg` (badge background) and `--pc-shadow-strong`
+  (dialog/sheet shadow, heavier than `--pc-shadow`).
+- **Global CSS utility classes**, defined in `globals.css`'s "Admin design system" section:
+  `.ad-card`, `.ad-row` (+ `.head`/`.hover`/`.sel`), `.ad-th`, `.ad-num`, `.ad-badge`, `.ad-ib`
+  (icon button), `.ad-seg` (segmented control), `.ad-sk` (loading skeleton), `.ad-gcard`
+  (dashboard nav tile), `.ad-pcard`/`.ad-slot` (drag-and-drop card + drop target), `.ad-dlg`/
+  `.ad-dlg-h`/`.ad-dlg-f` (desktop dialog) and `.ad-sheet`/`.ad-grab` (its mobile bottom-sheet
+  equivalent), `.ad-scrim`/`.ad-scrim.sheet`, `.ad-in`(+`.mono`/`.lg`/`.focus`), `.ad-lab`,
+  `.ad-btn`(+`.p`/`.ok`/`.lg`, mobile), `.ad-chip` (mobile), `.ad-m-sticky` (mobile sticky
+  action bar), `.ad-head`/`.ad-head-title`/`.ad-head-actions`/`.ad-crumb`,
+  `.pc-d-actionbtn`(+`[data-primary='true']`, desktop action buttons like "Add Course"/"Save").
+- **Shared components**, `src/components/admin/`: `AdminIcons.tsx` (`AIcon`/`AGrip`),
+  `AdminHead.tsx` (breadcrumb + title + actions), `AdminField.tsx`, `AdminName.tsx`
+  (avatar + team chip + name, for tables), `AdminScrim.tsx`. One responsive component per
+  concern, not separate desktop/mobile component trees — same approach as every redesigned
+  public page, via `@media (min-width: 1024px)` where a page needs it.
+- **Admin nav taxonomy** lives once in `src/lib/adminNavGroups.ts` (`ADMIN_NAV_GROUPS`),
+  consumed by both the sidebar (`src/app/layout.tsx`'s `DesktopSidebar`, which swaps to this
+  nav when `isAdminPath(pathname)`) and the admin dashboard hub — don't duplicate the grouping
+  in a third place.
+- **Before building a new admin page**, check `TEST_ENVIRONMENT_PLAN.md` section 17a for
+  whether a worked example already establishes its pattern (Courses → CRUD table; Handicaps →
+  sortable/searchable table; Match Setup → drag-and-drop, re-skin only, never touch the
+  `@dnd-kit` logic; the generic account-action form → Invite/Username, but Reset Password uses
+  a richer variant) versus pages with no worked example at all (Teams, specifically) where a
+  real design decision is still needed.
 
 ## File/Folder Conventions
 - App routes live in `src/app/**/page.tsx`.

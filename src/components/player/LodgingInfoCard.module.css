@@ -2,54 +2,55 @@
   width: 100%;
   max-width: 800px;
   padding: 24px;
-  border-radius: 24px !important;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-sm);
+  border-radius: var(--pc-radius-lg) !important;
+  background: var(--pc-card);
+  border: 1px solid var(--pc-rule);
+  box-shadow: var(--pc-shadow);
   overflow: hidden;
 }
 
 .cardAccent {
-  border: 1px solid var(--accent-cyan);
-  background: linear-gradient(135deg, var(--surface-tint) 0%, var(--surface) 45%);
+  border: 1px solid var(--pc-team-b);
   background:
     linear-gradient(
       135deg,
-      color-mix(in srgb, var(--accent-cyan) 12%, var(--surface)) 0%,
-      var(--surface) 45%
+      color-mix(in srgb, var(--pc-team-b) 12%, var(--pc-card)) 0%,
+      var(--pc-card) 45%
     );
-  background-color: var(--surface) !important;
+  background-color: var(--pc-card) !important;
 }
 
 .sectionTitle {
   margin-bottom: 8px;
-  color: var(--text);
+  color: var(--pc-ink);
+  font-family: var(--pc-font-serif);
 }
 
 .confirmation {
   margin-top: -4px;
   margin-bottom: 12px;
   font-weight: 700;
-  color: var(--text);
+  color: var(--pc-ink);
 }
 
 .contentCard {
   padding: 16px;
-  border-radius: 16px;
-  border: 1px solid var(--border);
-  background: var(--surface-muted);
+  border-radius: var(--pc-radius);
+  border: 1px solid var(--pc-rule);
+  background: var(--pc-fill);
 }
 
 .roomTitle {
   font-weight: 600;
+  color: var(--pc-ink);
 }
 
 .roommatesText {
-  color: var(--text);
+  color: var(--pc-ink);
 }
 
 .emptyText {
-  color: var(--text-muted);
+  color: var(--pc-ink-3);
 }
 
 .roommatesList {
@@ -61,13 +62,13 @@
 }
 
 .roommateLink {
-  color: var(--accent-blue-strong);
+  color: var(--pc-team-b);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 
 .roommateLink:hover {
-  color: var(--accent-violet);
+  color: var(--pc-team-a);
 }
 
 @media (min-width: 600px) {

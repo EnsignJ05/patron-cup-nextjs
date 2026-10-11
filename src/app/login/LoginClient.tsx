@@ -3,14 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
-import {
-  Box,
-  Typography,
-  TextField,
-  Button,
-  Paper,
-  Alert,
-} from '@mui/material';
+import { TextField, Button, Paper, Alert } from '@mui/material';
 import styles from './LoginClient.module.css';
 
 export default function LoginClient() {
@@ -46,27 +39,26 @@ export default function LoginClient() {
 
       if (signInError) {
         setError(signInError.message);
+        setSubmitting(false);
       }
+      // On success, leave `submitting` true: AuthContext still has to pick up the new
+      // session and fetch the role/must-change-password profile before the redirect effect
+      // above can fire. Clearing it here would flip the button back to "Sign in" for that
+      // gap, making a real few-second wait look like nothing is happening.
     } catch (err) {
       console.error('Login error:', err);
       setError('An error occurred during login');
-    } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <Box className={styles.pageRoot}>
-      <Paper
-        elevation={3}
-        className={styles.formCard}
-      >
-        <Typography variant="h4" component="h1" className={styles.title}>
-          Login
-        </Typography>
-        <Typography variant="body2" className={styles.subtitle}>
+    <div className={styles.pageRoot}>
+      <Paper elevation={0} className={styles.formCard}>
+        <h1 className={styles.title}>Login</h1>
+        <p className={styles.subtitle}>
           Invite-only access. Use the email and temporary password you were given.
-        </Typography>
+        </p>
 
         {error && (
           <Alert severity="error" className={styles.alert}>
@@ -74,7 +66,7 @@ export default function LoginClient() {
           </Alert>
         )}
         <form onSubmit={handleSubmit}>
-          <Box className={styles.formFields}>
+          <div className={styles.formFields}>
             <TextField
               label="Email"
               type="email"
@@ -103,9 +95,9 @@ export default function LoginClient() {
             >
               {submitting ? 'Signing in...' : 'Sign in'}
             </Button>
-          </Box>
+          </div>
         </form>
       </Paper>
-    </Box>
+    </div>
   );
 }

@@ -9,9 +9,9 @@ jest.mock('@/lib/supabaseBrowser', () => ({
 const events = [{ id: 'event-1', name: 'Patron Cup', year: 2026 }];
 const courses = [{ id: 'course-1', name: 'Bandon Trails', event_id: 'event-1' }];
 const players = [
-  { id: 'player-1', auth_user_id: 'auth-1', first_name: 'Pat', last_name: 'One', status: 'active' },
-  { id: 'player-2', auth_user_id: 'auth-2', first_name: 'Sam', last_name: 'Two', status: 'active' },
-  { id: 'player-3', auth_user_id: 'auth-3', first_name: 'Lee', last_name: 'Three', status: 'active' },
+  { id: 'player-1', auth_user_id: 'auth-1', first_name: 'Pat', last_name: 'One', is_active: true },
+  { id: 'player-2', auth_user_id: 'auth-2', first_name: 'Sam', last_name: 'Two', is_active: true },
+  { id: 'player-3', auth_user_id: 'auth-3', first_name: 'Lee', last_name: 'Three', is_active: true },
 ];
 const rerounds = [
   {

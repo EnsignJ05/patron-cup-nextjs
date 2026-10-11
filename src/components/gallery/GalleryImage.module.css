@@ -1,9 +1,9 @@
 .imageCard {
   width: 100%;
-  border-radius: 32px;
+  border-radius: var(--pc-radius-lg);
   overflow: hidden;
-  box-shadow: var(--shadow-sm);
-  background-color: var(--gallery-bg);
+  box-shadow: var(--pc-shadow);
+  background-color: var(--pc-card-2);
   margin-bottom: 16px;
 }
 

@@ -728,6 +728,7 @@ at the test project is the recommended default for local development.
 | S4 migration applied to test / prod (dates) | **Both done 2026-10-01.** Test: verified via seeded fake rows. Prod: PR #24 merged and deployed; independently verified S2/S3 were actually live (307 redirect on `/players/<id>`, exact `PUBLIC_PLAYER_COLUMNS` array present in the deployed bundle, no `select('*')` remaining) before applying the migration. All three acceptance checks pass on production; `/roster`, `/teams`, `/matches` confirmed still returning HTTP 200 |
 | S5 migration applied to test / prod (dates) | **Both done 2026-10-01.** Verified with real rows on both (temporary rows inserted and cleaned up on test; existing historical rows checked-not-modified on production) — see Task S5 for the full verification writeup. Also satisfies Part IV task H2 items 1-2 |
 | S5 public-vs-member classification approved by | _TBD_ — open committee question on `travel_info`/`lodging_assignments` only; everything else in that task needs no decision |
+| S6 (`player_private`) applied to test / prod (dates) | **Both done 2026-10-01**, via PR #25. One unrelated production build failure along the way (`next/font/google` CDN flake, not a code issue — fixed by redeploying the identical commit, not by changing anything); verified the redeploy was genuinely running the new code before touching the database. All of Part II (S1-S7) is now live on both environments |
 | Committee notified (S7) | Done — confirmed by user 2026-10-01 |
 
 ## 10. Known risks
@@ -1334,7 +1335,7 @@ this was this section's own original recommendation and the live state already m
 `branson_roster` all fail; nothing else in this task requires a code or schema change unless
 the committee asks for the tighter `travel_info` posture above.
 
-### Task S6 (done on test 2026-10-01; production pending the same test→main PR flow as S2-S4)
+### Task S6 (done 2026-10-01 on test and production)
 `address_line1`, `address_line2`, `zip_code`, `shirt_size`, `dietary_restrictions`,
 `emergency_contact_name`, `emergency_contact_phone` are (per the original report) **empty
 today**. They are also the fields that should never be readable by the whole membership.
@@ -1387,12 +1388,29 @@ fires. Re-ran Task 6.2's seed script after the column drop to confirm no conflic
 referenced these columns). `npx tsc --noEmit` clean (2 pre-existing unrelated failures);
 `npm test` 40/40 suites, 177/177 tests.
 
-**Production:** not yet applied — needs the same flow as S2-S4 (PR from `test` to `main`,
-merge, deploy, independently verify the new code is actually live before running either
-migration there, migration A then migration B in order). This is the one Part II task that
-changes schema shape, so doing it on test first — exactly as this task originally
-recommended — caught the wrong-file guess and the anon-default-grant gap before either could
-reach production.
+**Production: done 2026-10-01**, via PR #25 (`test` → `main`). One incident along the way,
+unrelated to this change: the first production build after merging **failed** —
+`next/font/google`'s loader crashed in `src/app/layout.tsx` fetching Google Fonts metadata at
+build time (`TypeError: Cannot read properties of null`). Diagnosed before assuming anything
+was wrong with this PR: `layout.tsx` hadn't been touched since a commit from before this
+entire session, and `npm run build` succeeded cleanly locally on the same source. Conclusion:
+a transient CDN/build-infra flake, not a code regression — confirmed correct when a plain
+**redeploy of the identical commit** (`vercel redeploy`, which rebuilds the exact same source
+snapshot rather than re-fetching from git) succeeded. Worth remembering: a failed Vercel build
+immediately after a merge is not automatically this PR's fault — check whether the failing
+file was even touched before debugging the wrong thing.
+
+Verified the redeployed build was genuinely running the new code before touching the database
+at all — same discipline as S4: confirmed via `vercel inspect` that the successful deployment
+is aliased to `patroncup.com`, and relied on the logical guarantee that `vercel redeploy`
+never changes source (the original failed build's log already showed the exact commit hash,
+matching `origin/main`'s PR #25 merge commit). Then applied migration A, re-verified anon is
+blocked on production using a temporary row on a **real player id** (cleaned up immediately
+after — no production PII was ever at risk, since all 7 columns were already confirmed
+empty), then migration B. Confirmed the columns are gone and `/roster`, `/teams`, `/matches`
+all still return `200`.
+
+**All of Part II (S1-S7) is now fully live on both test and production.**
 
 ### Task S7 (done) Disclosure
 The emails and phone numbers of 54 people were readable by unauthenticated callers for some
@@ -1974,47 +1992,220 @@ agent might copy.
 while `src/components/scoreboard/*` exists is actively confusing, and `LIVE_SCORING_PLAN.md`
 plans a scoreboard route — coordinate before deleting that one.
 
+### 15.11 Admin audit (added 2026-10-01, per section 16.6 — `/admin` now in scope)
+
+Same depth as 15.6/15.7 did for public pages. **One finding here changes the 16.1 MUI
+decision** — see the callout after the inventory table.
+
+**19 nominal routes, but only 17 are real pages.** `src/app/admin/page.tsx` (4 lines) and
+`src/app/admin/tee-times/page.tsx` (5 lines) are both pure `redirect()` stubs with no UI —
+`/admin` → `/admin/dashboard`, `/admin/tee-times` → `/admin/matches/setup`. Nothing to design
+or migrate for either. `src/app/admin/layout.tsx` (19 lines) is the auth gate
+(`isAdminRole` check, redirect to `/login` or `/unauthorized`) — also no UI, not a page.
+
+**Route inventory** (LOC / MUI import count / CSS module? / dark-mode refs / hardcoded
+colors — the last two checked in the `.module.css` where one exists, or directly in the
+`.tsx`'s `sx` props where it doesn't, since several admin pages have no CSS module at all and
+style entirely inline):
+
+| Route | LOC | MUI imports | CSS module? | Dark-mode refs | Hardcoded colors |
+|---|---|---|---|---|---|
+| `/admin/dashboard` | 171 | 16 | yes | 0 | 0 |
+| `/admin/players` | 412 | 24 | yes | 2 | 4 |
+| `/admin/events` | 339 | 23 | yes | 2 | 4 |
+| `/admin/teams` | 448 | 26 | none | — | 0 (3 unique `var(--x)` refs) |
+| `/admin/courses` | 341 | 24 | none | — | 0 (2 unique `var(--x)` refs) |
+| `/admin/matches` | 452 | 26 | none | — | 0 (2 unique `var(--x)` refs) |
+| `/admin/matches/setup` | 526 + 331 (`TeeTimeBoard.tsx`) | 17 + 1 | yes (page only) | 1 | 6 |
+| `/admin/scores` | 493 | 19 | none | — | 0 (8 unique `var(--x)` refs) |
+| `/admin/handicaps` | 533 | 18 | none | — | 0 (4 unique `var(--x)` refs) |
+| `/admin/participants` | 426 | 28 | none | — | 1 (3 unique `var(--x)` refs) |
+| `/admin/rerounds` | 400 | 27 | none | — | 1 (3 unique `var(--x)` refs) |
+| `/admin/lodging` | 656 | 27 | none | — | 0 (2 unique `var(--x)` refs) |
+| `/admin/travel` | 478 | 27 | none | — | 3 (2 unique `var(--x)` refs) |
+| `/admin/award-nominations` | 117 | 9 | none | — | not checked, small page |
+| `/admin/invite` | 138 | 1 (uses shared `FormPage`) | yes | 0 | 0 |
+| `/admin/change-username` | 88 | 1 (uses shared `FormPage`) | yes | 0 | 0 |
+| `/admin/reset-password` | 99 | 1 (uses shared `FormPage`) | yes | 0 | 0 |
+
+**10 of the 17 real pages have no CSS module at all** — they style entirely via MUI's `sx`
+prop, inline in the JSX. This is a *third* styling pattern alongside the two already found in
+public pages (CSS modules + `--pc-*` tokens on redesigned pages; CSS modules + legacy vars on
+old public pages) — inline `sx` referencing legacy vars as raw strings (e.g.
+`sx={{ color: 'var(--text)' }}`), with no stylesheet at all. These pages likely render
+correctly in dark mode today by the same accident as the legacy public pages (the vars they
+reference are theme-keyed), not by design.
+
+**Zero `--pc-*` token usage anywhere in `/admin`** (confirmed by grep) — expected, since this
+is exactly the gap section 16.6 exists to close.
+
+**Shared component usage:** `src/components/shared/FormPage.tsx` is used by exactly the three
+small account-management pages (`invite`, `change-username`, `reset-password`) — these are
+already simple and consistent with each other, likely the cheapest admin pages to migrate.
+`src/components/shared/Card.tsx` is used by `scores` and `matches/setup` (shared with public
+pages too — Part III's existing component-coupling caution applies here as well). No admin
+page uses `ComingSoon`, `AddToCalendar`, or `PageContainer` — consistent with Part III 15.10
+already marking those three dead.
+
+**`admin/handicaps/page.tsx` already hand-rolls table sorting** (`useState`-driven sort state,
+no `TableSortLabel`/DataGrid) — useful precedent: this codebase already proves hand-built
+sortable tables are a well-trodden path here, not a new risk being introduced.
+
+#### The MUI finding that changes 16.1: `@mui/x-data-grid` is not used in `/admin` at all
+
+Section 16.1's tiered-removal recommendation specifically carved out `@mui/x-data-grid` as
+"genuinely complex, not worth rebuilding" — written assuming it was in active use somewhere
+in admin. **A fresh grep across the entire codebase finds exactly one consumer:
+`src/app/tee-times/page.tsx`** — the public tee-times page, which is part of the **Bandon
+archive already decided for retirement** (section 16, "Bandon archive retirement"). Once that
+route is deleted (Task R0), `@mui/x-data-grid` has **zero remaining consumers anywhere in the
+app** and can simply be removed as a dependency — no rebuild needed, because nothing left
+uses it.
+
+`@mui/x-date-pickers` fares similarly, though not as starkly: **exactly one consumer**,
+`src/app/admin/rerounds/page.tsx` — a single `<DatePicker>` instance wrapped in
+`LocalizationProvider`/`AdapterDateFns`. Not zero, but a single component instance in one
+file is a small, bounded replacement (a native `<input type="date">` or a small custom
+component), not the kind of "rebuild a sortable/filterable/paginated grid from scratch" risk
+that originally motivated keeping it.
+
+**Aggregate MUI component usage across all 17 real admin pages** (import counts, components
+used by more than one file): `Typography`/`Paper`/`Box` (14 files each), `Button`/`Alert` (12),
+plain `Table`/`TableRow`/`TableHead`/`TableCell`/`TableBody`/`TableContainer` (11 — note:
+*plain* MUI tables, not `DataGrid`), `Select`/`MenuItem`/`InputLabel`/`FormControl` (11),
+`TextField` (10), `Dialog` + its four sub-components (10), `IconButton` (9), `Chip` (8), plus
+single-digit usage of `Tabs`, `Switch`, `Divider`, `Card`, `Checkbox`, and (once each)
+`TableSortLabel`, `InputAdornment`, `FormHelperText`. **Every one of these has a reasonable
+hand-built equivalent** — this is squarely the "simple/common" category 16.1 already said to
+remove, not the exception case.
+
+**Revised recommendation for 16.1, given this audit: reconsider full MUI removal.** The
+specific justification for the tiered carve-out — a complex, high-engineering-cost widget in
+real use — turns out not to hold once the Bandon archive is gone. What remains needing a
+decision is narrow: one `DatePicker` instance. If a small hand-built date input is acceptable
+there, **MUI can be removed from the project entirely**, which is more consistent than the
+tiered approach and avoids standing up a `ThemeProvider` + re-theming work for marginal
+benefit. The original tiered decision isn't wrong, just no longer necessary — this is worth
+a quick confirm-or-revise from the user before any admin page's CSS gets migrated, since it
+changes the target end-state for all 17 pages, not just one.
+
+**Separate from the MUI decision entirely: `admin/matches/setup/TeeTimeBoard.tsx`'s
+drag-and-drop is real, working complexity** (`@dnd-kit`'s `DndContext`/`useSortable`/
+`DragOverlay`) that should be **re-skinned, not rebuilt** — restyle its visual output to the
+design system, leave the drag-and-drop logic untouched regardless of what's decided about MUI
+elsewhere, since `@dnd-kit` is an unrelated library or this is not a MUI dependency to begin
+with.
+
 ---
 
-## 16. Decisions required before starting
+## 16. Decisions — finalized by the user 2026-10-01, superseding the recommendations below
 
-Do not begin task R2 until 16.1–16.3 are answered; they are cheap to decide now and
-expensive to reverse later. Record answers in section 19.
+**These materially change Part III's scope from how the rest of this section was written.**
+`/admin` being in scope roughly doubles the page count this part covers (19 more routes),
+and interacts with 16.1 and 16.4 in ways worth being explicit about. Read 16.6 below before
+starting any R-series task — it's new, added to capture what these answers actually require
+that the original plan didn't account for.
 
-### 16.1 Is "CSS modules for layout, MUI for form controls" the target or a waypoint?
-Recommendation: **ratify it as the target.** It is what the three redesigned pages already
-do (15.5), it keeps accessible form behavior for free, and full MUI removal would mean
-rebuilding selects, dialogs and date pickers by hand for no user-visible gain. Decide
-explicitly, because "redesigned" pages currently disagree with each other and a lower-level
-model will otherwise copy whichever file it opens first.
+### 16.1 MUI: target or waypoint? — **Finally decided 2026-10-01: MUI stays, used pragmatically**
+Went through two intermediate positions before landing here — tiered removal (first pass,
+assuming `@mui/x-data-grid`/`@mui/x-date-pickers` were in heavy complex use), then reopened
+once the admin audit (15.11) found that assumption false (one consumer each, both tied to
+code already being deleted). **Final answer from the user, superseding both:** "keep MUI in
+the project. It is just another tool available to us if needed. Use it where their pre-made
+components make sense."
 
-### 16.2 Is `/admin` in scope?
-Recommendation: **no.** 19 routes, 17 MUI files, `@mui/x-data-grid`, used by a handful of
-committee members on desktop. The Hi-Fi handoff targeted public surfaces. Excluding admin
-also means the legacy variables cannot be fully deleted (16.4).
+**What this actually means, so it doesn't get re-litigated per-page:**
+- **No mandate to remove MUI from anywhere it currently works.** A page already using
+  `TextField`/`Select`/`Dialog`/etc. does not need those ripped out during its redesign pass
+  just for the sake of it.
+- **No mandate to add a `ThemeProvider` either.** That was specifically to re-theme
+  `DataGrid`/date-pickers under the tiered plan; since there's no tiered carve-out anymore,
+  there's no forcing function requiring one. Fine to add one later if/when enough MUI
+  components in active use would benefit from centralized theming — not a prerequisite for
+  starting any R-series task.
+- **Visual consistency comes from the tokens, not from which library renders the pixels.**
+  Whether a given piece of UI ends up as a custom component styled with `--pc-*` CSS modules,
+  or an MUI component with `--pc-*` values passed through its `sx` prop (the same technique
+  already used for legacy vars, e.g. `sx={{ color: 'var(--text)' }}` in several admin pages
+  today) — either is correct. Choose per-component based on what's pragmatic, same spirit as
+  the existing home/FAQ (no MUI) vs. matches (MUI for inputs) split that prompted this
+  decision in the first place.
+- **15.11's factual findings still stand and still matter for cleanup, independent of this
+  decision:** `@mui/x-data-grid` has exactly one consumer in the entire codebase
+  (`src/app/tee-times/page.tsx`, part of the Bandon archive being deleted per Task R0) — once
+  that ships, remove the now-dead `@mui/x-data-grid` dependency from `package.json` entirely;
+  this is just dead-dependency hygiene (consistent with 16.4/16.5's "clean and pragmatic
+  code" standing instruction), not a MUI-policy question. `@mui/x-date-pickers` has one
+  consumer (`admin/rerounds`'s `DatePicker`) — keep it there if that's still the pragmatic
+  choice when that page gets redesigned, or replace it with something simpler if that turns
+  out nicer; either is fine under this decision, it's a normal per-component call now, not a
+  policy one.
 
-### 16.3 Page order
-Recommendation, driven by the 15.3 seam and the 15.7 coupling:
+### 16.2 Is `/admin` in scope? — **Yes, everything is in scope**
+User: "Everything is now in scope for redesign, but if we need a design for something let's
+note that in the plan to get one." **This is the decision with the largest planning
+consequence** — see 16.6.
 
-1. `/roster` — tab-bar target, smallest of the two seams
-2. `/dashboard` + `/players/[playerId]` + their three shared components — one unit
-3. `/players`
-4. `/teams`
-5. `/tee-times`
-6. `/itinerary`
-7. `/login` + `/change-password` + `/unauthorized` — auth trio, shared visual language
-8. `/dashboard/award-nominations`
-9. `/gallery`
+### 16.3 Page order — **Judgment delegated; ship as one batch, not incrementally**
+User trusts the implementation order already recommended (driven by the 15.3 seam and 15.7
+component coupling — unchanged, still the right dependency order to *build* in) but intends
+to **push everything to test, verify the whole site, then push everything to production in
+one release** — not the page-by-page incremental PRs the rest of this plan otherwise used for
+Parts I/II. Consequence: the R-series task boundaries below remain useful for *implementation
+sequencing* (what to build first, since later pages reuse earlier pages' components), but do
+not each need to be independently production-shippable — final verification (something like
+Part I's task 7.1, redone for the whole redesigned site) happens once, at the end, not once
+per page.
 
-### 16.4 When do the legacy variables get deleted?
-If admin stays out of scope (16.2), the legacy set can never be fully removed — admin
-depends on it. Recommendation: **keep both systems in `globals.css` indefinitely**, add a
-comment block marking the legacy set "admin-only, do not use in public pages", and delete
-only variables that end up with zero references. Do not attempt a big-bang rename.
+### 16.4 Legacy CSS variables — **Full sunset, not permanent coexistence**
+User: "unused variables are no longer maintained... with admin in scope, these probably
+should go away if unused." Since 16.2 now puts every page (including admin) on the path to
+`--pc-*` tokens, the original constraint behind "keep both systems indefinitely" (admin would
+otherwise permanently depend on the legacy set) no longer applies. **Decision: the ~48 legacy
+variables are a temporary bridge, not a second permanent system** — delete each one once the
+last page referencing it migrates (Task R11's logic, upgraded from "sunset what's safe" to
+"sunset everything, eventually").
 
-### 16.5 Delete the dead code now, or with its page?
-Recommendation: **now, as task R0**, in its own PR. It is independent, reviewable in one
-sitting, and shrinks the surface every later task has to reason about.
+### 16.5 Delete dead code now or later? — **Now, and go further: delete on sight generally**
+User: "if unused, get rid of it... worst case is we rebuild something, which I can live
+with." Confirmed unchanged by a fresh grep 2026-10-01: `CountdownTimer`, `OverallScoreBanner`,
+`PageContainer`, `ComingSoon`, `CourseBox`, and all of `src/styles/` are still genuinely
+unreferenced — proceed with Task R0 as originally written. The higher risk tolerance here
+also applies to the newly-decided Bandon archive retirement below — it's a strictly bigger
+version of the same instruction, not a separate judgment call.
+
+### Bandon archive retirement — **Decided: retire it.** (Same question as Part IV 21.1)
+User: "Bandon Archive can go away, it was a static build for a POC. We are moving onto bigger
+and better things." This resolves Part III's task R7 and Part IV's 21.1/21.3 identically —
+don't re-litigate either. Unlocks deleting, confirmed still accurate by a fresh grep
+2026-10-01: the `/tee-times` and `/tee-times/2025/[playerSlug]` routes, `src/lib/repositories/bandon.ts`,
+`getAllPlayersAndMatches.ts`, `getPlayerRecord.ts`, `getMatchesWithPlayers.ts`, and — confirmed
+solely reachable through that archive, cascading — `PlayerMatches.tsx`,
+`scoreboard/CourseScoreCard.tsx`, `scoreboard/MatchRow.tsx`. Fold all of this into Task R0's
+scope (it's the same "delete confirmed-dead code" action, just larger than originally
+scoped). The matching database side (Part IV Task H8: drop `match_bandon`, `player`,
+`records_bandon`, `team_bandon`) is a separate task in a separate system — coordinate but
+don't block one on the other; nothing else depends on those tables once the routes are gone.
+
+### 16.6 New: `/admin` has no Hi-Fi design to implement against
+The original Claude Design handoff (referenced throughout section 15) targeted public pages
+only — there is no existing Hi-Fi spec for any of `/admin`'s 19 routes. Section 15's whole
+inventory (15.6: route-by-route LOC/MUI/dark-mode table; 15.7: shared component usage) only
+covers public pages, by design, because admin was out of scope when it was written. **Per the
+user's 16.2 answer ("if we need a design for something let's note that in the plan to get
+one"): before any admin route can get an R-series task written for it, two things need to
+happen that don't exist yet:**
+1. **A fresh audit of `/admin`**, at the same depth as section 15 did for public pages —
+   route-by-route inventory, exact MUI/`@mui/x-data-grid`/`@mui/x-date-pickers` usage,
+   shared-component coupling, dark-mode/mobile gaps. Not done as part of recording these
+   decisions; this is the next concrete piece of work.
+2. **New design direction for admin**, not a port of an existing spec — likely the `design`
+   skill (canvas-based mockup), scoped to admin's actual needs (data tables, forms, bulk
+   actions) rather than the public pages' marketing-site aesthetic.
+
+Until both exist, the admin portion of Part III isn't actionable beyond "it's in scope" —
+treat this section as the task that produces the audit + design request, not as something
+already planned.
 
 ---
 
@@ -2025,37 +2216,63 @@ Every task: mobile-first, verified in **both** light and dark mode (per `AGENTS.
 these tasks are mostly visual refactors of existing behavior, so the practical bar is
 "existing tests still pass, and add a test when you change behavior rather than appearance."
 
-### Task R0 (Agent) Remove the dead code
+### Task R0 (Agent) Remove the dead code — scope expanded 2026-10-01 with the Bandon decision
 Delete everything in 15.10: the 5 orphaned components with their CSS modules, stories and
 tests; all 10 files under `src/styles/`; and the empty directories `src/app/schedule/[playerSlug]/`
-and `src/app/player/[playerSlug]/`. **Leave `src/app/scoreboard/` alone** pending
-`LIVE_SCORING_PLAN.md`.
+and `src/app/player/[playerSlug]/`. **Leave `src/app/scoreboard/` alone** — reserved for
+[[project-live-scoring]], a different feature than the Bandon archive below.
+
+**Also delete, now that the Bandon archive retirement is decided (section 16, "Bandon archive
+retirement"):** the `/tee-times` and `/tee-times/2025/[playerSlug]` routes (the only `.jsx`
+files in the codebase live here — this removes them entirely), `src/lib/repositories/bandon.ts`,
+`src/lib/getAllPlayersAndMatches.ts`, `src/lib/getPlayerRecord.ts`,
+`src/lib/getMatchesWithPlayers.ts`, and — confirmed solely reachable through this archive by a
+fresh grep — `src/components/player/PlayerMatches.tsx`,
+`src/components/scoreboard/CourseScoreCard.tsx`, `src/components/scoreboard/MatchRow.tsx`.
+This is a larger version of the same action (confirmed-dead code, now also confirmed-obsolete
+feature), not a separate judgment call — the user's standing instruction is "if unused, get
+rid of it, worst case we rebuild."
+
+The matching database tables (Part IV Task H8: `match_bandon`, `player`, `records_bandon`,
+`team_bandon`) are a separate task in a separate system (requires DB access, not just a code
+commit) — do in either order, nothing else depends on those tables once these routes are gone.
 
 Before deleting each item, re-run the check rather than trusting this document:
 ```bash
 grep -rn "CountdownTimer\|OverallScoreBanner\|PageContainer\|ComingSoon\|CourseBox" src --include="*.tsx" --include="*.jsx" | grep -v "__tests__\|\.stories\."
 grep -rn "@/styles\|styles/theme\|styles/pages" src --include="*.tsx" --include="*.ts"
+grep -rln "PlayerMatches\|CourseScoreCard\|MatchRow" src --include="*.tsx" --include="*.jsx" | grep -v "__tests__\|\.stories\.\|tee-times/2025\|components/player/PlayerMatches\|components/scoreboard/"
 ```
-Both must return nothing but the components' own self-imports.
+All must return nothing but the components' own self-imports (and PlayerMatches's internal
+use of the two scoreboard components, until all three are deleted together).
 
-**Acceptance:** `npm test` green, `npm run build` succeeds, `npx tsc --noEmit` clean, and
-the deleted-file count is ~20. One commit, message explaining these were superseded by the
-inlined home/matches implementations.
+**Acceptance:** `npm test` green, `npm run build` succeeds, `npx tsc --noEmit` clean. Deleted
+file count is now larger than the original ~20 estimate given the added archive scope — no
+new estimate given, since the exact file list above is authoritative. Consider two commits
+(original dead-code set, then the Bandon archive) rather than one, since they have different
+"why" explanations even though both land in the same task.
 
-### Task R1 (Agent) Write down the conventions before copying them
+### Task R1 (done 2026-10-01, commit `091d654`) Write down the conventions before copying them — updated 2026-10-01
 Extract the pattern already established in `page.module.css`, `faq/page.module.css` and
 `matches/page.module.css` into a short "Design system" section in `AGENTS.md` (10–20 lines,
-matching that file's existing terse tone). It must state:
-- The `--pc-*` token list and what each is for; that legacy vars are admin-only (per 16.4).
+matching that file's existing terse tone). It must state, per the finalized decisions in
+section 16 (all superseding what was originally drafted here):
+- The `--pc-*` token list and what each is for. **Not** "legacy vars are admin-only" — 16.4's
+  final answer is a full sunset once every page (including admin) migrates; say that instead.
 - The font trio and which element types use which.
-- The ratified MUI boundary from 16.1.
-- That hardcoded hex values are not acceptable in public-page CSS modules (15.9).
+- **MUI policy per 16.1's final decision:** no removal mandate and no boundary to enforce —
+  MUI is available wherever its components are the pragmatic choice, custom `--pc-*`-styled
+  components elsewhere. Consistency comes from using the tokens (via CSS module or via an
+  MUI component's `sx` prop) regardless of which renders a given piece of UI.
+- That hardcoded hex values are not acceptable in **any** page's CSS/`sx` styling, including
+  admin now that it's in scope (15.9's rule, no longer scoped to "public-page" only).
 
-This exists so that nine subsequent page migrations do not each re-derive the conventions
-and drift. **Acceptance:** a reviewer who has never seen the handoff can migrate a page
-using only `AGENTS.md` plus one existing redesigned page as reference.
+This exists so that many subsequent page migrations (now including all 17 real admin pages,
+not just the original 9) do not each re-derive the conventions and drift. **Acceptance:** a
+reviewer who has never seen the handoff can migrate a page using only `AGENTS.md` plus one
+existing redesigned page as reference.
 
-### Task R2 (Agent) `/roster` — first tab-bar seam
+### Task R2 (done 2026-10-01, commit `2c4cd6e`) `/roster` — first tab-bar seam
 `src/app/roster/page.tsx` (117 lines) is mostly a MUI `Table` with a `TextField` search and
 `Chip`s. Rebuild as a mobile-first card/list layout using `--pc-card`, `--pc-rule`,
 `--pc-ink*` — a desktop-oriented data table is exactly the pattern `AGENTS.md` warns
@@ -2068,7 +2285,7 @@ status`, plus whatever the UI shows), never `email`/`phone`/`ghin`.
 **Acceptance:** `/roster` visually consistent with `/matches` when navigating via the tab
 bar; correct in both themes at 375px wide; no `email` or `phone` in the network response.
 
-### Task R3 (Agent) Shared components for the dashboard unit
+### Task R3 (done 2026-10-01, commit `1161d3a`) Shared components for the dashboard unit
 Migrate `matches/MatchCard.tsx` (resolving its 5 hardcoded colors), `player/LodgingInfoCard.tsx`,
 and `player/DashboardProfileForm.tsx` to `--pc-*`. `MatchCard` has an existing test
 (`src/components/matches/__tests__/MatchCard.test.tsx`) and a story — keep both passing;
@@ -2077,7 +2294,7 @@ update the story if class names change.
 Do this **before** R4 so the two pages that consume these components are migrated against
 already-final components.
 
-### Task R4 (Agent) `/dashboard` + `/players/[playerId]` — one unit
+### Task R4 (done 2026-10-01, commits `4eeac62`+`21da1b9`) `/dashboard` + `/players/[playerId]` — one unit
 The largest remaining piece (512 + 457 lines of TSX, 281 + 164 of CSS). They share the three
 components from R3 plus `PlayerStats` and `PlayerRerounds` (migrate those here). Per 15.7
 these two pages cannot be split without leaving a component styled for the other.
@@ -2087,12 +2304,12 @@ Also the second tab-bar seam (15.3), and a Part II site (`dashboard/page.tsx:159
 Consider splitting the PR by component rather than by page if review size becomes a problem,
 but land them in one sequence without an intervening release.
 
-### Task R5 (Agent) `/players`
+### Task R5 (done 2026-10-01, commit `d84883a`) `/players`
 143 lines. Note its CSS module already has 2 theme references **and** 4 hardcoded colors —
 reconcile both into tokens. Part II site (`players/page.tsx:31`) and its detail page was
 handled in R4 (`players/[playerId]/page.tsx:37`).
 
-### Task R6 (Agent) `/teams`
+### Task R6 (done 2026-10-01, commit `908a3fa`) `/teams`
 162 lines. **Highest-value Part II overlap:** `teams/page.tsx:57` is the nested-embed leak
 (`team_rosters.select('*, player:players(*)')`) that Part II labels F4 and that the original
 third-party review missed. Replace the embed's `players(*)` with an explicit column list in
@@ -2111,47 +2328,228 @@ Then migrate `/tee-times` itself (243 / 219 lines).
 
 **Acceptance:** decision recorded in section 19; no `.jsx` files remain under `src/app/`.
 
-### Task R8 (Agent) `/itinerary`
+### Task R8 (done 2026-10-01, commit `aa34ee9`) `/itinerary`
 170 lines. Self-contained, no shared components.
 
-### Task R9 (Agent) Auth trio — `/login`, `/change-password`, `/unauthorized`
+### Task R9 (done 2026-10-01, commit `fcdf515`; manual must_change_password login still unverified) Auth trio — `/login`, `/change-password`, `/unauthorized`
 Small (9+44, 136, 21 lines) and should share one visual treatment. `/login` is a tab-bar
 target for signed-out visitors, and `/change-password` is reachable via the middleware
 forced-change redirect (`src/middleware.ts`), so verify both by actually logging in with a
 `must_change_password = true` account — this is exactly what the Part I test environment
 (task 6.3) was seeded to make possible.
 
-### Task R10 (Agent) `/dashboard/award-nominations` and `/gallery`
+### Task R10 (done 2026-10-01, commit `b3cd8f1`) `/dashboard/award-nominations` and `/gallery`
 Form-heavy page plus the smallest page (29 lines, uses `GalleryImage`). Migrate
 `gallery/GalleryImage.tsx` with the latter. `/gallery` also consumes the legacy
 `--gallery-bg` variable — replace with a `--pc-*` equivalent or retire the variable.
 
-### Task R11 (Agent) Legacy variable sunset
-Per 16.4 this is a scoped cleanup, not a big-bang. For each of the ~48 legacy variables,
-count references outside `src/app/admin/`:
-```bash
-for v in text text-muted surface border divider gallery-bg progress-track; do
-  echo "--$v: $(grep -rn "var(--$v)" src --include="*.css" --include="*.tsx" | grep -vc "/admin/")"
-done
-```
-Delete any that reach zero outside admin; add the "admin-only" comment block to `globals.css`
-for the rest. **Acceptance:** no public-page CSS module references a legacy variable, and
-`globals.css` states clearly which set is which.
+### Task R11 (done 2026-10-02, commit `5283bce`) Legacy variable sunset — full sunset, not scoped
+A sitewide grep (not just admin/public page CSS modules) found 3 consumers the page-by-page
+R-series tasks hadn't touched: `layout.module.css` (mobile AppBar + an admin-sidebar logout
+button that had used `--accent-red` since RA1 without anyone noticing), `Card.module.css`, and
+`AddToCalendar.module.css`. The largest piece was `globals.css`'s own global MUI-component
+reset (`.MuiPaper-root`, `.MuiOutlinedInput-*`, `.MuiChip-deleteIcon`, etc.) — genuinely
+load-bearing for every MUI component sitewide, not dead code, so each rule was mapped to its
+`--pc-*` equivalent (same mapping convention as commit `1161d3a`) rather than deleted. With
+every consumer migrated, deleted both legacy `:root` blocks outright (~40 variables, most
+already fully dead), folding their `color-scheme` declarations into the `--pc-*` theme blocks.
+**Acceptance met:** a full sitewide grep for every legacy variable name returns zero `var()`
+references anywhere in `src/`; `globals.css` now contains only `--pc-*` tokens plus the MUI
+reset (now itself `--pc-*`-based). Full suite verified clean (jest/tsc/build/lint/Storybook).
 
-### Task R12 (Agent) Final verification
+### Task R12 (done 2026-10-02) Final verification
 Walk every public route in both themes at 375px and at desktop width:
 `/`, `/faq`, `/matches`, `/roster`, `/players`, `/players/[id]`, `/teams`, `/tee-times`,
 `/itinerary`, `/gallery`, `/login`, `/change-password`, `/unauthorized`, `/dashboard`,
 `/dashboard/award-nominations`.
 
-- [ ] Every tab-bar destination lands on a redesigned page (closes 15.3).
-- [ ] No public page renders a hardcoded color that breaks in dark mode (closes 15.9).
-- [ ] `npm test` green; `npx tsc --noEmit` clean; `npm run build` succeeds.
-- [ ] Storybook still builds (`npm run build-storybook`) — stories reference class names.
-- [ ] Every page touched has an explicit column list, no `select('*')` on `players` (closes 15.8).
+- [x] Every tab-bar destination lands on a redesigned page (closes 15.3).
+- [x] No public page renders a hardcoded color that breaks in dark mode (closes 15.9) — zero
+      legacy-variable/hardcoded-hex references confirmed sitewide as of R11.
+- [x] `npm test` green (150/150); `npx tsc --noEmit` clean (2 pre-existing unrelated errors
+      only); `npm run build` succeeds.
+- [x] Storybook still builds (`npm run build-storybook`) — stories reference class names.
+- [x] Every page touched has an explicit column list, no `select('*')` on `players` (closes
+      15.8) for public pages; admin pages retain `select('*')` on `players` by deliberate
+      earlier decision (admin-authenticated route, same reasoning as
+      `players/[playerId]/page.tsx`).
 
-Do this on `test.patron-cup.com` once Part I is live, so it runs against seeded data in a
-production-like build rather than `next dev`.
+The live-browser walk (both themes, mobile+desktop, all public AND admin routes) was done by
+the user directly against `test.patron-cup.com` rather than by assistant automation (no browser
+tool available in-session) — see [[patron-cup-hifi-redesign]] for the bugs that walk surfaced
+and their fixes. **Part III (the Hi-Fi redesign, public pages + all of Phase R-Admin) is now
+complete**: RA1-RA7, R0-R12 all done, zero legacy CSS variables remain anywhere in `src/`.
+
+---
+
+## 17a. Admin redesign — findings from the Hi-Fi v3 design artifact (2026-10-01)
+
+Both of 16.6's prerequisites are now satisfied: the admin audit (15.11) and a Claude-Design
+canvas artifact ("Hi-Fi v3") that includes real admin design direction, not a port of the
+public-page spec. The artifact is a bundler-wrapped React canvas — reading it directly only
+surfaces loader boilerplate; the actual component source has to be decoded from its manifest
+(gzip+base64 per-asset blobs). Already done once this session; see
+[[patron-cup-hifi-redesign]] for the decoded file UUIDs if it needs re-reading.
+
+**The 17 real admin routes**, grouped exactly as the mockup's own `AD_GROUPS` nav taxonomy
+groups them (this taxonomy is itself new content the admin dashboard page should render, not
+just a planning convenience):
+
+| Group | Routes |
+|---|---|
+| Competition | `events`, `courses`, `matches`, `matches/setup`, `scores`, `handicaps`, `rerounds`, `award-nominations` |
+| People | `players`, `teams`, `participants` |
+| Trip | `travel`, `lodging` |
+| Accounts | `invite`, `reset-password`, `change-username` |
+
+(`dashboard` itself is the 17th route — the hub page that renders these 16 as tiles, matching
+the mockup's own "Four areas, sixteen tools" copy exactly.)
+
+**Current-state cross-check against 15.11, confirmed by direct inspection 2026-10-01:**
+`courses`, `handicaps`, `lodging`, `matches`, `participants`, `rerounds`, `scores`, `teams`,
+`travel`, `award-nominations` have **zero** CSS modules (pure inline `sx`) — 10 routes,
+matching 15.11 exactly. The other 7 (`change-username`, `dashboard`, `events`, `invite`,
+`matches/setup`, `players`, `reset-password`) already have one. Page sizes range from 88 lines
+(`change-username`) to 656 (`lodging`, the largest admin page by far) — `matches/setup` (526
+lines) carries real `@dnd-kit` logic per 15.11, untouched by any of this.
+
+**The mockup supplies a complete, reusable admin design system, not just visual references for
+a handful of pages** — decoded in full, not just skimmed:
+- **New CSS utility classes** (desktop): `.ad-card`, `.ad-row` (+ `.head`/`.hover`/`.sel`
+  variants), `.ad-th`, `.ad-num`, `.ad-badge`, `.ad-ib` (icon button), `.ad-dlg`/`.ad-dlg-h`/
+  `.ad-dlg-f` (modal dialog), `.ad-seg` (segmented control), `.ad-sk` (loading skeleton),
+  `.ad-gcard` (dashboard tile), `.ad-pcard` (draggable player card), `.ad-slot` (drag target),
+  `.ad-crumb`, `.ad-sub`, `.ad-in` (text input), `.ad-lab` (field label), `.ad-scrim`.
+- **Mobile equivalents**: `.ad-sheet`/`.ad-grab` (bottom sheet replacing the dialog), `.ad-btn`,
+  `.ad-chip`, `.ad-m-sticky` (sticky action bar).
+- **Reusable components** (desktop): `AIcon` (~25 named icon paths incl. one per nav item),
+  `AGrip` (drag handle), `AdminHead` (breadcrumb + title + actions), `AField` (labeled input
+  wrapper), `AName` (avatar + team chip + name), `AScrim`, `PCDesktop`/`PCDesktopSidebar`
+  (sidebar+topbar shell), `PCDeskBtn`, `PCDeskH`.
+- **Mobile equivalents**: `MWrap` (top bar + tab bar shell), `MHead`, `Sheet` (bottom-sheet
+  equivalent of a dialog), `MName`.
+- **Two new design tokens needed**, referenced by the above but not yet in `globals.css`:
+  `--pc-chip-bg` (badge background) and `--pc-shadow-strong` (dialog/sheet shadow, heavier than
+  `--pc-shadow`). Add both before building anything that uses `.ad-badge` or `.ad-dlg`/`.ad-sheet`.
+- **Worked full-page examples**, each establishing the canonical pattern for a category of
+  admin page rather than being usable verbatim:
+  - `HiAdminDashboard`/`MAdminDashboard` — the nav-tile hub (uses `AD_GROUPS` directly).
+  - `HiAdminCourses`/`MAdminCourses`(+`MAdminCourseStates`) — simple CRUD table + edit dialog,
+    plus explicit loading-skeleton and empty states.
+  - `HiAdminHandicaps`/`MAdminHandicaps` — sortable, searchable, team-filterable table with a
+    computed column (index change vs. previous). Confirms 15.11's finding that hand-rolled
+    sorting (no DataGrid) is the established, working precedent here.
+  - `HiAdminMatchSetup`/`MAdminMatchSetup` — the drag-and-drop groups board. **Re-skin only**:
+    `AGrip`/`.ad-pcard`/`.ad-slot` are visual, the actual `@dnd-kit` wiring in the current
+    `TeeTimeBoard.tsx` is untouched.
+  - `HiAdminAccountForm`/`MAdminInvite` — single-purpose action form (icon + heading + fields +
+    one primary button). Generic enough for `invite` and `username` as-is; `MAdminReset` is a
+    **richer variant** of the same pattern (player search, generate-or-type password, strength
+    meter) — use that one specifically for `reset-password`, not the generic form.
+  - `HiAdminRelational`/`MAdminTravel` — table + detail dialog/sheet, with a `Travel`/`Lodging`
+    segmented toggle **combining both into one UI** in the mockup. The real app has these as
+    two separate routes today. **Open design question, not resolved here:** keep them as two
+    routes sharing the same visual pattern (lower risk, no routing change), or actually merge
+    them behind the toggle as drawn. Decide this at the start of the task that touches either,
+    don't default silently to the riskier merge.
+  - `MAdminAwards` — nomination review/tally list (sorted by vote count, quoted reasons). This
+    is the **admin-side** nominee review, distinct from the player-facing nomination form at
+    `/dashboard/award-nominations` already redesigned in R10 — don't confuse the two when
+    reading "award-nominations" in a route list.
+- **Not covered by a worked example — closest analog only, exact layout is an implementation
+  decision**: `events` and `rerounds` → follow the Courses CRUD pattern; `matches` (the main
+  list, not `/setup`) and `participants` → follow the Travel/Lodging table+detail pattern;
+  `scores` → closest to Handicaps' sortable table, since "review and confirm" implies
+  per-row actions more than per-row editing; `teams` → roster/captain assignment has no
+  worked example at all (neither the drag-board nor a plain table clearly fits) — expect to
+  make a real design call here, not just reskin.
+- **The admin desktop shell is a synthesis, not a ready-made component**: `PCDesktop`'s own
+  `DESK_TABS` array is the *public*-site nav (Home/FAQ/Matches/Roster/Dashboard) — the mockup
+  never actually swaps in `AD_GROUPS` as the sidebar's nav model for admin routes, it just
+  renders each admin page with `active="dash"` as a placeholder. Building a real admin
+  sidebar nav means combining `PCDesktopSidebar`'s visual mechanics with `AD_GROUPS`' grouped
+  content yourself — a reasonable, small synthesis, but call it out as a decision made during
+  implementation, not something copied verbatim from the artifact.
+
+---
+
+## 17b. Phase R-Admin — Admin redesign completion tasks
+
+Same bar as Phase R: mobile-first, both themes, `npm test` green before any PR. Batched
+small-to-large and simple-pattern-to-complex, same reasoning as the public-page R2→R10
+sequence (establish shared components and the simplest worked pattern first; save the
+highest-risk page — the one with real drag-and-drop business logic — for last).
+
+### Task RA1 (done 2026-10-01, commit `6431b3b`) Admin design-system foundation
+Add `--pc-chip-bg` and `--pc-shadow-strong` to `globals.css`. Port the `ad-*` utility CSS and
+the `AIcon`/`AGrip`/`AdminHead`/`AField`/`AName`/`AScrim` components (desktop) plus
+`MWrap`/`MHead`/`Sheet`/`MName` (mobile) from the decoded mockup into real shared files (e.g.
+`src/components/admin/`). Build the real admin desktop shell (sidebar nav from `AD_GROUPS`,
+per 17a's note that this isn't ready-made). Extend `AGENTS.md`'s "Design system" section
+(written in R1) with an admin subsection covering these new classes/tokens/components, same
+spirit as R1 — a page migrated after this point should need only this doc plus one finished
+admin page as reference, not a re-read of the mockup.
+
+### Task RA2 (done 2026-10-01, commit `6b36a63`) `admin/dashboard`
+The hub page. Render `AD_GROUPS` as real tiles linking to the other 16 routes (replace any
+placeholder counts/labels with real ones — e.g. route counts per group, not the mockup's
+placeholder "sixteen tools" copy if that becomes stale).
+
+### Task RA3 (done 2026-10-01, commit `1e38294`) Account-action forms — `invite`, `reset-password`, `change-username`
+Three small, already-CSS-moduled pages (88-138 lines). `invite` and `change-username` fit the
+generic `HiAdminAccountForm` pattern directly. `reset-password` uses the richer `MAdminReset`
+variant (player search, generate-or-type password with a strength meter) — don't flatten it to
+the generic form, it's a deliberately different page in the mockup.
+
+### Task RA4 (done 2026-10-01, commits `67eaa5c`+`d3eadfb`+`218c657`+`6559a5f`) Simple CRUD tables — `courses`, `events`, `rerounds`, `players`
+`courses` is the mockup's literal worked example (table + add/edit dialog + explicit
+loading/empty states) — build it first as the reference, then apply the same shape to
+`events` and `rerounds` (no worked example, same pattern per 17a). `players` already has a CSS
+module; reconcile its existing styling into tokens rather than a ground-up rebuild.
+
+### Task RA5 (done 2026-10-01, commits `92a859a`+`f2c305e`+`6500c55`+`1871094`+`24e6d27`) Relational and review pages — `travel`+`lodging`, `participants`, `teams`, `award-nominations` (admin side)
+Resolve the Travel/Lodging separate-vs-combined question (17a) before writing either page.
+`participants` follows the same table+detail pattern. `teams` has no worked example — expect a
+real design decision (roster/captain assignment), not a reskin. `award-nominations` here is
+the **admin tally/review view** (`MAdminAwards` pattern: sorted by vote count, quoted reasons)
+— not the player-facing form R10 already redesigned.
+
+### Task RA6 (done 2026-10-01, commits `37dfc98`+`156caa9`+`d985cb5`+`2e30016`) Complex and high-risk pages — `handicaps`, `scores`, `matches`, `matches/setup`
+`handicaps`: sortable-table pattern, real `<button>`+`AIcon` sort headers, dynamic
+`grid-template-columns` computed in JS since course-column count varies, new search box added.
+`scores`: course-tabs became `.ad-chip` segmented buttons, per-match `ad-card` with status
+badges and a 3-button winner-selection row; `setOfficialMatchResult` logic unchanged. `matches`
+(main list): CRUD table pattern, bulk-creation divisibility check unchanged. `matches/setup`
+done last and most carefully: `page.tsx` is a pure visual pass (AdminHead, `.ad-seg` course
+tabs, `.pc-d-actionbtn` actions, restyled `renderCard` content) with zero changes to
+`fetchEventData`/`getAvailablePlayers`/`addMatchPlayer`/`removeMatchPlayer`/
+`handleBoardPersist`/`handleExportMatchesCsv`; `TeeTimeBoard.tsx` got exactly 3 cosmetic line
+changes (`AGrip` icon swap, one outline color) with the `@dnd-kit` logic completely untouched
+(verified via `git diff`). This completes all of Phase R-Admin's page-by-page work.
+
+### Task RA7 (code-verifiable half done 2026-10-01) Admin final verification, then close out R11/R12
+Walk all 17 real admin routes in both themes, mobile and desktop. Confirm the two
+account-action-form variants both still work end-to-end (invite sends an email, reset actually
+changes a password, username actually renames). Only after this: run R11 (legacy variable
+sunset — now actually safe to check "zero references anywhere, admin included") and re-run
+R12's walk extended to cover every admin route, not just public ones.
+
+**Done so far (code-level, no browser/credentials available in this session):** grepped all of
+`src/app/admin/` + `src/components/admin/` for legacy CSS vars (zero hits) and hardcoded hex
+(one hit, a form placeholder string, not styling) — confirms the token migration is complete
+across all 17 routes. Confirmed all 17 routes' `.module.css` files use `--pc-*` tokens wherever
+they set color/background. Confirmed `invite`/`reset-password`/`change-username` still POST to
+their original `/api/admin/*` routes, unchanged. Full suite passed: jest 150/150, `tsc --noEmit`
+(2 pre-existing unrelated errors only), production build, lint, and `build-storybook` all clean.
+Also noticed `src/app/admin/trip-planning/` is an empty, untracked, pre-existing directory (no
+files, predates this session) — not a real route, nothing to migrate, left alone.
+
+**Still not done — needs a real browser + admin credentials, neither available in this
+session:** the actual visual walk (both themes, mobile+desktop) of all 17 routes, and
+end-to-end exercise of the three account-action flows (does invite's email actually send, does
+reset actually change a password, does username actually rename). Also still unverified: RA1's
+root-layout admin sidebar swap has never been seen rendered for a logged-in admin. Recommend
+the user do this pass themselves before R11/R12.
 
 ---
 
@@ -2175,15 +2573,20 @@ production-like build rather than `next dev`.
 
 ## 19. Part III decisions to record
 
+All decided by the user 2026-10-01 — see section 16 for full reasoning on each.
+
 | Item | Value |
 |---|---|
-| 16.1 MUI boundary ratified as target? | _TBD_ |
-| 16.2 `/admin` in scope? | _TBD_ |
-| 16.3 Page order accepted (or revised) | _TBD_ |
-| 16.4 Legacy variable strategy | _TBD_ |
-| R0 dead-code deletion shipped (commit) | _TBD_ |
-| R7 — is the 2025 `[playerSlug]` archive still needed? | _TBD_ |
-| `src/app/scoreboard/` — deleted, or reserved for live scoring? | _TBD_ |
+| 16.1 MUI boundary | Tiered: removed everywhere with a reasonable hand-built equivalent; `@mui/x-data-grid` + `@mui/x-date-pickers` kept, re-themed to `--pc-*` tokens via a new `ThemeProvider` (none exists yet) |
+| 16.2 `/admin` in scope? | Yes — everything in scope. Needs its own audit + new design direction first (section 16.6); not yet actionable beyond that |
+| 16.3 Page order accepted (or revised) | Accepted as the *build* order; shipped as one batch to test then production, not per-page increments |
+| 16.4 Legacy variable strategy | Full sunset — delete each legacy variable once its last referencing page migrates, not a permanent second system |
+| R0 dead-code deletion shipped (commit) | **Done 2026-10-01** — two commits on `test`: `f851713` (orphaned components + legacy `src/styles/`), `cda2e19` (Bandon archive, incl. two orphaned test files the original inventory missed: `lib/repositories/__tests__/bandon.test.ts`, `lib/__tests__/bandonLegacy.test.ts`, plus 3 leftover `.module.css` files). `npm test` (36/36), `npm run build`, and `npx tsc --noEmit` (2 pre-existing unrelated errors only) all verified before committing. Not yet pushed to remote (user pushes) |
+| Bandon archive retirement (= Part IV 21.1/21.3) | **Decided: retire.** `/tee-times`, `/tee-times/2025/[playerSlug]`, `repositories/bandon.ts`, `getAllPlayersAndMatches.ts`, `getPlayerRecord.ts`, `getMatchesWithPlayers.ts`, `PlayerMatches.tsx`, `scoreboard/CourseScoreCard.tsx`, `scoreboard/MatchRow.tsx` all confirmed deletable, folded into Task R0 |
+| `src/app/scoreboard/` — deleted, or reserved for live scoring? | Still reserved for [[project-live-scoring]] — the Bandon decision doesn't touch this, it's a different empty directory for a different future feature |
+| Admin audit (16.6, half of it) | **Done 2026-10-01 — see section 15.11.** Found 17 real pages (not 19 — 2 are redirect stubs), 10 of which have no CSS module at all (pure inline `sx`), zero `--pc-*` usage anywhere, and critically: `@mui/x-data-grid` has one consumer total (the Bandon archive being deleted) and `@mui/x-date-pickers` has one (`admin/rerounds`). This reopens 16.1 — see that entry |
+| Admin design request (16.6, other half) | _TBD_ — not started; new design direction for admin (likely the `design` skill) still needed before any admin R-series task can be written, independent of the MUI question |
+| 16.1 final decision | **MUI stays, used pragmatically** — no removal mandate, no `ThemeProvider` requirement; consistency comes from `--pc-*` tokens regardless of which library renders a given component. `@mui/x-data-grid` still gets removed from `package.json` once Task R0 deletes its one consumer — dead-dependency cleanup, not a MUI-policy matter |
 
 ---
 
@@ -2476,6 +2879,16 @@ a style preference, not a correctness fix, once the enum is corrected or discard
 ### 20.7 Data-integrity gaps
 
 #### 20.7.1 [FIX] Missing uniqueness on join tables
+
+**Corrected 2026-10-03, while writing and then running Task H5: wrong for 10 of these 11.**
+This was written from a hand-pasted dashboard export; the real `pg_dump` baseline shows
+`team_rosters`, `match_players`, `team_captains`, `lodging_assignments`,
+`event_participants`, `reround_signups`, `course_holes`, `hole_scores`,
+`ceremony_award_nominations`, and (confirmed only after a failed run against test, not
+caught by the first text search) `teams` all already had the constraint listed below. Only
+`matches` genuinely didn't. Kept the original table as a historical record of what was
+checked; see Task H5 for what actually shipped.
+
 Nothing in the paste prevents duplicate rows in any junction table. Each of these should
 have a composite unique constraint, and today a double-click in the admin UI can create
 duplicates:
@@ -2737,16 +3150,22 @@ union all select 'hole_scores', count(*) from public.hole_scores;
 **Acceptance:** section 24 filled in; query 7's output saved verbatim into the H1 migration;
 every `[VERIFY]` item above resolved to a yes/no.
 
-### Task H1 (Agent) Put the RLS helper functions in version control
+### Task H1 (applied to test 2026-10-03) Put the RLS helper functions in version control
 Take `is_admin()` and `is_committee_or_admin()` from H0 query 7 and commit them as a
 migration, matching `current_player_id()`'s pattern (`STABLE SECURITY DEFINER`, explicit
 `search_path`). No behavior change — this is purely making thirty policies reproducible, and
 it is what lets Part I task 3.3 build a working test project.
 
-**Acceptance:** applying the baseline + H1 to the test project yields working committee
-writes.
+`supabase/migrations/20261003120000_h1_version_control_rls_helpers.sql` — `CREATE OR REPLACE`
+on both functions, bodies captured verbatim from the H0 pg_dump, only the `STABLE`/
+`search_path` attributes added. No DB connection available in the agent's environment this
+session (no `psql`/`supabase` CLI, no direct Postgres connection string in `.env.local`) —
+**user runs Phase H migrations via the Supabase SQL editor**, not the agent, going forward.
 
-### Task H2 (items 1-2 done via Part II Task S5 2026-10-01; item 3 still open)
+**Acceptance:** applying the baseline + H1 to the test project yields working committee
+writes. **Applied to test 2026-10-03** by the user via the Supabase SQL editor.
+
+### Task H2 (items 1-2 done via Part II Task S5 2026-10-01; item 3 applied to test 2026-10-03)
 Three changes that are small, independent, and currently exploitable:
 1. ~~Drop `"Records Update Policy"` on `records_bandon` and `"Match Bandon Update"` on
    `match_bandon` (20.5.3). No app impact.~~ **Done** — Part II Task S5 shipped this exact
@@ -2757,72 +3176,282 @@ Three changes that are small, independent, and currently exploitable:
    `branson_roster`'s anon `SELECT` policy without dropping the table, since 21.3 (retire the
    2025 Bandon archive?) is still undecided. Revisit dropping the table itself once that
    decision is made.
-3. **Still open.** For each of the nine tables from 20.5.2, per H0 query 1: enable RLS if
-   disabled (already confirmed enabled everywhere, per Part II Task S0), and add
-   `DELETE … TO authenticated USING is_committee_or_admin()`.
+3. `supabase/migrations/20261003121000_h2_add_missing_delete_policies.sql` — one `DELETE`
+   policy per table, role level matching that table's existing INSERT/UPDATE policies rather
+   than a blanket `is_committee_or_admin()`: `events`/`players` use `is_admin()` (matching
+   their existing insert/update policies, which are admin-only, not committee), the other 7
+   (`teams`, `matches`, `courses`, `lodging`, `travel_info`, `rerounds`,
+   `event_participants`) use `is_committee_or_admin()`. Confirmed via code read that all 9
+   admin delete buttons issue a real client-side `.from(table).delete()` call today — meaning
+   they've been silently no-op'ing (RLS denies, Supabase returns no error on 0 rows affected),
+   not secretly working around the missing policy some other way.
 
-**Acceptance:** item 1/2 verified — an `anon` client cannot UPDATE `records_bandon` or
-`match_bandon`, and cannot `SELECT` `branson_roster`, on both test and production. Item 3 not
-yet done: each of the nine admin delete buttons still needs a policy added, then verified
-working for an admin account and rejected for a player account.
+**Acceptance:** item 1/2 verified on test and production already. **Item 3 migration applied
+to test 2026-10-03** by the user. Still worth a manual check when convenient: each of the 9
+delete buttons actually removes a row for an admin account, and a player-role account still
+gets denied — no automated test covers the committee-vs-admin split specifically, and
+`events`/`players` being admin-only (not committee) is new behavior worth confirming with a
+committee-role account too, not just admin and player.
 
-### Task H3 (Agent) Fix `players.is_active`
-Per 21.2, in one migration plus one code change:
-1. Reconcile rows (H0 query 8) — e.g. `UPDATE players SET status = 'inactive' WHERE is_active IS FALSE AND status = 'active'`, decided from the actual counts.
-2. Change `src/app/admin/teams/page.tsx:62` and
-   `src/app/admin/matches/setup/page.tsx:105` from `.eq('is_active', true)` to
-   `.eq('status', 'active')`.
-3. `ALTER TABLE players DROP COLUMN is_active;`
-4. Add `CHECK (status IN ('active','inactive','pending'))` and `NOT NULL DEFAULT 'pending'`.
+### Task H3 (code + migration applied to test 2026-10-03) Fix `players.is_active`/`status` split-brain — standardized on `is_active`
+**Direction reversed from this task's original draft** (which said "standardize on
+`status`, drop `is_active`") — user decided 2026-10-03 to go the other way, matching what
+Part III's admin redesign had already done across 5 pages (`travel`, `lodging`, `teams`,
+`matches/setup`, `participants`) without anyone revisiting this plan section at the time.
 
-Ship the code change **before** the column drop. **Acceptance:** a newly invited player
-appears in the admin Team-builder immediately — this is the regression test for the bug in
-20.5.1, and it needs the Part I test environment plus a seeded admin (task 6.3) to verify.
+Code changes (commit `b6ead61`): `types/database.ts`'s `Player.status` →
+`Player.is_active: boolean` (and the now-unused `PlayerStatus` type removed);
+`lib/playerColumns.ts`'s `PUBLIC_PLAYER_COLUMNS` swaps `'status'` for `'is_active'`; public
+pages (`roster`, `players`) and admin pages (`reset-password`, `rerounds`) that filtered on
+`status = 'active'` now filter on `is_active = true`; `admin/players` (the actual
+status-editing UI) got its 3-value Active/Inactive/Pending `Select` collapsed to a 2-value
+Active/Inactive one bound to the boolean — "pending" behaved identically to "inactive"
+everywhere that filtered on `status`, so nothing is lost except that one label. 4 test
+fixtures + `playerColumns.test.ts` updated to match.
 
-### Task H4 (Agent) Type corrections
+Migration `supabase/migrations/20261003130000_h3_standardize_on_is_active.sql`: reconciles
+`is_active` FROM `status` for every existing row first (`status` was the only column anything
+ever actually wrote — `is_active` just sat at its insert-time default forever, per the
+original 20.5.1 finding), re-grants anon `SELECT` on `is_active` before `status` disappears
+under it (anon could read `players.status` for the public roster/players listings), drops
+`status`, then adds `NOT NULL DEFAULT true` to `is_active`.
+
+**Acceptance:** migration **applied to test 2026-10-03** by the user via the Supabase SQL
+editor. Still worth a manual check when convenient: a newly-admin-deactivated player
+disappears from `travel`/`lodging`/`teams`/`matches/setup`/`participants`'s pickers
+immediately (the original 20.5.1 regression test), and the public `/roster` and `/players`
+pages still load for an anonymous visitor (the anon column grant actually matters here, not
+just RLS).
+
+### Task H4 (migration written 2026-10-03, not yet applied) Type corrections
 `ghin_number` `int8` → `text` (20.6.1); `players.country` nullability reconciled with
 `src/types/database.ts:16` (20.6.2); `match_results_pending.status` `text` → the
 `match_pending_status` enum (20.6.4). Update `src/types/database.ts` in the same commit and
 re-run `npx tsc --noEmit`.
 
-### Task H5 (Agent) Uniqueness and CHECK constraints
-Everything in 20.7.1, 20.7.2, 20.7.3. Use `CREATE UNIQUE INDEX` / `ALTER TABLE … ADD
-CONSTRAINT`, each `IF NOT EXISTS`-guarded where syntax allows. Expect some to **fail on
-production data** — duplicate `team_rosters` rows are likely. That is a finding, not an
-obstacle: dedupe first, in the same migration, and record what was found.
+`src/types/database.ts` already declares the post-fix shape for both `ghin_number`
+(`string | null`) and `country` (`string`, non-nullable) — no code change ships with this
+migration, only the database catches up to what TypeScript already expects. For 20.6.4: the
+enum turned out to be the stale side (missing `'cancelled'`, which the real `CHECK` constraint
+and the app's own `MatchResultsPendingStatus` type both already have), and it's unused as any
+column's type — `supabase/migrations/20261003140000_h4_type_corrections.sql` drops it outright
+rather than converting the column to match it, since the `CHECK` already does the job
+correctly and converting would be pure style with real migration risk for no gain. Confirmed
+via code read that no numeric/arithmetic handling of `ghin_number` exists anywhere (every
+site already treats it as an opaque string — `.localeCompare()`, `String(...)`, `?? ''`), so
+the `int8`→`text` column conversion is safe.
 
-Run this against the **test** project with real seeded data before prod, and write the seed
-script (Part I task 6.2) to satisfy these constraints.
+**Acceptance:** not yet verified — awaiting the user applying this migration to test via the
+Supabase SQL editor, then `npx tsc --noEmit` confirming no new type errors (expected: none,
+since the types already matched the target shape).
 
-### Task H6 (Agent) Indexes
+### Task H5 (applied to test 2026-10-03) Uniqueness and CHECK constraints
+**Major correction found while writing this migration: the 20.7.1 audit was wrong about
+almost everything in its own table.** It was based on a hand-pasted dashboard export; the
+real `pg_dump` baseline already in this repo shows 9 of the 11 "missing" uniqueness
+constraints already exist — `team_rosters`, `match_players`, `team_captains`,
+`lodging_assignments`, `event_participants`, `reround_signups`, `course_holes`,
+`hole_scores`, and `ceremony_award_nominations` all already have one.
+`course_holes`' and `hole_scores`' 20.7.3 range CHECKs (hole_number/par) were likewise
+already present — only `strokes`/`penalty_strokes` were actually missing from `hole_scores`.
+
+**Second correction, found only after a failed run against test:** the first version of this
+migration still tried to add `teams_event_id_name_key`, which — per the error Postgres
+returned (`42P07: relation "teams_event_id_name_key" already exists`) — already exists too.
+Missed on the first pass because the check used a `\b`-word-boundary regex, and "teams" has
+no word boundary before the `_` in `teams_event_id_name_key` (underscore counts as a word
+character, so `\bteams\b` never matched). Re-verified every other constraint/index name in
+the file directly against the baseline text afterward (not a regex search) and confirmed
+none of the other 7 have the same problem. **Only `matches (event_id, match_number)`
+genuinely lacks a uniqueness constraint** — the file now adds only that one.
+
+`supabase/migrations/20261003150000_h5_uniqueness_and_checks.sql` adds, confirmed safe via
+code read (both existing write paths —`propose_match_result` and
+`set_official_match_result` RPCs — already enforce the halved/winner exclusivity in
+application logic, and `admin/matches/page.tsx`'s edit form has no control that actually sets
+either field, just carries forward whatever a row already has):
+- `matches_event_id_match_number_key` (20.7.1's one real gap) — **not** deduped
+  automatically first, unlike this task's general guidance: `matches` has children that
+  `ON DELETE CASCADE` (`match_players`, `match_results_pending`), so an automatic "keep the
+  earliest" pick on an actual duplicate could silently destroy real scheduled-player rows. If
+  the `ADD CONSTRAINT` fails, that's a signal to go look at the actual conflicting rows
+  together, not to blindly re-run a guessed `DELETE`.
+- `events_one_active` partial unique index (20.7.2), with a defensive `UPDATE` first that
+  collapses to one active event (keeping whichever was most recently updated) in case more
+  than one already is.
+- `matches_halved_xor_winner`, `events_end_after_start`, `lodging_checkout_after_checkin`,
+  `hole_scores_strokes_positive`, `hole_scores_penalty_nonnegative`,
+  `round_scores_total_positive` (the genuinely-missing half of 20.7.3).
+
+**Deliberately not added, decided while writing this migration rather than applied blindly:**
+`players.status`'s CHECK is moot (column dropped in H3). `event_participants.status`/
+`payment_status` are completely unused columns — a full source grep found zero reads or
+writes of either — so there's no real call site defining valid values to encode; a CHECK
+here would invent a business rule, not capture one. `matches.match_type`'s premise was
+wrong: `matchFormatConfig.ts` doesn't define a closed set (it pattern-matches a few known
+phrases and falls back to a generic default for anything else), and
+`admin/matches/page.tsx`'s own UI explicitly keeps a non-standard existing `match_type` as a
+selectable option rather than rejecting it — a CHECK limited to the 2 standard values would
+break real, intentionally-supported data.
+
+**Acceptance:** **applied to test 2026-10-03**, confirmed by the user — the corrected
+migration (just the one real `matches_event_id_match_number_key` constraint, plus the
+`events_one_active` index and the 5 CHECK constraints) ran clean, no duplicate-row failure.
+
+### Task H6 (applied to test 2026-10-03) Indexes
 All of 20.8.1, informed by H0 queries 3 and 4 — **skip any FK that already has a leading
 index**, and skip single-column indexes made redundant by an H5 composite unique. Use
 `CREATE INDEX IF NOT EXISTS`; on production prefer `CREATE INDEX CONCURRENTLY` (which cannot
 run inside a transaction, so it needs its own migration file or a manual step).
 
-### Task H7 (Agent) RLS performance rewrite
+Same lesson as H5: 20.8.1's own list assumed zero indexes exist beyond primary keys, which
+isn't true. Cross-checked every FK column in that list directly against the baseline dump
+(not a regex, after H5's word-boundary miss) before writing anything. Of 20.8.1's ~30 FK
+columns, most already have coverage — either an explicit `CREATE INDEX` already in the
+baseline, or a composite `UNIQUE` constraint's backing index, which covers lookups on its
+*leading* column only, not later ones (e.g. `teams(event_id, name)`'s unique constraint
+already covers `event_id` lookups). `supabase/migrations/
+20261003160000_h6_fk_indexes.sql` adds only the columns with no coverage at all: `team_captains
+.player_id`, `match_players.player_id`/`.team_id`, `round_scores.course_id`, `lodging.event_id`,
+`lodging_assignments.player_id`, `event_participants.player_id`, `courses.event_id`,
+`matches.course_id`/`.winner_team_id`, all 4 of `rerounds`' player columns plus its
+`event_id`/`course_id`, and 5 of `match_results_pending`'s player-FK columns (`winner_team_id`,
+`proposed_by_player_id`, `confirmed_by_player_id`, `rejected_by_player_id`,
+`superseded_by_proposal_id`) plus `ceremony_award_nominations`' `nominator_player_id`/
+`nominated_player_id`. Deliberately skipped `round_scores.tee_time_id` (no FK constraint
+exists — `tee_times` doesn't exist per 20.6.3, nothing to index) and `reround_signups.player_id`
+(the table itself is an H8 drop target, not yet executed — indexing it now is wasted work).
+
+Written as plain `CREATE INDEX IF NOT EXISTS` for test, matching this task's own guidance.
+**When H9 promotes to production, switch each to `CREATE INDEX CONCURRENTLY` instead** (each
+needs its own statement outside a transaction) — production has live traffic these indexes
+would otherwise briefly lock against; test doesn't, so plain `CREATE INDEX` there is fine.
+
+### Task H7 (applied to test 2026-10-03) RLS performance rewrite
 20.8.2, 20.8.3, 20.8.4: wrap `auth.uid()` as `(SELECT auth.uid())` or replace whole clauses
 with `current_player_id()`; merge duplicate permissive policies; re-scope `public`-role
 policies to `authenticated`.
 
-This rewrites ~15 policies, so it is the highest-regression task in Phase H. It must land
-**after** Part II's policy work (which rewrites `players` policies and adds column grants) to
-avoid two authors editing the same policies. **Acceptance:** Part II's RLS test suite
-(`npm run test:rls`, its task T-series) passes unchanged — the policies get faster, not
-different.
+This rewrites ~15 policies, so it is the highest-regression task in Phase H — Part II
+(already complete) lands first as planned, so no two-author collision risk. Unlike H5/H6,
+**every claim in 20.8.2/20.8.3/20.8.4 checked out exactly against the real baseline
+policies** when verified directly (not via regex this time) before writing anything — no
+corrections needed here, just confirmation.
 
-### Task H8 (Agent) Drop unused tables and add audit-column defaults
-Per 21.3/21.4: drop `team_bandon`, `branson_captains`, `reround_signups`, and — if 21.1 says
-retire — `match_bandon`, `player`, `records_bandon` (with the code deletions from 20.4).
+`supabase/migrations/20261003170000_h7_rls_performance.sql`: `ALTER POLICY` to rewrite
+`players_update_own` → folded into a merge (see below) rather than altered twice; the two
+`profiles` own-row policies and `reround_signups_insert_own`/`_delete_own` (no committee
+counterpart to merge with) get their bare `auth.uid()` wrapped or replaced with
+`current_player_id()`; `ceremony_award_nominations_select_committee` and
+`match_results_pending_select`'s first OR-branch get their inline committee/admin `EXISTS`
+re-derivation replaced with the already-`STABLE` `is_committee_or_admin()` helper (built in
+H1). Then `DROP`+`CREATE` to merge each redundant permissive-policy pair into one OR'd
+policy: `players` (UPDATE), `round_scores` (INSERT, UPDATE), `travel_info` (INSERT, UPDATE),
+`hole_scores` (INSERT). `events`/`matches`' anon+authenticated SELECT pair has the identical
+`USING (true)` already, so those just get `ALTER POLICY ... TO authenticated, anon` on the
+survivor and a `DROP` of the now-redundant anon-only one, rather than a full merge rewrite.
+Finally, `ALTER POLICY ... TO authenticated` on `match_results_pending`'s 4 policies and
+`ceremony_award_nominations`'s 2 (20.8.4) — no behavior change, since anon could never pass
+either table's `USING`/`WITH CHECK` anyway; this just stops anon from being evaluated against
+them at all.
+
+**This task's own acceptance criterion doesn't exist**: `npm run test:rls` isn't in
+`package.json`, and no RLS-specific test file exists anywhere in the repo — searched the
+whole tree. Whatever automated RLS verification Part II's text assumed either was never
+built or was done as an ad-hoc live check against the database rather than a committed test
+suite (consistent with how Part II's own acceptance was actually verified at the time — live
+queries against test/production, not a script). **Real acceptance, until/unless that script
+gets built**: applied to test, then a live check that round_scores/travel_info/hole_scores
+own-row insert/update, players own-row update, and committee/admin access to all of the
+above still work exactly as before for a real player and a real committee/admin account —
+same as how every other Phase H migration's acceptance has actually been verified this
+session.
+
+### Task H8 (applied to test 2026-10-03) Drop unused tables and add audit-column defaults
+Per 21.1/21.3 (decided 2026-10-01: retire) and 21.4 ignored here, unrelated: drop
+`team_bandon`, `branson_captains`, `branson_roster` (its anon-exposing policy was already
+dropped in Part II Task S5; the table itself is still unreferenced and unused — drop it too,
+consistent with the standing "if unused, get rid of it" instruction), `reround_signups`, and
+`match_bandon`/`player`/`records_bandon` (with the matching code deletions, which land in
+Part III Task R0 — do that side first or in the same sitting, since this task only removes
+the database tables, not the routes/components still referencing them).
 Then 20.7.5: `NOT NULL DEFAULT now()` on audit columns and one shared `set_updated_at()`
 trigger attached to every table with `updated_at`.
 
 `pg_dump` each table being dropped to a file stored outside the database first.
 
+**Code-side prerequisite confirmed already done**: a full source grep found zero
+references anywhere in `src/` to any of the 7 tables being dropped — Part III Task R0
+already removed every route/component that read them.
+
+**20.7.5's "missing trigger" half was wrong, corrected while writing this migration**
+(same pattern as H5/H6/20.7.1/20.8.1 — checked the real baseline directly instead of
+trusting the finding text): a shared `public.update_updated_at()` trigger already exists
+and is attached to all 10 tables that need one (`courses`, `event_participants`, `events`,
+`lodging`, `matches`, `players`, `rerounds`, `round_scores`, `teams`, `travel_info`).
+`match_results_pending` deliberately has no trigger — its `SECURITY DEFINER` RPCs already
+set `updated_at` explicitly, and its column is already `NOT NULL`. Nothing to add for
+triggers; `supabase/migrations/20261003180000_h8_drop_unused_tables_and_audit_columns.sql`
+only adds the genuinely-missing `NOT NULL` (the nullability half of 20.7.5 *was* real,
+verified directly: most `created_at`/`updated_at` columns have `DEFAULT now()` but still
+allow `NULL`) across `course_holes`, `courses`, `event_participants`, `events`,
+`hole_scores`, `lodging`, `lodging_assignments`, `match_players`, `matches`, `players`,
+`team_captains`, `team_rosters`, `teams`, `rerounds`, `round_scores`, and `travel_info` —
+each with a defensive `UPDATE ... WHERE ... IS NULL` first.
+
+Drop order in the migration respects the one real cross-dependency found: `records_bandon`
+and `team_bandon` both FK-reference `player(id)`, so they're dropped before `player`
+itself; everything else has zero inbound FKs from any other table (confirmed via a direct
+grep for `REFERENCES public.<table>` on each). Also confirmed `player_team_view` (a real,
+still-used view) references `public.players` (plural, the live table), not `public.player`
+(singular, the Bandon one being dropped) — no view breaks.
+
+**The `pg_dump`-each-table-first step is a manual, outside-this-file action** — it's a CLI
+backup step, not SQL, and this agent's environment has no `pg_dump`/DB connection available
+(same limitation noted since H1). The migration file includes the exact `pg_dump` command
+as a comment; **run that yourself before running the migration**, since `DROP TABLE` is
+not reversible once committed.
+
 ### Task H9 (Human + Agent) Promote to production
 Only after the full Part I task 7.1 smoke test passes against the hardened test project.
 Apply H1–H8 to prod in the same order, one migration at a time, verifying between each.
 Take a fresh backup first. Re-run Part II's production curl checks afterward.
+
+**2026-10-03, after H1-H8 all applied to test: re-ran what's actually checkable from this
+agent's environment** (`vercel curl` against `test.patron-cup.com`, which bypasses
+Deployment Protection — no direct DB connection available, same limitation as every Phase H
+migration). `/`, `/faq`, `/roster`, `/matches`, `/itinerary`, `/teams`, `/login` all `200`;
+`/dashboard` and `/admin/dashboard` correctly `307` to login when unauthenticated; `/roster`'s
+response body inspected directly (not just status code) to rule out a Next.js error-boundary
+page rendering underneath a 200 — confirmed clean (`"error":null` in the RSC payload, not an
+actual exception). This re-confirms the exact same programmatic checks from Task 7.1 still
+pass post-Phase-H.
+
+**Still needs a human, before H9 can actually run**: Task 7.1's original backend/RLS checks
+(committee can write another player's row, a player can't write someone else's, the full
+`propose_match_result`→`finalize_match_result_from_pending` flow, avatar upload) were last
+verified 2026-10-01, **before any Phase H migration existed** — this agent has no test
+account passwords (deliberately never recorded anywhere, per [[project_invite_only_auth]]),
+so re-running those specific checks isn't possible from here. The user's own Part III
+passthrough (2026-10-02) already exercised much of this surface live and caught/fixed real
+bugs, but that was also before Phase H landed. Given H1-H7 are behavior-preserving by design
+and H8 only touched already-dead tables, residual risk is specifically "did a Phase H SQL
+statement itself have a mistake" (H5 already caught one) — not a full 7.1 re-run, but a
+**quick targeted pass worth doing before H9**: edit a player in `admin/players` and toggle
+Active/Inactive (H3), confirm `admin/participants`'s "+ Participant" still works (H3),
+confirm a GHIN number still displays/saves correctly in `admin/handicaps` (H4), and try one
+of the 9 delete buttons that got a new policy in H2 to confirm it actually removes a row now.
+
+**Done 2026-10-03 — passed, after fixing what it found.** The targeted pass surfaced the
+deploy-sequencing gap (H3's code fix for `admin/players` hadn't been pushed yet — fixed by
+pushing) and the `admin/participants` pre-existing `handicap_at_event`/`is_confirmed` bug
+(unrelated to Phase H, fixed same session — see [[patron-cup-hifi-redesign]]). Before pushing
+that fix, did a full proactive sweep of every table type and every insert/update payload
+against the real current schema and found one more live bug the targeted pass wouldn't have
+caught on its own: `/api/admin/invite/route.ts` still wrote `players.status`, meaning
+**inviting a new player was broken** from the moment H3 landed until this fix. All fixes
+pushed together in one batch; user confirmed afterward that everything is now working
+correctly. **H9 is unblocked — ready whenever the user wants to promote to production.**
 
 ---
 
@@ -2875,10 +3504,10 @@ dedicated Part IV pass:
 | Extra functions found beyond what any prior source mentioned | `finalize_match_result_from_pending`, `get_current_player_id`, `get_current_role`, `handle_new_user`, `propose_match_result`, `reject_match_result_pending`, `set_official_match_result`, `withdraw_match_result_pending`, `update_updated_at` — all captured verbatim in the baseline migration. `handle_new_user` is wired to `auth.users` via trigger `on_auth_user_created` (not in the `--schema=public` dump; created manually, confirmed matching on both projects) |
 | Indexes (H0 q3/q4) | 17 non-PK indexes exist on production already (not "assume none" as originally written) — covers `players` (auth_user_id, email, name, role), `events` (is_active, year), `matches` (date, event_id), `round_scores` (event_id, player_id), `team_rosters` (player_id, team_id), `travel_info` (event_id), `ceremony_award_nominations` (event_id), `match_results_pending` (match_id, status, + the partial unique index). Section 20.8.1's list still stands for what's *missing* — most FK columns on `teams, courses, team_captains, match_players, course_holes, hole_scores, lodging*, event_participants, rerounds, reround_signups, match_results_pending`'s other player-FKs, and `ceremony_award_nominations`'s player-FKs remain unindexed |
 | Baseline migration applied to test | **Done 2026-09-28** — `supabase/migrations/00000000000000_baseline_schema.sql` applied via direct `pg_dump`/`psql` (Docker/`supabase db dump` was unavailable; native `pg_dump` from `libpq` used instead, see task 2.1's updated instructions). Verified identical to production: 26 tables (exact name match), 12 functions, 77 policies, 10 triggers, 57 indexes, 2 enums, plus the `auth.users` trigger. One quirk recorded in the migration file itself: 8 trailing `ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin` statements fail as the `postgres` user (platform-locked role, already correct by default on every fresh project) — commented out in place with an explanation; the 8 equivalent `FOR ROLE postgres` statements did apply |
-| 21.1 Retire the 2025 Bandon archive? | _TBD_ |
-| 21.2 `status` chosen over `is_active`? | _TBD_ |
-| 21.3 Tables approved for dropping | _TBD_ |
-| 21.4 `round_scores`/`hole_scores` — reuse or replace? | _TBD_ |
+| 21.1 Retire the 2025 Bandon archive? | **Decided 2026-10-01: yes** (same decision recorded in Part III section 16/19) — `/tee-times`, `/tee-times/2025/[playerSlug]`, and their supporting lib/components folded into Part III Task R0; `match_bandon`/`player`/`records_bandon`/`team_bandon` table drops remain Task H8 below |
+| 21.2 `status` chosen over `is_active`? | _TBD_ — separate question, not addressed by the Bandon decision |
+| 21.3 Tables approved for dropping | **Decided 2026-10-01**, as part of 21.1: `match_bandon`, `player`, `records_bandon`, `team_bandon`. `branson_roster`/`branson_captains` already addressed separately (branson_roster's anon exposure closed via Part II Task S5; both tables still exist, dropping them is bundled into this same H8 pass since they're equally unreferenced) |
+| 21.4 `round_scores`/`hole_scores` — reuse or replace? | _TBD_ — unrelated to the Bandon decision; still needs input from whoever drives [[project-live-scoring]] |
 | Duplicate rows found by H5 constraints | _TBD_ |
 | H1–H8 applied to test (dates) | _TBD_ |
 | H1–H8 applied to prod (dates) | _TBD_ |

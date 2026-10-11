@@ -156,7 +156,7 @@ export default function PlayerMatchResultActions({
               {error}
             </Alert>
           ) : null}
-          <Typography variant="body2" sx={{ mb: 1.5, color: 'var(--text-muted)' }}>
+          <Typography variant="body2" sx={{ mb: 1.5, color: 'var(--pc-ink-3)' }}>
             Waiting for an opponent to confirm: <strong>{proposedLabel}</strong>
           </Typography>
           <Button size="small" variant="outlined" disabled={busy} onClick={() => void handleWithdraw()}>
@@ -177,7 +177,7 @@ export default function PlayerMatchResultActions({
           <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
             Confirm result?
           </Typography>
-          <Typography variant="body2" sx={{ mb: 1.5, color: 'var(--text-muted)' }}>
+          <Typography variant="body2" sx={{ mb: 1.5, color: 'var(--pc-ink-3)' }}>
             Proposed outcome: <strong>{proposedLabel}</strong>
           </Typography>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>

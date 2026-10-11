@@ -1,0 +1,109 @@
+.eventFilter {
+  min-width: 220px;
+}
+
+.alert {
+  margin-bottom: 16px;
+}
+
+.emptyState {
+  font-family: var(--pc-font-sans);
+  font-size: 13px;
+  color: var(--pc-ink-3);
+}
+
+.courseTabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  overflow-x: auto;
+  margin-bottom: 20px;
+}
+
+.group {
+  margin-bottom: 28px;
+}
+
+.groupHeading {
+  font-family: var(--pc-font-serif);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--pc-ink);
+  margin: 0;
+}
+
+.matchGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.matchHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.statusPending,
+.statusFinal,
+.statusHalved {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 9px;
+  border-radius: 999px;
+  font: 600 11px var(--pc-font-sans);
+  white-space: nowrap;
+}
+
+.statusPending {
+  background: var(--pc-fill);
+  color: var(--pc-ink-2);
+}
+
+.statusFinal {
+  background: var(--pc-live-bg);
+  color: var(--pc-live-fg);
+}
+
+.statusHalved {
+  background: var(--pc-chip-bg);
+  color: var(--pc-ink-2);
+}
+
+.teamsGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.resultRow {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+@media (min-width: 640px) {
+  .teamsGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .resultRow {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 900px) {
+  .matchGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.dialogTitle {
+  font-family: var(--pc-font-serif);
+  font-weight: 500;
+  font-size: 22px;
+  margin: 4px 0 0;
+  color: var(--pc-ink);
+}

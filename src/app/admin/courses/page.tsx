@@ -1,24 +1,8 @@
 'use client';
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import Paper from '@mui/material/Paper';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
-import IconButton from '@mui/material/IconButton';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import AddIcon from '@mui/icons-material/Add';
 import Alert from '@mui/material/Alert';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
@@ -26,6 +10,9 @@ import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
 import type { Course, Event } from '@/types/database';
+import AdminHead from '@/components/admin/AdminHead';
+import { AIcon } from '@/components/admin/AdminIcons';
+import styles from './page.module.css';
 
 export default function CoursesAdminPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
@@ -42,12 +29,9 @@ export default function CoursesAdminPage() {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    
+
     const [coursesRes, eventsRes] = await Promise.all([
-      supabase
-        .from('courses')
-        .select('*, event:events(*)')
-        .order('name'),
+      supabase.from('courses').select('*, event:events(*)').order('name'),
       supabase.from('events').select('*').order('year', { ascending: false }),
     ]);
 
@@ -55,7 +39,7 @@ export default function CoursesAdminPage() {
     else setCourses(coursesRes.data || []);
 
     if (eventsRes.data) setEvents(eventsRes.data);
-    
+
     setLoading(false);
   }, [supabase]);
 
@@ -64,9 +48,9 @@ export default function CoursesAdminPage() {
   }, [fetchData]);
 
   const handleAdd = () => {
-    setEditingCourse({ 
-      event_id: selectedEventId || null, 
-      name: '', 
+    setEditingCourse({
+      event_id: selectedEventId || null,
+      name: '',
       par: 72,
       resort_name: '',
     });
@@ -85,11 +69,8 @@ export default function CoursesAdminPage() {
 
   const confirmDelete = async () => {
     if (!courseToDelete) return;
-    
-    const { error } = await supabase
-      .from('courses')
-      .delete()
-      .eq('id', courseToDelete.id);
+
+    const { error } = await supabase.from('courses').delete().eq('id', courseToDelete.id);
 
     if (error) {
       setError(error.message);
@@ -118,10 +99,7 @@ export default function CoursesAdminPage() {
     };
 
     if (editingCourse.id) {
-      const { error } = await supabase
-        .from('courses')
-        .update(courseData)
-        .eq('id', editingCourse.id);
+      const { error } = await supabase.from('courses').update(courseData).eq('id', editingCourse.id);
 
       if (error) {
         setError(error.message);
@@ -129,9 +107,7 @@ export default function CoursesAdminPage() {
       }
       setSuccess('Course updated successfully');
     } else {
-      const { error } = await supabase
-        .from('courses')
-        .insert([courseData]);
+      const { error } = await supabase.from('courses').insert([courseData]);
 
       if (error) {
         setError(error.message);
@@ -145,102 +121,133 @@ export default function CoursesAdminPage() {
     fetchData();
   };
 
-  const filteredCourses = selectedEventId 
-    ? courses.filter(c => c.event_id === selectedEventId)
-    : courses;
+  const filteredCourses = selectedEventId ? courses.filter((c) => c.event_id === selectedEventId) : courses;
+  const eventCount = new Set(courses.map((c) => c.event_id).filter(Boolean)).size;
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, color: 'var(--text)' }}>
-          Courses Management
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleAdd}
-          sx={{ bgcolor: 'var(--text)', color: 'var(--bg)' }}
-        >
-          Add Course
-        </Button>
-      </Box>
+    <div>
+      <AdminHead
+        crumb="Courses"
+        title="Courses"
+        sub={`${courses.length} course${courses.length === 1 ? '' : 's'} across ${eventCount} event${eventCount === 1 ? '' : 's'}.`}
+        actions={
+          <>
+            <FormControl size="small" className={styles.eventFilter}>
+              <InputLabel>Event</InputLabel>
+              <Select
+                value={selectedEventId}
+                label="Event"
+                onChange={(e) => setSelectedEventId(e.target.value)}
+              >
+                <MenuItem value="">All events</MenuItem>
+                {events.map((event) => (
+                  <MenuItem key={event.id} value={event.id}>
+                    {event.name} ({event.year})
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <button type="button" className="pc-d-actionbtn" data-primary="true" onClick={handleAdd}>
+              <AIcon name="plus" size={14} />
+              <span>Add Course</span>
+            </button>
+          </>
+        }
+      />
 
-      {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
-      {success && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>{success}</Alert>}
+      {error && (
+        <Alert severity="error" className={styles.alert} onClose={() => setError('')}>
+          {error}
+        </Alert>
+      )}
+      {success && (
+        <Alert severity="success" className={styles.alert} onClose={() => setSuccess('')}>
+          {success}
+        </Alert>
+      )}
 
-      <FormControl sx={{ mb: 3, minWidth: 200 }}>
-        <InputLabel>Filter by Event</InputLabel>
-        <Select
-          value={selectedEventId}
-          label="Filter by Event"
-          onChange={(e) => setSelectedEventId(e.target.value)}
-        >
-          <MenuItem value="">All Events</MenuItem>
-          {events.map((event) => (
-            <MenuItem key={event.id} value={event.id}>
-              {event.name} ({event.year})
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+      <div className="ad-card" style={{ overflow: 'hidden' }}>
+        <div className={`ad-row head ${styles.courseGrid}`}>
+          <span className="ad-th">Course name</span>
+          <span className="ad-th">Resort</span>
+          <span className="ad-th">Event</span>
+          <span className="ad-th" style={{ textAlign: 'right' }}>Par</span>
+          <span className="ad-th" style={{ textAlign: 'right' }}>Rating / Slope</span>
+          <span className="ad-th" style={{ textAlign: 'right' }}>Yards</span>
+          <span className="ad-th" />
+        </div>
+        {loading ? (
+          [0, 1, 2].map((i) => (
+            <div key={i} className={`ad-row ${styles.courseGrid}`}>
+              {[60, 50, 40, 24, 50, 30, 0].map((w, j) => (
+                <div
+                  key={j}
+                  className="ad-sk"
+                  style={{ width: w ? `${w}%` : 0, marginLeft: j >= 3 ? 'auto' : 0, animationDelay: `${i * 0.12}s` }}
+                />
+              ))}
+            </div>
+          ))
+        ) : filteredCourses.length === 0 ? (
+          <div className={styles.emptyState}>
+            <div className={styles.emptyIcon}>
+              <AIcon name="courses" size={24} />
+            </div>
+            <div className={styles.emptyTitle}>No courses yet</div>
+            <div className={styles.emptyBody}>Add the courses this event will play, then build rounds on them.</div>
+            <button type="button" className="pc-d-actionbtn" data-primary="true" onClick={handleAdd}>
+              <AIcon name="plus" size={14} />
+              <span>Add Course</span>
+            </button>
+          </div>
+        ) : (
+          filteredCourses.map((course) => (
+            <div key={course.id} className={`ad-row hover ${styles.courseGrid}`}>
+              <span style={{ fontSize: 13, fontWeight: 600 }}>{course.name}</span>
+              <span style={{ fontSize: 13, color: 'var(--pc-ink-2)' }}>{course.resort_name || '—'}</span>
+              <span>
+                {course.event ? (
+                  <span className="ad-badge">{course.event.name} ({course.event.year})</span>
+                ) : (
+                  <span style={{ fontSize: 13, color: 'var(--pc-ink-3)' }}>General</span>
+                )}
+              </span>
+              <span className="ad-num">{course.par}</span>
+              <span className="ad-num">{course.rating && course.slope ? `${course.rating} / ${course.slope}` : '—'}</span>
+              <span className="ad-num">{course.yardage?.toLocaleString() || '—'}</span>
+              <span style={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+                <button type="button" className="ad-ib" onClick={() => handleEdit(course)} aria-label={`Edit ${course.name}`}>
+                  <AIcon name="edit" size={16} />
+                </button>
+                <button type="button" className="ad-ib" onClick={() => handleDelete(course)} aria-label={`Delete ${course.name}`}>
+                  <AIcon name="trash" size={16} />
+                </button>
+              </span>
+            </div>
+          ))
+        )}
+      </div>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow sx={{ bgcolor: 'var(--text)' }}>
-              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Course Name</TableCell>
-              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Resort</TableCell>
-              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Event</TableCell>
-              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Par</TableCell>
-              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Rating/Slope</TableCell>
-              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }}>Yardage</TableCell>
-              <TableCell sx={{ color: 'var(--bg)', fontWeight: 600 }} align="right">Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={7} align="center">Loading...</TableCell>
-              </TableRow>
-            ) : filteredCourses.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} align="center">No courses found</TableCell>
-              </TableRow>
-            ) : (
-              filteredCourses.map((course) => (
-                <TableRow key={course.id} hover>
-                  <TableCell sx={{ fontWeight: 600 }}>{course.name}</TableCell>
-                  <TableCell>{course.resort_name || '-'}</TableCell>
-                  <TableCell>{course.event?.name || 'General'}</TableCell>
-                  <TableCell>{course.par}</TableCell>
-                  <TableCell>
-                    {course.rating && course.slope 
-                      ? `${course.rating} / ${course.slope}` 
-                      : '-'}
-                  </TableCell>
-                  <TableCell>{course.yardage?.toLocaleString() || '-'}</TableCell>
-                  <TableCell align="right">
-                    <IconButton onClick={() => handleEdit(course)} size="small">
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton onClick={() => handleDelete(course)} size="small" color="error">
-                      <DeleteIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
-      {/* Edit/Add Dialog */}
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>
-          {editingCourse?.id ? 'Edit Course' : 'Add Course'}
-        </DialogTitle>
+      {/* Add/Edit dialog -- real MUI Dialog for the focus-trap/keyboard/ESC behavior,
+          restyled to match .ad-dlg's visual language. */}
+      <Dialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{ className: 'ad-dlg' }}
+      >
+        <div className="ad-dlg-h">
+          <div>
+            <div className="ad-crumb">Courses</div>
+            <h2 className={styles.dialogTitle}>{editingCourse?.id ? 'Edit course' : 'Add course'}</h2>
+          </div>
+          <button type="button" className="ad-ib" onClick={() => setDialogOpen(false)} aria-label="Close">
+            <AIcon name="x" size={18} />
+          </button>
+        </div>
         <DialogContent>
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, mt: 1 }}>
+          <div className={styles.formGrid}>
             <TextField
               label="Course Name"
               value={editingCourse?.name || ''}
@@ -248,6 +255,7 @@ export default function CoursesAdminPage() {
               required
               fullWidth
               placeholder="e.g., Pacific Dunes"
+              className={styles.fieldWide}
             />
             <TextField
               label="Resort Name"
@@ -275,7 +283,7 @@ export default function CoursesAdminPage() {
               label="Par"
               type="number"
               value={editingCourse?.par || 72}
-              onChange={(e) => setEditingCourse({ ...editingCourse, par: parseInt(e.target.value) })}
+              onChange={(e) => setEditingCourse({ ...editingCourse, par: parseInt(e.target.value, 10) })}
               fullWidth
             />
             <TextField
@@ -283,21 +291,27 @@ export default function CoursesAdminPage() {
               type="number"
               inputProps={{ step: 0.1 }}
               value={editingCourse?.rating || ''}
-              onChange={(e) => setEditingCourse({ ...editingCourse, rating: e.target.value ? parseFloat(e.target.value) : null })}
+              onChange={(e) =>
+                setEditingCourse({ ...editingCourse, rating: e.target.value ? parseFloat(e.target.value) : null })
+              }
               fullWidth
             />
             <TextField
               label="Slope"
               type="number"
               value={editingCourse?.slope || ''}
-              onChange={(e) => setEditingCourse({ ...editingCourse, slope: e.target.value ? parseInt(e.target.value) : null })}
+              onChange={(e) =>
+                setEditingCourse({ ...editingCourse, slope: e.target.value ? parseInt(e.target.value, 10) : null })
+              }
               fullWidth
             />
             <TextField
               label="Yardage"
               type="number"
               value={editingCourse?.yardage || ''}
-              onChange={(e) => setEditingCourse({ ...editingCourse, yardage: e.target.value ? parseInt(e.target.value) : null })}
+              onChange={(e) =>
+                setEditingCourse({ ...editingCourse, yardage: e.target.value ? parseInt(e.target.value, 10) : null })
+              }
               fullWidth
             />
             <TextField
@@ -313,29 +327,61 @@ export default function CoursesAdminPage() {
               fullWidth
               multiline
               rows={3}
-              sx={{ gridColumn: { md: '1 / -1' } }}
+              className={styles.fieldWide}
             />
-          </Box>
+          </div>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleSave} variant="contained" sx={{ bgcolor: 'var(--text)', color: 'var(--bg)' }}>
-            Save
-          </Button>
-        </DialogActions>
+        <div className="ad-dlg-f">
+          {editingCourse?.id && (
+            <button
+              type="button"
+              className="pc-d-actionbtn"
+              style={{ color: 'var(--pc-team-a)' }}
+              onClick={() => {
+                setDialogOpen(false);
+                handleDelete(editingCourse as Course);
+              }}
+            >
+              <AIcon name="trash" size={14} />
+              <span>Delete</span>
+            </button>
+          )}
+          <span style={{ flex: 1 }} />
+          <button type="button" className="pc-d-actionbtn" onClick={() => setDialogOpen(false)}>
+            Cancel
+          </button>
+          <button type="button" className="pc-d-actionbtn" data-primary="true" onClick={handleSave}>
+            Save course
+          </button>
+        </div>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)}>
-        <DialogTitle>Confirm Delete</DialogTitle>
+      {/* Delete confirmation */}
+      <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)} PaperProps={{ className: 'ad-dlg' }}>
+        <div className="ad-dlg-h">
+          <h2 className={styles.dialogTitle}>Delete course?</h2>
+        </div>
         <DialogContent>
-          Are you sure you want to delete {courseToDelete?.name}?
+          <p style={{ margin: 0, color: 'var(--pc-ink-2)' }}>
+            Are you sure you want to delete {courseToDelete?.name}? This can&apos;t be undone.
+          </p>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteConfirmOpen(false)}>Cancel</Button>
-          <Button onClick={confirmDelete} color="error" variant="contained">Delete</Button>
-        </DialogActions>
+        <div className="ad-dlg-f">
+          <span style={{ flex: 1 }} />
+          <button type="button" className="pc-d-actionbtn" onClick={() => setDeleteConfirmOpen(false)}>
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="pc-d-actionbtn"
+            data-primary="true"
+            style={{ background: 'var(--pc-team-a)', borderColor: 'var(--pc-team-a)' }}
+            onClick={confirmDelete}
+          >
+            Delete
+          </button>
+        </div>
       </Dialog>
-    </Box>
+    </div>
   );
 }

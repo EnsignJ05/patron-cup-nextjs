@@ -6,10 +6,13 @@ import Box from '@mui/material/Box';
 import Link from 'next/link';
 import Image from 'next/image';
 import IconButton from '@mui/material/IconButton';
+import Drawer from '@mui/material/Drawer';
 import { Analytics } from '@vercel/analytics/react';
 import { Inter, Newsreader, JetBrains_Mono, IBM_Plex_Sans } from 'next/font/google';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
-import { canAccessDashboard, isAdminRole } from '@/lib/authConfig';
+import { canAccessDashboard, isAdminRole, isAdminPath } from '@/lib/authConfig';
+import { ADMIN_NAV_GROUPS } from '@/lib/adminNavGroups';
+import { AIcon } from '@/components/admin/AdminIcons';
 import { useRouter, usePathname } from 'next/navigation';
 import './globals.css';
 import styles from './layout.module.css';
@@ -116,6 +119,8 @@ function DesktopSidebar({
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname.startsWith(href);
 
+  const inAdmin = isAdminPath(pathname);
+
   return (
     <aside className={styles.sidebar}>
       <Link href="/" className={styles.sidebarLogo}>
@@ -131,20 +136,54 @@ function DesktopSidebar({
         <span className={styles.sidebarWordmark}>Patron Cup</span>
       </Link>
 
-      <nav className={styles.sidebarNav}>
-        {links.map((link) => (
+      {inAdmin ? (
+        <nav className={styles.sidebarNav}>
           <Link
-            key={link.href}
-            href={link.href}
-            className={`${styles.sidebarLink} ${isActive(link.href) ? styles.sidebarLinkActive : ''}`}
+            href="/"
+            className={styles.sidebarLink}
           >
             <span className={styles.sidebarLinkIcon}>
-              <TabIcon name={link.icon} />
+              <AIcon name="back" size={16} />
             </span>
-            <span>{link.label}</span>
+            <span>Back to site</span>
           </Link>
-        ))}
-      </nav>
+          {ADMIN_NAV_GROUPS.map((group) => (
+            <div key={group.name}>
+              <div className={styles.sidebarGroupLabel}>
+                <span className={styles.sidebarGroupDot} style={{ background: group.color }} />
+                <span>{group.name}</span>
+              </div>
+              {group.items.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`${styles.sidebarLink} ${isActive(item.href) ? styles.sidebarLinkActive : ''}`}
+                >
+                  <span className={styles.sidebarLinkIcon}>
+                    <AIcon name={item.icon} size={18} />
+                  </span>
+                  <span>{item.label}</span>
+                </Link>
+              ))}
+            </div>
+          ))}
+        </nav>
+      ) : (
+        <nav className={styles.sidebarNav}>
+          {links.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={`${styles.sidebarLink} ${isActive(link.href) ? styles.sidebarLinkActive : ''}`}
+            >
+              <span className={styles.sidebarLinkIcon}>
+                <TabIcon name={link.icon} />
+              </span>
+              <span>{link.label}</span>
+            </Link>
+          ))}
+        </nav>
+      )}
 
       <div className={styles.sidebarFooter}>
         <button
@@ -169,6 +208,78 @@ function DesktopSidebar({
   );
 }
 
+// ── Mobile menu drawer — admin nav + logout, neither reachable on mobile otherwise ────
+function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const pathname = usePathname();
+  const { user, role, signOut } = useAuth();
+  const router = useRouter();
+  const isAuthenticated = Boolean(user);
+  const isAdmin = isAdminRole(role);
+  const inAdmin = isAdminPath(pathname);
+
+  const isActive = (href: string) =>
+    href === '/' ? pathname === '/' : pathname.startsWith(href);
+
+  const handleLogout = async () => {
+    await signOut();
+    onClose();
+    router.push('/');
+  };
+
+  return (
+    <Drawer anchor="right" open={open} onClose={onClose}>
+      <div className={styles.mobileMenu}>
+        {inAdmin ? (
+          <>
+            <Link href="/" className={styles.mobileMenuLink} onClick={onClose}>
+              <AIcon name="back" size={16} />
+              <span>Back to site</span>
+            </Link>
+            {ADMIN_NAV_GROUPS.map((group) => (
+              <div key={group.name}>
+                <div className={styles.mobileMenuGroupLabel}>
+                  <span className={styles.sidebarGroupDot} style={{ background: group.color }} />
+                  <span>{group.name}</span>
+                </div>
+                {group.items.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={onClose}
+                    className={`${styles.mobileMenuLink} ${isActive(item.href) ? styles.sidebarLinkActive : ''}`}
+                  >
+                    <AIcon name={item.icon} size={18} />
+                    <span>{item.label}</span>
+                  </Link>
+                ))}
+              </div>
+            ))}
+          </>
+        ) : (
+          isAuthenticated &&
+          isAdmin && (
+            <Link href="/admin/dashboard" className={styles.mobileMenuLink} onClick={onClose}>
+              <AIcon name="back" size={16} />
+              <span>Admin</span>
+            </Link>
+          )
+        )}
+        <div className={styles.mobileMenuFooter}>
+          {isAuthenticated ? (
+            <button onClick={handleLogout} className={styles.sidebarLogoutBtn}>
+              Logout
+            </button>
+          ) : (
+            <Link href="/login" className={styles.sidebarLoginLink} onClick={onClose}>
+              Login
+            </Link>
+          )}
+        </div>
+      </div>
+    </Drawer>
+  );
+}
+
 // ── Mobile top bar ────────────────────────────────────────────────────────────
 function MobileAppBar({
   resolvedTheme,
@@ -177,6 +288,8 @@ function MobileAppBar({
   resolvedTheme: 'light' | 'dark';
   toggleTheme: () => void;
 }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+
   return (
     <AppBar position="static" color="transparent" elevation={0} className={styles.appBar}>
       <Toolbar className={styles.toolbar}>
@@ -197,8 +310,16 @@ function MobileAppBar({
           >
             {resolvedTheme === 'dark' ? <SunIcon /> : <MoonIcon />}
           </IconButton>
+          <IconButton
+            aria-label="Open menu"
+            className={styles.menuButton}
+            onClick={() => setMenuOpen(true)}
+          >
+            <MenuIcon />
+          </IconButton>
         </Box>
       </Toolbar>
+      <MobileMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
     </AppBar>
   );
 }
@@ -371,6 +492,21 @@ function MoonIcon() {
   return (
     <svg width={22} height={22} viewBox="0 0 24 24"><g {...g}>
       <path d="M20 15.5A8 8 0 1 1 8.5 4 6.5 6.5 0 0 0 20 15.5z"/>
+    </g></svg>
+  );
+}
+
+function MenuIcon() {
+  const g = {
+    stroke: 'currentColor',
+    strokeWidth: 1.8,
+    fill: 'none',
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+  } as const;
+  return (
+    <svg width={22} height={22} viewBox="0 0 24 24"><g {...g}>
+      <path d="M4 7h16M4 12h16M4 17h16"/>
     </g></svg>
   );
 }

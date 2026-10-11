@@ -6,16 +6,16 @@
 }
 
 .icon {
-  color: var(--text-muted);
+  color: var(--pc-ink-3);
   font-size: 20px;
 }
 
 .label {
-  color: var(--text-muted);
+  color: var(--pc-ink-3);
 }
 
 .link {
-  color: var(--text);
+  color: var(--pc-ink);
   text-decoration: none;
   font-size: 0.875rem;
 }
@@ -25,5 +25,5 @@
 }
 
 .separator {
-  color: var(--text-muted);
+  color: var(--pc-ink-3);
 }

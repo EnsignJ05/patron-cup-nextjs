@@ -51,7 +51,7 @@ jest.mock('@/lib/supabaseBrowser', () => ({
                           city: 'Austin',
                           state: 'TX',
                           profile_image_url: null,
-                          status: 'active',
+                          is_active: true,
                         },
                       },
                     ],
@@ -60,6 +60,13 @@ jest.mock('@/lib/supabaseBrowser', () => ({
               }),
             };
           },
+        };
+      }
+      if (table === 'team_captains') {
+        return {
+          select: () => ({
+            in: () => Promise.resolve({ data: [], error: null }),
+          }),
         };
       }
       throw new Error(`unexpected table in test mock: ${table}`);
