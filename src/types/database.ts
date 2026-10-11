@@ -172,11 +172,48 @@ export interface MatchPlayer {
   player_id: string;
   team_id: string;
   handicap_used: number | null;
+  strokes_received: number | null;
   created_at: string;
   // Joined data
   player?: Player;
   match?: Match;
   team?: Team;
+}
+
+export type MatchScorecardStatus = 'in_progress' | 'final' | 'abandoned';
+
+/** Live-scoring session header -- one row per match (LIVE_SCORING_PLAN.md Phase 3).
+ * Carries no derived state (holes_up, result_label, thru); src/lib/scoring recomputes
+ * those from match_hole_scores every time. */
+export interface MatchScorecard {
+  id: string;
+  match_id: string;
+  event_id: string | null;
+  course_id: string | null;
+  format_key: string;
+  handicap_allowance: number;
+  holes_count: number;
+  status: MatchScorecardStatus;
+  started_by_player_id: string | null;
+  finalized_at: string | null;
+  disputed_at: string | null;
+  disputed_by_player_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/** One player's gross entry for one hole. A row exists only once something's
+ * recorded (gross_strokes or is_conceded). */
+export interface MatchHoleScore {
+  id: string;
+  match_id: string;
+  hole_number: number;
+  player_id: string;
+  gross_strokes: number | null;
+  is_conceded: boolean;
+  entered_by_player_id: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface RoundScore {

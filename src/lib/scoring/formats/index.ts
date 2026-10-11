@@ -20,6 +20,13 @@ export function listScoringFormats(): ScoringFormat[] {
   return FORMATS;
 }
 
+/** Looks up a format by the key a scorecard pinned at start_match_scorecard time
+ * (Task P3.1/P3.3), rather than re-deriving it from matches.match_type -- a later
+ * rename of the match type shouldn't change how an in-progress scorecard is scored. */
+export function getScoringFormatByKey(formatKey: string): ScoringFormat {
+  return FORMATS.find((f) => f.key === formatKey) ?? UNKNOWN_FORMAT;
+}
+
 export function resolveScoringFormat(matchType: string): { format: ScoringFormat; isUnknown: boolean } {
   const normalized = normalizeMatchType(matchType);
   if (normalized.includes('two man better ball') || normalized.includes('betterball')) {
