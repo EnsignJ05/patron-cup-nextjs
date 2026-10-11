@@ -10,6 +10,8 @@ import Dialog from '@mui/material/Dialog';
 import DialogContent from '@mui/material/DialogContent';
 import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
 import { setOfficialMatchResult } from '@/lib/matchResultMutations';
+import { fetchEventMatchScorecards, type MatchScorecardLite } from '@/lib/repositories/matchScorecards';
+import ScorecardEditorDialog from '@/components/admin/ScorecardEditorDialog';
 import type { Match, Event, Course, Team, Player, MatchPlayer } from '@/types/database';
 import AdminHead from '@/components/admin/AdminHead';
 import { AIcon } from '@/components/admin/AdminIcons';
@@ -35,6 +37,8 @@ export default function ScoresAdminPage() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [matches, setMatches] = useState<MatchWithJoins[]>([]);
   const [matchPlayers, setMatchPlayers] = useState<MatchPlayerWithJoins[]>([]);
+  const [scorecards, setScorecards] = useState<MatchScorecardLite[]>([]);
+  const [editingMatchId, setEditingMatchId] = useState<string | null>(null);
   const [selectedEventId, setSelectedEventId] = useState('');
   const [selectedCourseId, setSelectedCourseId] = useState('');
   const [loading, setLoading] = useState(false);
@@ -66,7 +70,7 @@ export default function ScoresAdminPage() {
       setLoading(true);
       setError('');
 
-      const [matchesRes, teamsRes, matchPlayersRes] = await Promise.all([
+      const [matchesRes, teamsRes, matchPlayersRes, scorecardsRes] = await Promise.all([
         supabase
           .from('matches')
           .select('*, course:courses(*), winner_team:teams!matches_winner_team_id_fkey(*)')
@@ -77,6 +81,7 @@ export default function ScoresAdminPage() {
           .order('match_number', { ascending: true }),
         supabase.from('teams').select('*').eq('event_id', eventId).order('name'),
         supabase.from('match_players').select('*, player:players(*), match:matches!inner(id,event_id,match_date)').eq('match.event_id', eventId),
+        fetchEventMatchScorecards(supabase, eventId),
       ]);
 
       if (matchesRes.error) setError(matchesRes.error.message);
@@ -86,6 +91,7 @@ export default function ScoresAdminPage() {
       setMatches(matchesRes.data || []);
       setTeams(teamsRes.data || []);
       setMatchPlayers(matchPlayersRes.data || []);
+      setScorecards(scorecardsRes.data || []);
       setLoading(false);
     },
     [supabase],
@@ -131,6 +137,26 @@ export default function ScoresAdminPage() {
     });
     return map;
   }, [matchPlayers]);
+
+  const scorecardByMatchId = useMemo(
+    () => new Map(scorecards.map((s) => [s.match_id, s])),
+    [scorecards],
+  );
+
+  const disputedScorecards = useMemo(() => scorecards.filter((s) => s.disputed_at), [scorecards]);
+
+  const matchById = useMemo(() => new Map(matches.map((m) => [m.id, m])), [matches]);
+
+  const editingMatch = editingMatchId ? matchById.get(editingMatchId) ?? null : null;
+  const editingPlayers = useMemo(() => {
+    if (!editingMatchId) return [];
+    return (matchPlayersByMatchId.get(editingMatchId) || []).map((mp) => ({
+      player_id: mp.player_id,
+      team_id: mp.team_id,
+      name: `${mp.player?.first_name || ''} ${mp.player?.last_name || ''}`.trim(),
+      strokes_received: mp.strokes_received,
+    }));
+  }, [editingMatchId, matchPlayersByMatchId]);
 
   const groupedMatches = useMemo(() => {
     const filtered = selectedCourseId ? matches.filter((match) => (match.course?.id || 'tbd') === selectedCourseId) : [];
@@ -234,6 +260,26 @@ export default function ScoresAdminPage() {
         </Alert>
       )}
 
+      {disputedScorecards.length > 0 && (
+        <div className="ad-card" style={{ padding: 16, marginBottom: 16, display: 'grid', gap: 10 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--pc-team-a)' }}>
+            Disputed scorecards ({disputedScorecards.length})
+          </div>
+          {disputedScorecards.map((s) => {
+            const match = matchById.get(s.match_id);
+            return (
+              <div key={s.match_id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 13 }}>Match #{match?.match_number ?? '?'}</span>
+                <span style={{ flex: 1, fontSize: 12, color: 'var(--pc-ink-3)' }}>{match?.match_type}</span>
+                <button type="button" className="pc-d-actionbtn" onClick={() => setEditingMatchId(s.match_id)}>
+                  Review
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {matchCourses.length === 0 ? (
         <p className={styles.emptyState}>No matches found for this event.</p>
       ) : (
@@ -279,6 +325,7 @@ export default function ScoresAdminPage() {
                       const winnerValue = match.is_halved ? 'halved' : match.winner_team_id || '';
                       const isOfficial = match.result_set_by_official === true;
                       const winnerLabel = match.is_halved ? 'Halved' : match.winner_team_id ? `Winner: ${getTeamName(match.winner_team_id)}` : 'Pending';
+                      const scorecard = scorecardByMatchId.get(match.id);
 
                       return (
                         <div key={match.id} className="ad-card" style={{ padding: 16, display: 'grid', gap: 14 }}>
@@ -296,6 +343,8 @@ export default function ScoresAdminPage() {
                                 {winnerLabel}
                               </span>
                               {isOfficial && <span className="ad-badge">Official</span>}
+                              {scorecard && <span className="ad-badge">Scorecard: {scorecard.status}</span>}
+                              {scorecard?.disputed_at && <span className="ad-badge" style={{ color: 'var(--pc-team-a)' }}>Disputed</span>}
                             </div>
                           </div>
 
@@ -350,6 +399,11 @@ export default function ScoresAdminPage() {
                             >
                               {teamB?.name || 'Team B'}
                             </button>
+                            <span style={{ flex: 1 }} />
+                            <button type="button" className="pc-d-actionbtn" onClick={() => setEditingMatchId(match.id)}>
+                              <AIcon name="setup" size={14} />
+                              <span>Scorecard</span>
+                            </button>
                           </div>
                         </div>
                       );
@@ -383,6 +437,18 @@ export default function ScoresAdminPage() {
           </button>
         </div>
       </Dialog>
+
+      {editingMatch && (
+        <ScorecardEditorDialog
+          open={Boolean(editingMatchId)}
+          onClose={() => setEditingMatchId(null)}
+          matchId={editingMatch.id}
+          matchNumber={editingMatch.match_number}
+          courseId={editingMatch.course_id}
+          players={editingPlayers}
+          onChanged={() => fetchEventData(selectedEventId)}
+        />
+      )}
     </div>
   );
 }

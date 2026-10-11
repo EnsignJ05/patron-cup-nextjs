@@ -1,6 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   clearMatchHoleScore,
+  resolveMatchScorecardDispute,
+  setMatchScorecardFormat,
   setMatchScorecardStatus,
   startMatchScorecard,
   upsertMatchHoleScore,
@@ -74,5 +76,25 @@ describe('scorecardMutations', () => {
       p_match_id: 'm1',
       p_status: 'abandoned',
     });
+  });
+
+  it('setMatchScorecardFormat calls set_match_scorecard_format with mapped args', async () => {
+    const supabase = mockClient(async () => ({ error: null }));
+    await setMatchScorecardFormat(supabase, {
+      matchId: 'm1',
+      formatKey: 'four_ball_net_best_ball',
+      handicapAllowance: 0.9,
+    });
+    expect(supabase.rpc).toHaveBeenCalledWith('set_match_scorecard_format', {
+      p_match_id: 'm1',
+      p_format_key: 'four_ball_net_best_ball',
+      p_handicap_allowance: 0.9,
+    });
+  });
+
+  it('resolveMatchScorecardDispute calls resolve_match_scorecard_dispute', async () => {
+    const supabase = mockClient(async () => ({ error: null }));
+    await resolveMatchScorecardDispute(supabase, { matchId: 'm1' });
+    expect(supabase.rpc).toHaveBeenCalledWith('resolve_match_scorecard_dispute', { p_match_id: 'm1' });
   });
 });

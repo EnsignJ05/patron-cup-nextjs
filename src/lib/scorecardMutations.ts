@@ -82,3 +82,29 @@ export async function setMatchScorecardStatus(
   if (error) return err(fromRpcError(error));
   return { ok: true };
 }
+
+/** Committee/admin only (Task P6.3) -- re-snapshots match_players.strokes_received
+ * because changing the allowance makes the Phase 3 start-time snapshot stale. */
+export async function setMatchScorecardFormat(
+  supabase: SupabaseClient,
+  params: { matchId: string; formatKey: string; handicapAllowance: number },
+): Promise<ScorecardMutationResult> {
+  const { error } = await supabase.rpc('set_match_scorecard_format', {
+    p_match_id: params.matchId,
+    p_format_key: params.formatKey,
+    p_handicap_allowance: params.handicapAllowance,
+  });
+  if (error) return err(fromRpcError(error));
+  return { ok: true };
+}
+
+/** Committee/admin only -- clears a scorecard's dispute flag (Task P6.1) without
+ * touching the result. */
+export async function resolveMatchScorecardDispute(
+  supabase: SupabaseClient,
+  params: { matchId: string },
+): Promise<ScorecardMutationResult> {
+  const { error } = await supabase.rpc('resolve_match_scorecard_dispute', { p_match_id: params.matchId });
+  if (error) return err(fromRpcError(error));
+  return { ok: true };
+}
