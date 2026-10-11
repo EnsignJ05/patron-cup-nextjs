@@ -1,0 +1,17 @@
+{
+  "name": "Patron Cup",
+  "short_name": "Patron Cup",
+  "description": "Live scoring, matches, and schedule for the Patron Cup golf event.",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#faf9f6",
+  "theme_color": "#0c0a09",
+  "icons": [
+    {
+      "src": "/gallery/patron-logo.png",
+      "sizes": "601x415",
+      "type": "image/png"
+    }
+  ]
+}

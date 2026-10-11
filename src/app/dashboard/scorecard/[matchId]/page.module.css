@@ -53,6 +53,19 @@
   justify-self: end;
 }
 
+.unsyncedPill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 99px;
+  background: var(--pc-fill-2);
+  color: var(--pc-ink-2);
+  font: 700 10px var(--pc-font-sans);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  justify-self: end;
+}
+
 .livePill .dot {
   width: 7px;
   height: 7px;

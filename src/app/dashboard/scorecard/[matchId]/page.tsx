@@ -12,6 +12,7 @@ import {
 } from '@/lib/scorecardMutations';
 import { allocateStrokes, computeMatchPlayState, getScoringFormatByKey, resolveScoringFormat } from '@/lib/scoring';
 import type { MatchSide, PlayerHoleEntry, ScoringHole } from '@/lib/scoring/types';
+import { useOfflineScoreQueue } from '@/hooks/useOfflineScoreQueue';
 import styles from './page.module.css';
 
 type JoinedMatchPlayer = {
@@ -215,6 +216,7 @@ export default function ScorecardPage() {
   }, [scoringState, loading, holesCount, findFirstUnfilled]);
 
   const savingRef = useRef(false);
+  const offlineQueue = useOfflineScoreQueue(matchId, supabase);
 
   const applyLocalEntry = (holeNumber: number, playerId: string, grossStrokes: number | null, isConceded: boolean) => {
     setHoleScores((prev) => {
@@ -245,6 +247,18 @@ export default function ScorecardPage() {
 
     applyLocalEntry(currentHole, activePlayerId, grossStrokes, isConceded);
 
+    // Clearing a cell has no offline-queue equivalent (the batch RPC only upserts) --
+    // it's a correction, not new data, so it's immediate-only. Everything else is
+    // durably queued first (Task P7.1) so a dead connection can't lose a tapped score.
+    if (!isClear) {
+      offlineQueue.enqueue({
+        hole_number: currentHole,
+        player_id: activePlayerId,
+        gross_strokes: grossStrokes,
+        is_conceded: isConceded,
+      });
+    }
+
     const result = isClear
       ? await clearMatchHoleScore(supabase, { matchId, holeNumber: currentHole, playerId: activePlayerId })
       : await upsertMatchHoleScore(supabase, {
@@ -259,6 +273,9 @@ export default function ScorecardPage() {
     if (!result.ok) {
       setSaveError(result.message);
       return;
+    }
+    if (!isClear) {
+      offlineQueue.confirmSent({ hole_number: currentHole, player_id: activePlayerId });
     }
 
     if (!isClear) {
@@ -290,6 +307,11 @@ export default function ScorecardPage() {
     setFinalizing(true);
     setSaveError('');
     try {
+      const remaining = await offlineQueue.flush();
+      if (remaining > 0) {
+        setSaveError(`${remaining} score${remaining === 1 ? '' : 's'} haven't synced yet -- check your connection and try again.`);
+        return;
+      }
       const res = await fetch(`/api/matches/${matchId}/finalize`, { method: 'POST' });
       const body = await res.json();
       if (!res.ok) {
@@ -390,7 +412,11 @@ export default function ScorecardPage() {
       <div className={styles.topbar}>
         <Link href="/dashboard" className={styles.backBtn} aria-label="Back">←</Link>
         <span className={styles.topbarTitle}>LIVE SCORING</span>
-        <span className={styles.livePill}><i className={styles.dot} />LIVE</span>
+        {offlineQueue.pendingCount > 0 ? (
+          <span className={styles.unsyncedPill}>{offlineQueue.pendingCount} unsynced</span>
+        ) : (
+          <span className={styles.livePill}><i className={styles.dot} />LIVE</span>
+        )}
       </div>
 
       <div className={styles.holeStrip}>

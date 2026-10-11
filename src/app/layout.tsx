@@ -376,6 +376,14 @@ function AppShell({ children }: { children: React.ReactNode }) {
   const { resolvedTheme, applyTheme } = useThemeManager();
   const toggleTheme = () => applyTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
 
+  // Shell caching for a dead zone between holes (LIVE_SCORING_PLAN.md Task P7.2) --
+  // not an offline-first data layer, just keeps the app loadable when the network
+  // drops. Registration failure (unsupported browser, blocked in dev) is silent.
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  }, []);
+
   return (
     <div className={styles.shell}>
       <DesktopSidebar resolvedTheme={resolvedTheme} toggleTheme={toggleTheme} />
@@ -394,6 +402,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <head>
         <title>Patron Cup</title>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#faf9f6" />
         <link rel="icon" type="image/png" sizes="32x32" href="/gallery/patron-logo.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="/gallery/patron-logo.png" />
         <link rel="apple-touch-icon" sizes="180x180" href="/gallery/patron-logo.png" />
