@@ -193,8 +193,8 @@ export default function CourseHolesAdminPage() {
               <div className={`${styles.banner} ${styles.bannerOk}`}>
                 <AIcon name="handicaps" size={14} />
                 <span>
-                  Unusual split: {frontNineOdd} of the front nine's stroke indexes are odd. Conventionally
-                  that's close to half. Worth a second look, not necessarily wrong.
+                  Unusual split: {frontNineOdd} of the front nine&apos;s stroke indexes are odd. Conventionally
+                  that&apos;s close to half. Worth a second look, not necessarily wrong.
                 </span>
               </div>
             )}

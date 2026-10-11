@@ -13,6 +13,7 @@ import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import Link from 'next/link';
 import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
+import { listScoringFormats } from '@/lib/scoring/formats';
 import type { Match, Event, Course } from '@/types/database';
 import AdminHead from '@/components/admin/AdminHead';
 import { AIcon } from '@/components/admin/AdminIcons';
@@ -34,7 +35,7 @@ export default function MatchesAdminPage() {
   const [selectedEventId, setSelectedEventId] = useState<string>('');
   const [bulkPlayerCount, setBulkPlayerCount] = useState('');
 
-  const matchTypeOptions = ['Two Man Better Ball', 'Head to Head'];
+  const matchTypeOptions = listScoringFormats().map((f) => f.label);
 
   const fetchData = useCallback(async () => {
     setLoading(true);

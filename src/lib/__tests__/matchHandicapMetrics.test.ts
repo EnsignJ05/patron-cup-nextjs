@@ -47,4 +47,32 @@ describe('calculateMatchHandicapMetrics', () => {
     expect(metrics.get('p1')).toEqual({ courseHandicap: null, strokesGiven: null });
     expect(metrics.get('p2')).toEqual({ courseHandicap: null, strokesGiven: null });
   });
+
+  it('applies the allowance to each course handicap before subtracting the lowest (decision 2.2, order A)', () => {
+    const metrics = calculateMatchHandicapMetrics(
+      [
+        { playerId: 'p1', officialEventHandicap: 10 },
+        { playerId: 'p2', officialEventHandicap: 20 },
+      ],
+      { slope: 113, rating: 72, par: 72 },
+      0.9,
+    );
+
+    // Playing handicaps: round(10*0.9)=9, round(20*0.9)=18. Lowest is 9.
+    expect(metrics.get('p1')).toEqual({ courseHandicap: 10, strokesGiven: 0 });
+    expect(metrics.get('p2')).toEqual({ courseHandicap: 20, strokesGiven: 9 });
+  });
+
+  it('defaults the allowance to 1.0, reproducing pre-allowance behavior exactly', () => {
+    const withDefault = calculateMatchHandicapMetrics(
+      [{ playerId: 'p1', officialEventHandicap: 10 }],
+      { slope: 113, rating: 72, par: 72 },
+    );
+    const withExplicitOne = calculateMatchHandicapMetrics(
+      [{ playerId: 'p1', officialEventHandicap: 10 }],
+      { slope: 113, rating: 72, par: 72 },
+      1.0,
+    );
+    expect(withDefault.get('p1')).toEqual(withExplicitOne.get('p1'));
+  });
 });

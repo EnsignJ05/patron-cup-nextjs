@@ -8,7 +8,7 @@ export type MatchFormatConfig = {
   isUnknown: boolean;
 };
 
-const normalizeMatchType = (matchType: string) =>
+export const normalizeMatchType = (matchType: string) =>
   matchType.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 
 export function getFormatConfig(matchType: string): MatchFormatConfig {
