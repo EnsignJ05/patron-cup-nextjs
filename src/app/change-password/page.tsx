@@ -65,7 +65,14 @@ import styles from './page.module.css';
        }
  
        setSuccess('Password updated.');
-       router.replace('/dashboard');
+       // A hard navigation, not router.replace(): the sidebar's own "Dashboard" link has
+       // almost certainly already prefetched /dashboard while must_change_password was still
+       // true, and Next.js's client router cache serves that stale (redirect-to-
+       // /change-password) result instead of re-running middleware -- confirmed via direct
+       // testing, this leaves the user stuck on /change-password indefinitely even though the
+       // database write above already succeeded. A full page load bypasses the client router
+       // cache entirely and re-evaluates middleware fresh.
+       window.location.href = '/dashboard';
      } catch (err) {
        const message = err instanceof Error ? err.message : 'Unable to update password.';
        setError(message);
