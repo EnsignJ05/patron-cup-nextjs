@@ -8,6 +8,7 @@ import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
+import Link from 'next/link';
 import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
 import type { Course, Event } from '@/types/database';
 import AdminHead from '@/components/admin/AdminHead';
@@ -216,6 +217,14 @@ export default function CoursesAdminPage() {
               <span className="ad-num">{course.rating && course.slope ? `${course.rating} / ${course.slope}` : '—'}</span>
               <span className="ad-num">{course.yardage?.toLocaleString() || '—'}</span>
               <span style={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+                <Link
+                  href={`/admin/courses/${course.id}/holes`}
+                  className="ad-ib"
+                  aria-label={`Edit holes for ${course.name}`}
+                  title="Holes"
+                >
+                  <AIcon name="setup" size={16} />
+                </Link>
                 <button type="button" className="ad-ib" onClick={() => handleEdit(course)} aria-label={`Edit ${course.name}`}>
                   <AIcon name="edit" size={16} />
                 </button>

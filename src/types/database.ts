@@ -116,6 +116,7 @@ export interface CourseHole {
   yardage: number | null;
   handicap_index: number | null;
   created_at: string;
+  updated_at: string;
 }
 
 /** Row in match_results_pending (player propose → opponent confirm). */
