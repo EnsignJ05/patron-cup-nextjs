@@ -197,25 +197,22 @@ export default function LodgingAdminPage() {
     const payload = slotDrafts
       .filter((slot) => Boolean(slot.playerId))
       .map((slot) => ({
-        lodging_id: selectedLodging.id,
         player_id: slot.playerId,
         confirmation_num: slot.confirmationNum.trim() || null,
         is_primary: slot.isPrimary,
       }));
 
-    const { error: deleteError } = await supabase.from('lodging_assignments').delete().eq('lodging_id', selectedLodging.id);
+    // Atomic via an RPC (set_lodging_assignments), not a client-side delete-then-insert:
+    // a failing insert used to leave the room with zero assignments, since the delete had
+    // already committed on its own. The function wraps both in one transaction.
+    const { error: rpcError } = await supabase.rpc('set_lodging_assignments', {
+      p_lodging_id: selectedLodging.id,
+      p_assignments: payload,
+    });
 
-    if (deleteError) {
-      setError(deleteError.message);
+    if (rpcError) {
+      setError(rpcError.message);
       return;
-    }
-
-    if (payload.length > 0) {
-      const { error: insertError } = await supabase.from('lodging_assignments').insert(payload);
-      if (insertError) {
-        setError(insertError.message);
-        return;
-      }
     }
 
     setSuccess('Room assignments saved');
@@ -244,7 +241,7 @@ export default function LodgingAdminPage() {
   };
 
   const validationErrors = useMemo(() => {
-    const errors: Partial<Record<'event_id' | 'bedrooms' | 'num_of_people', string>> = {};
+    const errors: Partial<Record<'event_id' | 'bedrooms' | 'num_of_people' | 'check_out_date', string>> = {};
     const bedrooms = editingLodging?.bedrooms;
     const numOfPeople = editingLodging?.num_of_people;
 
@@ -262,6 +259,10 @@ export default function LodgingAdminPage() {
       errors.num_of_people = 'Number of people is required';
     } else if (!Number.isInteger(numOfPeople) || numOfPeople < 0) {
       errors.num_of_people = 'Number of people must be a non-negative whole number';
+    }
+
+    if (editingLodging?.check_in_date && editingLodging?.check_out_date && editingLodging.check_out_date < editingLodging.check_in_date) {
+      errors.check_out_date = 'Check-out date must be on or after check-in date';
     }
 
     return errors;
@@ -463,6 +464,8 @@ export default function LodgingAdminPage() {
               onChange={(e) => setEditingLodging({ ...editingLodging, check_out_date: e.target.value })}
               fullWidth
               InputLabelProps={{ shrink: true }}
+              error={Boolean(validationErrors.check_out_date)}
+              helperText={validationErrors.check_out_date}
             />
             <TextField
               label="Notes"

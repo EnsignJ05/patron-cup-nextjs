@@ -115,6 +115,16 @@ export async function POST(request: Request) {
     .eq('auth_user_id', targetUserId);
 
   if (updatePlayerError) {
+    // Roll back the auth email change -- same pattern as /api/admin/invite's rollback on
+    // failure -- so a failure here never leaves auth.users and players.email disagreeing
+    // about which email the account actually uses.
+    const { error: rollbackError } = await adminClient.auth.admin.updateUserById(targetUserId, {
+      email: currentEmail,
+      email_confirm: true,
+    });
+    if (rollbackError) {
+      console.error('Failed to roll back auth email after players.email update failure:', rollbackError.message);
+    }
     return NextResponse.json({ error: updatePlayerError.message }, { status: 400 });
   }
 

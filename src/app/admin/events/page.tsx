@@ -85,6 +85,19 @@ export default function EventsAdminPage() {
     if (!editingEvent) return;
     setError('');
 
+    if (editingEvent.start_date && editingEvent.end_date && editingEvent.end_date < editingEvent.start_date) {
+      setError('End date must be on or after the start date.');
+      return;
+    }
+
+    if (editingEvent.is_active) {
+      const otherActiveEvent = events.find((event) => event.is_active && event.id !== editingEvent.id);
+      if (otherActiveEvent) {
+        setError(`"${otherActiveEvent.name}" is already the active event. Deactivate it before activating this one.`);
+        return;
+      }
+    }
+
     const eventData = {
       name: editingEvent.name,
       year: editingEvent.year,
