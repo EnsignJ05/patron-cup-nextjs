@@ -1,0 +1,28 @@
+.cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 48px;
+  border-radius: var(--pc-radius-sm);
+  background: var(--pc-ink);
+  color: var(--pc-bg);
+  font: 700 14px var(--pc-font-sans);
+  text-decoration: none;
+  margin-top: 10px;
+}
+
+.caption {
+  font-size: 11px;
+  color: var(--pc-ink-3);
+  text-align: center;
+  margin-top: 8px;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--pc-live-dot);
+  animation: pcLivePulse 1.6s ease-out infinite;
+}

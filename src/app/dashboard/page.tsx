@@ -7,6 +7,7 @@ import { calculateMatchHandicapMetrics } from '@/lib/matchHandicapMetrics';
 import { getViewerRoleForPendingProposal, isPastScheduledStart } from '@/lib/matchResultEntry';
 import DashboardProfileForm from '@/components/player/DashboardProfileForm';
 import PlayerMatchResultActions from '@/components/player/PlayerMatchResultActions';
+import KeepScoreEntry from '@/components/player/KeepScoreEntry';
 import MatchCard from '@/components/matches/MatchCard';
 import LodgingInfoCard from '@/components/player/LodgingInfoCard';
 import type { MatchResultsPending } from '@/types/database';
@@ -545,6 +546,16 @@ export default async function DashboardPage() {
                           : null
                       }
                     />
+                    {playerRecord?.id ? (
+                      <KeepScoreEntry
+                        matchId={match.id}
+                        winnerTeamId={match.winner_team_id}
+                        isHalved={match.is_halved}
+                        resultSetByOfficial={match.result_set_by_official === true}
+                        participantPlayerIds={participantPlayerIds}
+                        currentPlayerId={playerRecord.id}
+                      />
+                    ) : null}
                     {playerRecord?.id ? (
                       <PlayerMatchResultActions
                         matchId={match.id}
