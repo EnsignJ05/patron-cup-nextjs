@@ -460,7 +460,9 @@ export default function MatchesPage() {
       rows,
     );
     const filename = `${sanitizeFilenameSegment(currentEvent?.name ?? 'event')}-${currentEvent?.year ?? 'matches'}-matches-handicaps.csv`;
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    // Leading BOM, same as the other two CSV exports (admin/handicaps, admin/matches/setup) --
+    // without it Excel doesn't reliably detect UTF-8 and can mangle non-ASCII characters.
+    const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
