@@ -29,3 +29,25 @@ export function getE2ESupabaseAdminClient(): SupabaseClient {
   });
   return cachedClient;
 }
+
+/**
+ * A plain anon-key client, for specs that need to prove a password actually works end to end
+ * (e.g. after an admin-triggered reset) via a real `signInWithPassword` call -- stronger
+ * proof than reading `auth.users` state, since it exercises the same auth path a real login
+ * does. Always returns a fresh client (no cached session) so repeated sign-ins across
+ * different throwaway accounts in the same test file never bleed into each other.
+ */
+export function createE2ESupabaseAnonClient(): SupabaseClient {
+  const url = process.env.E2E_SUPABASE_URL;
+  const anonKey = process.env.E2E_SUPABASE_ANON_KEY;
+
+  if (!url || !anonKey) {
+    throw new Error(
+      'Missing Supabase anon credentials for E2E sign-in checks. Populate E2E_SUPABASE_URL and E2E_SUPABASE_ANON_KEY in .env.e2e.local (see .env.e2e.example).',
+    );
+  }
+
+  return createClient(url, anonKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+}
