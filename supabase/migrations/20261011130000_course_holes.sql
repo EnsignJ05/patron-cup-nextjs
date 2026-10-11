@@ -22,21 +22,11 @@ CREATE UNIQUE INDEX IF NOT EXISTS course_holes_course_id_handicap_index_key
 
 CREATE INDEX IF NOT EXISTS idx_course_holes_course_id ON public.course_holes(course_id);
 
-CREATE OR REPLACE FUNCTION public.set_course_holes_updated_at()
-RETURNS trigger
-LANGUAGE plpgsql
-AS $$
-BEGIN
-  NEW.updated_at = now();
-  RETURN NEW;
-END;
-$$;
-
 DROP TRIGGER IF EXISTS course_holes_set_updated_at ON public.course_holes;
 CREATE TRIGGER course_holes_set_updated_at
   BEFORE UPDATE ON public.course_holes
   FOR EACH ROW
-  EXECUTE FUNCTION public.set_course_holes_updated_at();
+  EXECUTE FUNCTION public.update_updated_at();
 
 ALTER TABLE public.course_holes ENABLE ROW LEVEL SECURITY;
 
