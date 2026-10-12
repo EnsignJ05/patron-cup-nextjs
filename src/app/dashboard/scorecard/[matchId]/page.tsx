@@ -56,6 +56,9 @@ export default function ScorecardPage() {
   const [currentHole, setCurrentHole] = useState<number | null>(null);
   const [activePlayerId, setActivePlayerId] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  // The number pad stays hidden until a player row is tapped, so a stray touch
+  // can't log a score before anyone's deliberately entered scoring mode.
+  const [padVisible, setPadVisible] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [finalizing, setFinalizing] = useState(false);
   const [finalizeResult, setFinalizeResult] = useState<{ resultLabel: string } | null>(null);
@@ -296,6 +299,12 @@ export default function ScorecardPage() {
     setCurrentHole(hole);
     setActivePlayerId(findFirstUnfilled(hole));
     setSheetOpen(false);
+    setPadVisible(false);
+  };
+
+  const selectPlayer = (playerId: string) => {
+    setActivePlayerId(playerId);
+    setPadVisible(true);
   };
 
   const handleDispute = async () => {
@@ -337,7 +346,7 @@ export default function ScorecardPage() {
     return (
       <div className={styles.wrap}>
         <div className={styles.topbar}>
-          <Link href="/dashboard" className={styles.backBtn} aria-label="Back">←</Link>
+          <Link href="/dashboard" className={styles.backBtn}>← Exit Scoring</Link>
           <span className={styles.topbarTitle}>SCORECARD</span>
           <span />
         </div>
@@ -357,7 +366,7 @@ export default function ScorecardPage() {
     return (
       <div className={styles.wrap}>
         <div className={styles.topbar}>
-          <Link href="/dashboard" className={styles.backBtn} aria-label="Back">←</Link>
+          <Link href="/dashboard" className={styles.backBtn}>← Exit Scoring</Link>
           <span className={styles.topbarTitle}>REVIEW</span>
           <span />
         </div>
@@ -410,7 +419,7 @@ export default function ScorecardPage() {
   return (
     <div className={styles.wrap}>
       <div className={styles.topbar}>
-        <Link href="/dashboard" className={styles.backBtn} aria-label="Back">←</Link>
+        <Link href="/dashboard" className={styles.backBtn}>← Exit Scoring</Link>
         <span className={styles.topbarTitle}>LIVE SCORING</span>
         {offlineQueue.pendingCount > 0 ? (
           <span className={styles.unsyncedPill}>{offlineQueue.pendingCount} unsynced</span>
@@ -544,8 +553,8 @@ export default function ScorecardPage() {
             <button
               key={mp.player_id}
               type="button"
-              className={`${styles.playerRow} ${activePlayerId === mp.player_id ? styles.active : ''}`}
-              onClick={() => setActivePlayerId(mp.player_id)}
+              className={`${styles.playerRow} ${activePlayerId === mp.player_id && padVisible ? styles.active : ''}`}
+              onClick={() => selectPlayer(mp.player_id)}
             >
               <div className={styles.playerInfo}>
                 <div className={styles.avatarWrap}>
@@ -604,7 +613,7 @@ export default function ScorecardPage() {
             </span>
             <span className={styles.verdictScoreB}>{holeResult.sideBScore}</span>
           </>
-        ) : (
+        ) : padVisible ? (
           <span className={styles.verdictScoring}>
             Scoring <b style={{ color: 'var(--pc-ink)' }}>
               {(() => {
@@ -613,21 +622,33 @@ export default function ScorecardPage() {
               })()}
             </b>
           </span>
+        ) : (
+          <span className={styles.verdictScoring}>Tap a player above to enter their score</span>
         )}
       </div>
 
       <div className={styles.padWrap}>
-        <div className={styles.pad}>
-          {NUMBER_KEYS.map((k) => (
-            <div
-              key={k}
-              className={`${styles.padKey} ${k.length > 1 || k === '⌫' ? styles.padKeySmall : ''}`}
-              onClick={() => handleKey(k)}
-            >
-              {k}
-            </div>
-          ))}
-        </div>
+        {padVisible ? (
+          <div className={styles.pad}>
+            {NUMBER_KEYS.map((k) => (
+              <div
+                key={k}
+                className={`${styles.padKey} ${k.length > 1 || k === '⌫' ? styles.padKeySmall : ''}`}
+                onClick={() => handleKey(k)}
+              >
+                {k}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <button
+            type="button"
+            className={styles.padPrompt}
+            onClick={() => activePlayerId && selectPlayer(activePlayerId)}
+          >
+            Tap a player to enter a score
+          </button>
+        )}
         <button
           type="button"
           className={styles.cta}

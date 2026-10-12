@@ -24,12 +24,15 @@
 .backBtn {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
+  gap: 4px;
+  padding: 7px 10px 7px 6px;
   border-radius: var(--pc-radius-sm);
   color: var(--pc-ink-2);
   text-decoration: none;
+  font: 700 12px var(--pc-font-sans);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  justify-self: start;
 }
 
 .topbarTitle {
@@ -407,6 +410,23 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
+}
+
+/* Stands in for the number pad until a player row is tapped, so the keys that
+   write scores can't be reached by a stray touch -- same footprint as .pad (4
+   rows at 46px + 3 gaps) so opening the pad doesn't jump the layout. */
+.padPrompt {
+  height: 208px;
+  border-radius: var(--pc-radius-sm);
+  border: 1px dashed var(--pc-rule-2);
+  background: none;
+  color: var(--pc-ink-3);
+  font: 600 13px var(--pc-font-sans);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  cursor: pointer;
 }
 
 .padKey {

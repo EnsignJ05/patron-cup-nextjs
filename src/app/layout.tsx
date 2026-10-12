@@ -388,6 +388,11 @@ function MobileTabBar() {
 function AppShell({ children }: { children: React.ReactNode }) {
   const { resolvedTheme, applyTheme } = useThemeManager();
   const toggleTheme = () => applyTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
+  const pathname = usePathname();
+  // The scorecard screen is a focused, one-handed data-entry flow -- the bottom tab
+  // bar just invites a mis-tap away from it. Its own topbar's "Exit Scoring" link is
+  // the way out while it's hidden.
+  const hideMobileTabBar = pathname?.startsWith('/dashboard/scorecard/') ?? false;
 
   // Shell caching for a dead zone between holes (LIVE_SCORING_PLAN.md Task P7.2) --
   // not an offline-first data layer, just keeps the app loadable when the network
@@ -403,7 +408,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
       <div className={styles.mainArea}>
         <MobileAppBar resolvedTheme={resolvedTheme} toggleTheme={toggleTheme} />
         <main>{children}</main>
-        <MobileTabBar />
+        {!hideMobileTabBar && <MobileTabBar />}
       </div>
     </div>
   );
