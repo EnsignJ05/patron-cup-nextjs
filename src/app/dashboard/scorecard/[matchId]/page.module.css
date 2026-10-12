@@ -98,6 +98,23 @@
   background: var(--pc-live-dot);
 }
 
+.holeStripHalved {
+  background: repeating-linear-gradient(-45deg, var(--pc-stripe) 0 2px, var(--pc-rule-2) 2px 4px);
+}
+
+.matchStatusBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0 16px 10px;
+  font: 700 13px var(--pc-font-sans);
+}
+
+.matchStatusThru {
+  font: 600 11px var(--pc-font-mono);
+  color: var(--pc-ink-3);
+}
+
 .holeNav {
   display: grid;
   grid-template-columns: 46px 1fr 46px;

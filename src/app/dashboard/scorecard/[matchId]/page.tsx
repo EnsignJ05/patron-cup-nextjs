@@ -422,7 +422,48 @@ export default function ScorecardPage() {
       <div className={styles.holeStrip}>
         {Array.from({ length: holesCount }).map((_, i) => {
           const n = i + 1;
-          const saved = scoringState.holeResults[i]?.wonBy != null;
+          const wonBy = scoringState.holeResults[i]?.wonBy;
+          const isPast = n < currentHole;
+
+          // Past holes show who won it; the current hole and anything still ahead
+          // keep today's plain progress treatment instead.
+          if (isPast && wonBy === 'A') {
+            return (
+              <button
+                key={n}
+                type="button"
+                className={styles.holeStripCell}
+                style={{ background: teamColor(teamIds[0]) }}
+                onClick={() => goToHole(n)}
+                aria-label={`Hole ${n} · ${teamName(teamIds[0])} won`}
+              />
+            );
+          }
+          if (isPast && wonBy === 'B') {
+            return (
+              <button
+                key={n}
+                type="button"
+                className={styles.holeStripCell}
+                style={{ background: teamColor(teamIds[1]) }}
+                onClick={() => goToHole(n)}
+                aria-label={`Hole ${n} · ${teamName(teamIds[1])} won`}
+              />
+            );
+          }
+          if (isPast && wonBy === 'halved') {
+            return (
+              <button
+                key={n}
+                type="button"
+                className={`${styles.holeStripCell} ${styles.holeStripHalved}`}
+                onClick={() => goToHole(n)}
+                aria-label={`Hole ${n} · halved`}
+              />
+            );
+          }
+
+          const saved = wonBy != null;
           return (
             <button
               key={n}
@@ -433,6 +474,18 @@ export default function ScorecardPage() {
             />
           );
         })}
+      </div>
+
+      <div className={styles.matchStatusBar}>
+        {scoringState.leaderTeamId ? (
+          <span style={{ color: teamColor(scoringState.leaderTeamId) }}>
+            {teamName(scoringState.leaderTeamId)} {scoringState.resultLabel}
+            {scoringState.isDormie ? ' · DORMIE' : ''}
+          </span>
+        ) : (
+          <span>{scoringState.thru > 0 ? 'All square' : 'Not started'}</span>
+        )}
+        <span className={styles.matchStatusThru}>Thru {scoringState.thru}</span>
       </div>
 
       <div className={styles.holeNav}>
