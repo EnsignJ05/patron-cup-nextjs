@@ -226,6 +226,11 @@ function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
     router.push('/');
   };
 
+  // Only the admin branches below put anything above the logout/login action. When
+  // neither applies (a signed-in player, most commonly), that action shouldn't be
+  // pinned to the bottom of an otherwise-empty drawer -- it reads as broken.
+  const hasMainContent = inAdmin || (isAuthenticated && isAdmin);
+
   return (
     <Drawer anchor="right" open={open} onClose={onClose}>
       <div className={styles.mobileMenu}>
@@ -264,7 +269,7 @@ function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
             </Link>
           )
         )}
-        <div className={styles.mobileMenuFooter}>
+        <div className={hasMainContent ? styles.mobileMenuFooter : styles.mobileMenuFooterTop}>
           {isAuthenticated ? (
             <button onClick={handleLogout} className={styles.sidebarLogoutBtn}>
               Logout
@@ -289,6 +294,12 @@ function MobileAppBar({
   toggleTheme: () => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const pathname = usePathname();
+  const { user } = useAuth();
+  // Signed out and not in /admin, the drawer would only duplicate the tab bar's
+  // Login link -- nothing worth a separate menu for. Every authenticated role gets
+  // one regardless of nav links, because it's the only place to log out on mobile.
+  const hasMenuContent = Boolean(user) || isAdminPath(pathname);
 
   return (
     <AppBar position="static" color="transparent" elevation={0} className={styles.appBar}>
@@ -310,16 +321,18 @@ function MobileAppBar({
           >
             {resolvedTheme === 'dark' ? <SunIcon /> : <MoonIcon />}
           </IconButton>
-          <IconButton
-            aria-label="Open menu"
-            className={styles.menuButton}
-            onClick={() => setMenuOpen(true)}
-          >
-            <MenuIcon />
-          </IconButton>
+          {hasMenuContent && (
+            <IconButton
+              aria-label="Open menu"
+              className={styles.menuButton}
+              onClick={() => setMenuOpen(true)}
+            >
+              <MenuIcon />
+            </IconButton>
+          )}
         </Box>
       </Toolbar>
-      <MobileMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
+      {hasMenuContent && <MobileMenu open={menuOpen} onClose={() => setMenuOpen(false)} />}
     </AppBar>
   );
 }
